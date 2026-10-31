@@ -26,6 +26,13 @@ npx wrangler login                    # opens Cloudflare in your browser
 npx wrangler deploy                   # creates the Worker and prints its URL
 ```
 
+### C. GitHub Actions (one click, nothing installed locally)
+
+`.github/workflows/deploy.yml` deploys on demand. Add the repository secrets `CLOUDFLARE_API_TOKEN`
+(template "Edit Cloudflare Workers") and `CLOUDFLARE_ACCOUNT_ID`, then Actions -> "Deploy to Cloudflare (manual)" ->
+Run workflow. It type-checks and runs the tests first, deploys, and (if you set the `DEPLOY_URL` variable) checks
+`/api/health` afterwards. It never runs automatically.
+
 ### B. Cloudflare dashboard (no terminal)
 
 Workers & Pages → Create → Import a repository → `ai-creator-studio`, branch `feature/phase1-d1-backend`.
