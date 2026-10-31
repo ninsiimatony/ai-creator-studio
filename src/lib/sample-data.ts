@@ -54,6 +54,7 @@ export const sampleScripts: Script[] = [
       "1. A real-world hallucination example\n2. How language models predict words\n3. Why confidence ≠ accuracy\n4. How researchers reduce it\n5. What it means for you",
     body: "Draft narration goes here…",
     cta: "If this helped, subscribe for weekly AI explainers — and tell us the strangest AI answer you've seen.",
+    storyboard: [],
   },
   {
     id: "s2",
@@ -62,6 +63,7 @@ export const sampleScripts: Script[] = [
     outline: "",
     body: "",
     cta: "",
+    storyboard: [],
   },
 ];
 
@@ -73,6 +75,10 @@ export const sampleVideos: Video[] = [
     done: ["script", "voiceover", "visuals", "captions", "thumbnail"],
     scheduled: "2026-11-04",
     approval: "pending",
+    description: "",
+    tags: [],
+    thumbnailConcept: "",
+    youtubeStatus: "none",
   },
   {
     id: "v2",
@@ -81,6 +87,10 @@ export const sampleVideos: Video[] = [
     done: ["script"],
     scheduled: "2026-11-08",
     approval: "draft",
+    description: "",
+    tags: [],
+    thumbnailConcept: "",
+    youtubeStatus: "none",
   },
   {
     id: "v3",
@@ -89,6 +99,10 @@ export const sampleVideos: Video[] = [
     done: [],
     scheduled: "2026-11-12",
     approval: "draft",
+    description: "",
+    tags: [],
+    thumbnailConcept: "",
+    youtubeStatus: "none",
   },
   {
     id: "v4",
@@ -97,5 +111,9 @@ export const sampleVideos: Video[] = [
     done: ["script", "voiceover", "visuals", "captions"],
     scheduled: "2026-11-15",
     approval: "draft",
+    description: "",
+    tags: [],
+    thumbnailConcept: "",
+    youtubeStatus: "none",
   },
 ];

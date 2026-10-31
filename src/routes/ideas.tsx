@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useStudio } from "@/lib/studio-store";
-import { Badge, NextStep, PageHeader } from "@/components/ui-bits";
+import { AiBox, Badge, NextStep, PageHeader } from "@/components/ui-bits";
+import { aiIdeas } from "@/lib/ai.functions";
+import { aiBlockedReason, useIntegrations } from "@/lib/use-integrations";
 
 export const Route = createFileRoute("/ideas")({
   head: () => ({
@@ -22,7 +25,32 @@ export const Route = createFileRoute("/ideas")({
 });
 
 function Ideas() {
-  const { ideas, addIdea, setIdeaStatus, startScript } = useStudio();
+  const { ideas, addIdea, setIdeaStatus, startScript, mode, reload } = useStudio();
+  const qc = useQueryClient();
+  const integ = useIntegrations();
+  const blocked = aiBlockedReason(mode, integ.data);
+  const [aiTopic, setAiTopic] = useState("");
+  const [aiCount, setAiCount] = useState(5);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiMsg, setAiMsg] = useState("");
+  const [aiErr, setAiErr] = useState("");
+  async function generateIdeas() {
+    setAiBusy(true);
+    setAiMsg("");
+    setAiErr("");
+    try {
+      const r = await aiIdeas({ data: { topic: aiTopic.trim() || undefined, count: aiCount } });
+      await reload();
+      void qc.invalidateQueries({ queryKey: ["integrations"] });
+      setAiMsg(
+        `Added ${r.ideas.length} ideas · cost $${r.usage.costUsd.toFixed(4)} (${r.usage.model}).`,
+      );
+    } catch (e) {
+      setAiErr(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      setAiBusy(false);
+    }
+  }
   const [title, setTitle] = useState("");
   const [topic, setTopic] = useState("AI technology");
   const [msg, setMsg] = useState("");
@@ -64,6 +92,59 @@ function Ideas() {
           Add idea
         </button>
       </form>
+      <div className="mb-6">
+        <AiBox title="Generate ideas with AI" blocked={blocked}>
+          <div className="grid gap-3 sm:grid-cols-[1fr_120px_auto]">
+            <label className="sr-only" htmlFor="ai-topic">
+              Topic or theme (optional)
+            </label>
+            <input
+              id="ai-topic"
+              className="field"
+              placeholder="Optional theme, e.g. 'robots in healthcare'"
+              maxLength={120}
+              value={aiTopic}
+              onChange={(e) => setAiTopic(e.target.value)}
+            />
+            <label className="sr-only" htmlFor="ai-count">
+              How many ideas
+            </label>
+            <select
+              id="ai-count"
+              className="field"
+              value={aiCount}
+              onChange={(e) => setAiCount(Number(e.target.value))}
+            >
+              {[3, 5, 8].map((n) => (
+                <option key={n} value={n}>
+                  {n} ideas
+                </option>
+              ))}
+            </select>
+            <button
+              className="btn btn-primary"
+              disabled={aiBusy}
+              onClick={() => void generateIdeas()}
+            >
+              {aiBusy ? "Thinking…" : "Generate"}
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Brainstorms only — Claude has no web access, so these are not trend or search data. Cost
+            is metered against your daily AI budget.
+          </p>
+          {aiMsg && (
+            <p role="status" className="text-sm text-primary">
+              {aiMsg}
+            </p>
+          )}
+          {aiErr && (
+            <p role="alert" className="text-sm text-destructive">
+              {aiErr}
+            </p>
+          )}
+        </AiBox>
+      </div>
       {msg && (
         <p role="status" className="mb-4 text-sm text-primary">
           {msg}

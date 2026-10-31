@@ -7,8 +7,9 @@ import {
   setCookie,
 } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { getEnv, type D1Database } from "@/server/db";
+import { getEnv } from "@/server/db";
 import { AppError } from "@/server/errors";
+import { guard, requireDb, requireUser } from "@/server/context";
 import {
   SESSION_COOKIE,
   SESSION_TTL_SECONDS,
@@ -25,30 +26,6 @@ import * as repo from "@/server/repo";
 import { STAGE_KEYS, type SessionInfo, type Snapshot } from "@/lib/types";
 
 // ---------- helpers ----------
-
-/** Runs a handler; known AppErrors reach the user, anything else is logged and masked. */
-async function guard<T>(fn: () => Promise<T>): Promise<T> {
-  try {
-    return await fn();
-  } catch (e) {
-    if (e instanceof AppError) throw e;
-    console.error("server function failed:", e);
-    throw new AppError("Something went wrong. Please try again.");
-  }
-}
-
-async function requireDb(): Promise<{ db: D1Database; setupCode: string | undefined }> {
-  const env = await getEnv();
-  if (!env.DB) throw new AppError("The database is not available in this environment.");
-  return { db: env.DB, setupCode: env.SETUP_CODE };
-}
-
-async function requireUser(): Promise<{ db: D1Database; user: AuthUser }> {
-  const { db } = await requireDb();
-  const user = await getSessionUser(db, getCookie(SESSION_COOKIE));
-  if (!user) throw new AppError("Please sign in.");
-  return { db, user };
-}
 
 function startSession(token: string) {
   const req = getRequest();
@@ -94,7 +71,8 @@ export const setupAccount = createServerFn({ method: "POST" })
   .validator(z.object({ email, password, setupCode: z.string().min(1).max(200) }))
   .handler(async ({ data }) =>
     guard(async () => {
-      const { db, setupCode } = await requireDb();
+      const { db, env } = await requireDb();
+      const setupCode = env.SETUP_CODE;
       if (!setupCode) {
         throw new AppError("Account setup is disabled until a SETUP_CODE secret is configured.");
       }
@@ -201,6 +179,24 @@ export const toggleStage = createServerFn({ method: "POST" })
     }),
   );
 
+export const updateVideoMeta = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      id,
+      title: title.optional(),
+      description: z.string().max(5000).optional(),
+      tags: z.array(z.string().trim().min(1).max(60)).max(30).optional(),
+      thumbnailConcept: z.string().max(2000).optional(),
+    }),
+  )
+  .handler(async ({ data }) =>
+    guard(async () => {
+      const { db, user } = await requireUser();
+      const { id: videoId, ...patch } = data;
+      return repo.updateVideoMeta(db, user.id, videoId, patch);
+    }),
+  );
+
 export const setScheduled = createServerFn({ method: "POST" })
   .validator(z.object({ id, scheduled: date }))
   .handler(async ({ data }) =>
@@ -257,6 +253,7 @@ export const saveSettings = createServerFn({ method: "POST" })
       timezone: z.string().trim().min(1).max(64),
       budgetCap: z.number().min(0).max(1_000_000),
       currency: z.enum(["USD", "OMR", "EUR"]),
+      aiDailyCapUsd: z.number().min(0).max(1000),
     }),
   )
   .handler(async ({ data }) =>

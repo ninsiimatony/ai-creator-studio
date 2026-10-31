@@ -15,7 +15,21 @@ export interface D1Database {
   batch(statements: D1PreparedStatement[]): Promise<D1Result[]>;
 }
 
-export type WorkerEnv = { DB?: D1Database; SETUP_CODE?: string };
+export type WorkerEnv = {
+  DB?: D1Database;
+  SETUP_CODE?: string;
+  ANTHROPIC_API_KEY?: string;
+  /** Model for long-form writing (default claude-sonnet-5-5). */
+  AI_MODEL_WRITER?: string;
+  /** Model for short tasks: ideas, titles, tags, thumbnails (default claude-haiku-5-5). */
+  AI_MODEL_FAST?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  /** Base64 of 32 random bytes; encrypts stored Google refresh tokens. */
+  TOKEN_ENC_KEY?: string;
+  ELEVENLABS_API_KEY?: string;
+  ELEVENLABS_VOICE_ID?: string;
+};
 
 /**
  * Returns the Worker bindings/secrets, or {} when not running inside Cloudflare Workers

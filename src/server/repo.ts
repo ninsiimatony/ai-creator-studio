@@ -4,6 +4,7 @@ import type { D1Database, D1PreparedStatement } from "./db";
 import { AppError } from "./errors";
 import {
   DEFAULT_SETTINGS,
+  type Scene,
   STAGES,
   type Idea,
   type IdeaStatus,
@@ -24,8 +25,19 @@ type VideoRow = {
   scheduled: string;
   approval: Video["approval"];
   note: string | null;
+  description: string;
+  tags: string;
+  thumbnail_concept: string;
+  youtube_status: Video["youtubeStatus"];
+  youtube_video_id: string | null;
+  publish_at: string | null;
+  script_id: string | null;
 };
+type ScriptRow = Omit<Script, "storyboard"> & { storyboard: string };
+const VIDEO_COLS =
+  "id, title, stage, done_stages, scheduled, approval, note, description, tags, thumbnail_concept, youtube_status, youtube_video_id, publish_at, script_id";
 type SettingsRow = {
+  ai_daily_cap_usd: number;
   audience: string;
   format: string;
   approval_required: number;
@@ -44,6 +56,19 @@ function parseDone(json: string): Stage[] {
     return [];
   }
 }
+function parseJsonArray<T>(json: string): T[] {
+  try {
+    const v: unknown = JSON.parse(json);
+    return Array.isArray(v) ? (v as T[]) : [];
+  } catch {
+    return [];
+  }
+}
+const toScript = (r: ScriptRow): Script => ({
+  ...r,
+  storyboard: parseJsonArray<Scene>(r.storyboard),
+});
+
 /** The first stage not yet done (or "quality" when everything is). */
 export function nextStage(done: Stage[]): Stage {
   return STAGES.find((s) => !done.includes(s.key))?.key ?? "quality";
@@ -55,7 +80,14 @@ const toVideo = (r: VideoRow): Video => ({
   done: parseDone(r.done_stages),
   scheduled: r.scheduled,
   approval: r.approval,
+  description: r.description,
+  tags: parseJsonArray<string>(r.tags),
+  thumbnailConcept: r.thumbnail_concept,
+  youtubeStatus: r.youtube_status,
   ...(r.note ? { note: r.note } : {}),
+  ...(r.youtube_video_id ? { youtubeVideoId: r.youtube_video_id } : {}),
+  ...(r.publish_at ? { publishAt: r.publish_at } : {}),
+  ...(r.script_id ? { scriptId: r.script_id } : {}),
 });
 const toSettings = (r: SettingsRow | null): Settings =>
   r
@@ -66,6 +98,7 @@ const toSettings = (r: SettingsRow | null): Settings =>
         timezone: r.timezone,
         budgetCap: r.budget_cap,
         currency: r.currency as Settings["currency"],
+        aiDailyCapUsd: r.ai_daily_cap_usd,
       }
     : DEFAULT_SETTINGS;
 
@@ -80,23 +113,23 @@ export async function loadSnapshot(db: D1Database, uid: string): Promise<Snapsho
       .bind(uid),
     db
       .prepare(
-        "SELECT id, title, hook, outline, body, cta FROM scripts WHERE user_id = ? ORDER BY created_at ASC, rowid ASC",
+        "SELECT id, title, hook, outline, body, cta, storyboard FROM scripts WHERE user_id = ? ORDER BY created_at ASC, rowid ASC",
       )
       .bind(uid),
     db
       .prepare(
-        "SELECT id, title, stage, done_stages, scheduled, approval, note FROM videos WHERE user_id = ? ORDER BY scheduled ASC, created_at ASC",
+        `SELECT ${VIDEO_COLS} FROM videos WHERE user_id = ? ORDER BY scheduled ASC, created_at ASC`,
       )
       .bind(uid),
     db
       .prepare(
-        "SELECT audience, format, approval_required, timezone, budget_cap, currency FROM settings WHERE user_id = ?",
+        "SELECT audience, format, approval_required, timezone, budget_cap, currency, ai_daily_cap_usd FROM settings WHERE user_id = ?",
       )
       .bind(uid),
   ]);
   return {
     ideas: (ideas?.results ?? []) as IdeaRow[],
-    scripts: (scripts?.results ?? []) as Script[],
+    scripts: ((scripts?.results ?? []) as ScriptRow[]).map(toScript),
     videos: ((videos?.results ?? []) as VideoRow[]).map(toVideo),
     settings: toSettings(((settings?.results ?? [])[0] as SettingsRow | undefined) ?? null),
   };
@@ -156,6 +189,7 @@ export async function startScript(db: D1Database, uid: string, ideaId: string): 
     outline: "",
     body: "",
     cta: "",
+    storyboard: [],
   };
   await db
     .prepare("INSERT INTO scripts (id, user_id, idea_id, title) VALUES (?, ?, ?, ?)")
@@ -203,6 +237,11 @@ export async function createVideo(
     done: [],
     scheduled: input.scheduled ?? "",
     approval: "draft",
+    description: "",
+    tags: [],
+    thumbnailConcept: "",
+    youtubeStatus: "none",
+    ...(input.scriptId ? { scriptId: input.scriptId } : {}),
   };
   await db
     .prepare("INSERT INTO videos (id, user_id, script_id, title, scheduled) VALUES (?, ?, ?, ?, ?)")
@@ -213,9 +252,7 @@ export async function createVideo(
 
 async function getVideo(db: D1Database, uid: string, id: string): Promise<Video> {
   const row = await db
-    .prepare(
-      "SELECT id, title, stage, done_stages, scheduled, approval, note FROM videos WHERE id = ? AND user_id = ?",
-    )
+    .prepare(`SELECT ${VIDEO_COLS} FROM videos WHERE id = ? AND user_id = ?`)
     .bind(id, uid)
     .first<VideoRow>();
   if (!row) throw new AppError("Video not found.");
@@ -331,11 +368,12 @@ export async function returnVideo(db: D1Database, uid: string, id: string): Prom
 export async function saveSettings(db: D1Database, uid: string, s: Settings): Promise<void> {
   await db
     .prepare(
-      `INSERT INTO settings (user_id, audience, format, approval_required, timezone, budget_cap, currency)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO settings (user_id, audience, format, approval_required, timezone, budget_cap, currency, ai_daily_cap_usd)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(user_id) DO UPDATE SET audience = excluded.audience, format = excluded.format,
          approval_required = excluded.approval_required, timezone = excluded.timezone,
-         budget_cap = excluded.budget_cap, currency = excluded.currency, updated_at = datetime('now')`,
+         budget_cap = excluded.budget_cap, currency = excluded.currency,
+         ai_daily_cap_usd = excluded.ai_daily_cap_usd, updated_at = datetime('now')`,
     )
     .bind(
       uid,
@@ -345,6 +383,7 @@ export async function saveSettings(db: D1Database, uid: string, s: Settings): Pr
       s.timezone,
       s.budgetCap,
       s.currency,
+      s.aiDailyCapUsd,
     )
     .run();
 }
@@ -397,4 +436,147 @@ export async function seedSampleData(db: D1Database, uid: string): Promise<void>
     if (v.approval === "pending") stmts.push(logApproval(db, uid, id, "submitted"));
   }
   await db.batch(stmts);
+}
+
+// ---------- AI-assisted content ----------
+
+export async function addIdeasBulk(
+  db: D1Database,
+  uid: string,
+  items: { title: string; topic: string; angle: string }[],
+): Promise<Idea[]> {
+  const ideas: Idea[] = items.map((i) => ({
+    id: crypto.randomUUID(),
+    title: i.title.slice(0, 200),
+    topic: i.topic,
+    angle: i.angle.slice(0, 500),
+    score: 0, // no real trend data exists, so no score is invented
+    status: "new",
+  }));
+  if (ideas.length === 0) return [];
+  await db.batch(
+    ideas.map((i) =>
+      db
+        .prepare(
+          "INSERT INTO ideas (id, user_id, title, topic, angle, score, status) VALUES (?, ?, ?, ?, ?, 0, 'new')",
+        )
+        .bind(i.id, uid, i.title, i.topic, i.angle),
+    ),
+  );
+  return ideas;
+}
+
+export async function getScript(db: D1Database, uid: string, id: string): Promise<Script> {
+  const row = await db
+    .prepare(
+      "SELECT id, title, hook, outline, body, cta, storyboard FROM scripts WHERE id = ? AND user_id = ?",
+    )
+    .bind(id, uid)
+    .first<ScriptRow>();
+  if (!row) throw new AppError("Script not found.");
+  return toScript(row);
+}
+
+export async function setStoryboard(
+  db: D1Database,
+  uid: string,
+  scriptId: string,
+  scenes: Scene[],
+): Promise<void> {
+  const res = await db
+    .prepare(
+      "UPDATE scripts SET storyboard = ?, updated_at = datetime('now') WHERE id = ? AND user_id = ?",
+    )
+    .bind(JSON.stringify(scenes), scriptId, uid)
+    .run();
+  if (!res.meta.changes) throw new AppError("Script not found.");
+}
+
+export async function getVideoWithScript(
+  db: D1Database,
+  uid: string,
+  id: string,
+): Promise<{ video: Video; scriptBody: string; scriptHook: string }> {
+  const video = await getVideo(db, uid, id);
+  let scriptBody = "";
+  let scriptHook = "";
+  if (video.scriptId) {
+    const s = await db
+      .prepare("SELECT body, hook FROM scripts WHERE id = ? AND user_id = ?")
+      .bind(video.scriptId, uid)
+      .first<{ body: string; hook: string }>();
+    scriptBody = s?.body ?? "";
+    scriptHook = s?.hook ?? "";
+  }
+  return { video, scriptBody, scriptHook };
+}
+
+/** Edits publishing metadata. Locked while a video is awaiting or has received approval. */
+export async function updateVideoMeta(
+  db: D1Database,
+  uid: string,
+  id: string,
+  patch: {
+    title?: string | undefined;
+    description?: string | undefined;
+    tags?: string[] | undefined;
+    thumbnailConcept?: string | undefined;
+  },
+): Promise<Video> {
+  const v = await getVideo(db, uid, id);
+  if (v.approval === "pending" || v.approval === "approved") {
+    throw new AppError(
+      "This video is in the approval flow. Request changes before editing its details.",
+    );
+  }
+  if (v.youtubeStatus !== "none") throw new AppError("This video was already sent to YouTube.");
+  const next = {
+    title: patch.title ?? v.title,
+    description: patch.description ?? v.description,
+    tags: patch.tags ?? v.tags,
+    thumbnailConcept: patch.thumbnailConcept ?? v.thumbnailConcept,
+  };
+  await db
+    .prepare(
+      "UPDATE videos SET title = ?, description = ?, tags = ?, thumbnail_concept = ?, updated_at = datetime('now') WHERE id = ? AND user_id = ?",
+    )
+    .bind(next.title, next.description, JSON.stringify(next.tags), next.thumbnailConcept, id, uid)
+    .run();
+  return { ...v, ...next };
+}
+
+export async function getSettingsFor(db: D1Database, uid: string): Promise<Settings> {
+  const row = await db
+    .prepare(
+      "SELECT audience, format, approval_required, timezone, budget_cap, currency, ai_daily_cap_usd FROM settings WHERE user_id = ?",
+    )
+    .bind(uid)
+    .first<SettingsRow>();
+  return toSettings(row);
+}
+
+export async function logAutomation(
+  db: D1Database,
+  uid: string,
+  kind: string,
+  status: "ok" | "error",
+  summary: string,
+): Promise<void> {
+  await db
+    .prepare("INSERT INTO automation_runs (user_id, kind, status, summary) VALUES (?, ?, ?, ?)")
+    .bind(uid, kind, status, summary.slice(0, 500))
+    .run();
+}
+
+export async function listAutomationRuns(
+  db: D1Database,
+  uid: string,
+): Promise<{ id: number; kind: string; status: string; summary: string; createdAt: string }[]> {
+  const r = await db
+    .prepare(
+      "SELECT id, kind, status, summary, created_at AS createdAt FROM automation_runs WHERE user_id = ? ORDER BY id DESC LIMIT 20",
+    )
+    .bind(uid)
+    .all<{ id: number; kind: string; status: string; summary: string; createdAt: string }>();
+  return r.results;
 }

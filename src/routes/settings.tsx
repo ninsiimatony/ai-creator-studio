@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useStudio } from "@/lib/studio-store";
+import { useIntegrations } from "@/lib/use-integrations";
 import { CURRENCIES, type Currency } from "@/lib/types";
 import { PageHeader } from "@/components/ui-bits";
 
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/settings")({
 
 function SettingsPage() {
   const { settings, saveSettings, mode } = useStudio();
+  const integ = useIntegrations();
   const [s, setS] = useState(settings);
   const [saved, setSaved] = useState(false);
   return (
@@ -105,6 +107,34 @@ function SettingsPage() {
               ))}
             </select>
           </L>
+        </div>
+        <div className="rounded-md border p-3">
+          <L label="AI daily budget cap (USD)">
+            <input
+              type="number"
+              min={0}
+              max={1000}
+              step="0.01"
+              className="field"
+              value={s.aiDailyCapUsd}
+              onChange={(e) => {
+                setS({ ...s, aiDailyCapUsd: Number(e.target.value) });
+                setSaved(false);
+              }}
+            />
+          </L>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Claude usage is metered in US dollars from the token counts the API reports. Every AI
+            request is refused if it could push today's total (UTC) over this cap.{" "}
+            <strong>0 keeps AI switched off.</strong> A 6-minute script on the default writing model
+            costs roughly $0.03–$0.15.
+          </p>
+          {mode === "db" && integ.data && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Spent today: ${integ.data.ai.spentUsd.toFixed(4)} · Models:{" "}
+              {integ.data.ai.writerModel} (writing), {integ.data.ai.fastModel} (ideas, titles, tags)
+            </p>
+          )}
         </div>
         <label className="flex items-start gap-3 text-sm">
           <input

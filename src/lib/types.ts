@@ -22,6 +22,13 @@ export type Idea = {
   score: number;
   status: IdeaStatus;
 };
+export type Scene = {
+  narration: string;
+  visual: string;
+  keywords: string[];
+  onScreenText: string;
+  seconds: number;
+};
 export type Script = {
   id: string;
   title: string;
@@ -29,7 +36,9 @@ export type Script = {
   outline: string;
   body: string;
   cta: string;
+  storyboard: Scene[];
 };
+export type YoutubeStatus = "none" | "uploading" | "private" | "unlisted" | "scheduled" | "public";
 export type Video = {
   id: string;
   title: string;
@@ -38,6 +47,13 @@ export type Video = {
   scheduled: string;
   approval: Approval;
   note?: string | undefined;
+  description: string;
+  tags: string[];
+  thumbnailConcept: string;
+  youtubeStatus: YoutubeStatus;
+  youtubeVideoId?: string | undefined;
+  publishAt?: string | undefined;
+  scriptId?: string | undefined;
 };
 export type Currency = "USD" | "OMR" | "EUR";
 export const CURRENCIES: Currency[] = ["USD", "OMR", "EUR"];
@@ -48,6 +64,8 @@ export type Settings = {
   timezone: string;
   budgetCap: number;
   currency: Currency;
+  /** Daily cap on AI spend in USD. 0 keeps AI switched off. */
+  aiDailyCapUsd: number;
 };
 
 export type Snapshot = {
@@ -64,6 +82,7 @@ export const DEFAULT_SETTINGS: Settings = {
   timezone: "Asia/Muscat",
   budgetCap: 0,
   currency: "USD",
+  aiDailyCapUsd: 0,
 };
 
 /** What the session endpoint tells the client. */

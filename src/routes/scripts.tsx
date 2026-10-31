@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useStudio, type Script } from "@/lib/studio-store";
 import { NextStep, PageHeader } from "@/components/ui-bits";
+import { ScriptAi } from "@/components/ScriptAi";
 
 export const Route = createFileRoute("/scripts")({
   head: () => ({
@@ -123,9 +124,6 @@ function Scripts() {
               />
             </F>
             <div className="flex flex-wrap items-center gap-2">
-              <button className="btn" disabled title="Requires an AI model connection">
-                Generate draft with AI (not connected)
-              </button>
               <button
                 className="btn"
                 onClick={async () => {
@@ -145,10 +143,11 @@ function Scripts() {
           </div>
         )}
       </div>
+      {s && <ScriptAi key={s.id} script={s} />}
       <div className="mt-6">
-        <NextStep title="AI script generation">
-          A future backend can draft scripts from shortlisted ideas. Drafts will always land here
-          for human review.
+        <NextStep title="Video rendering">
+          Scripts and storyboards are produced here. Turning them into a finished video file is not
+          connected — you upload the finished video when publishing.
         </NextStep>
       </div>
     </>

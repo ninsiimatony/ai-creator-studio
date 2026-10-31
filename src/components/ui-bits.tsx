@@ -58,3 +58,27 @@ export function NextStep({ title, children }: { title: string; children: ReactNo
     </div>
   );
 }
+
+/** A panel for an AI action. Shows why AI is unavailable and disables its controls when it is. */
+export function AiBox({
+  title,
+  blocked,
+  children,
+}: {
+  title: string;
+  blocked: string | null;
+  children: ReactNode;
+}) {
+  return (
+    <div className="panel p-4">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium">{title}</span>
+        <Badge tone={blocked ? "off" : "teal"}>{blocked ? "Unavailable" : "Claude"}</Badge>
+      </div>
+      {blocked && <p className="mb-3 text-sm text-muted-foreground">{blocked}</p>}
+      <fieldset disabled={!!blocked} className="space-y-3 disabled:opacity-60">
+        {children}
+      </fieldset>
+    </div>
+  );
+}

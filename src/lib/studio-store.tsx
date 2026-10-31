@@ -70,6 +70,12 @@ type Store = {
     confirmed: boolean,
   ) => Promise<void>;
   returnVideo: (id: string) => Promise<void>;
+  updateVideoMeta: (
+    id: string,
+    patch: Partial<Pick<Video, "title" | "description" | "tags" | "thumbnailConcept">>,
+  ) => Promise<boolean>;
+  /** Re-reads everything from the server (after server-side generation). No-op in demo mode. */
+  reload: () => Promise<void>;
   saveSettings: (s: Settings) => Promise<boolean>;
   loadSampleData: () => Promise<void>;
 };
@@ -233,6 +239,7 @@ export function StudioProvider({
               outline: "",
               body: "",
               cta: "",
+              storyboard: [],
             },
           ]);
           return true;
@@ -269,6 +276,10 @@ export function StudioProvider({
               done: [],
               scheduled: input.scheduled ?? "",
               approval: "draft",
+              description: "",
+              tags: [],
+              thumbnailConcept: "",
+              youtubeStatus: "none",
             },
           ]);
           return true;
@@ -317,6 +328,20 @@ export function StudioProvider({
         if (ok) patchVideo(id, (v) => ({ ...v, approval: "draft" }));
       },
 
+      updateVideoMeta: async (id, patch) => {
+        if (!persisted) {
+          patchVideo(id, (v) => ({ ...v, ...patch }));
+          return true;
+        }
+        const updated = await call(() => api.updateVideoMeta({ data: { id, ...patch } }));
+        if (updated) patchVideo(id, () => updated);
+        return !!updated;
+      },
+
+      reload: async () => {
+        if (persisted) await resync();
+      },
+
       saveSettings: async (s) => {
         if (!persisted) {
           setSettings(s);
@@ -344,6 +369,7 @@ export function StudioProvider({
     videos,
     settings,
     call,
+    resync,
     flushAll,
     flushScript,
     onSignOut,
