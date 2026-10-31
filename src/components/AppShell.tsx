@@ -8,6 +8,7 @@ const nav = [
   { to: "/ideas", label: "Idea research" },
   { to: "/scripts", label: "Script editor" },
   { to: "/pipeline", label: "Production" },
+  { to: "/render", label: "Render video" },
   { to: "/approvals", label: "Approvals" },
   { to: "/publish", label: "Publishing" },
   { to: "/automation", label: "Automation" },

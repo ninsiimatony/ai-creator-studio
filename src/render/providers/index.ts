@@ -7,6 +7,8 @@ import type { Availability, MediaEnv, ProviderInfo } from "./types";
 export * from "./types";
 export { VOICE_PROVIDERS, IMAGE_PROVIDERS, CLIP_PROVIDERS, MUSIC_PROVIDERS };
 export { decodeAudioFile } from "./music";
+export { titleCardImage, workersAiImage } from "./images";
+export { elevenLabsVoice, workersAiVoice } from "./voices";
 
 export type ProviderRow = { id: string; label: string; cost: string; availability: Availability };
 

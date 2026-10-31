@@ -4,7 +4,7 @@ Tony AI YouTube Studio runs as a single Cloudflare Worker (TanStack Start SSR + 
 functions) with a Cloudflare D1 (SQLite) database. No paid service is required for local
 development, and nothing here deploys anything by itself.
 
-Integrations (all optional, each shows "Not connected" until its secret exists): Claude (ideas, scripts,
+Video rendering runs in the browser (see [RENDERING.md](RENDERING.md)). Integrations (all optional, each shows "Not connected" until its secret exists): Claude (ideas, scripts,
 SEO, thumbnails, storyboards), Google OAuth + YouTube Data/Analytics APIs, ElevenLabs voiceover.
 
 ## How it fits together

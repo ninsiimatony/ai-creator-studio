@@ -44,6 +44,9 @@ npx wrangler secret put ELEVENLABS_API_KEY    # voiceover
 npx wrangler secret put ELEVENLABS_VOICE_ID   # voiceover default voice (optional)
 ```
 
+The free AI images and voiceover need no secret: they use the `AI` binding created automatically at deploy time.
+The app caps usage (60 images and 40,000 spoken characters per day) to stay inside Cloudflare's free allowance.
+
 Optional plain variables: `AI_MODEL_WRITER` (default `claude-sonnet-5-5`), `AI_MODEL_FAST` (default `claude-haiku-5-5`).
 
 ## First run

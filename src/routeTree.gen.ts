@@ -18,6 +18,7 @@ import { Route as ChannelRouteImport } from './routes/channel'
 import { Route as IdeasRouteImport } from './routes/ideas'
 import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as PublishRouteImport } from './routes/publish'
+import { Route as RenderRouteImport } from './routes/render'
 import { Route as ScriptsRouteImport } from './routes/scripts'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
@@ -72,6 +73,11 @@ const PublishRoute = PublishRouteImport.update({
   path: '/publish',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RenderRoute = RenderRouteImport.update({
+  id: '/render',
+  path: '/render',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ScriptsRoute = ScriptsRouteImport.update({
   id: '/scripts',
   path: '/scripts',
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/ideas': typeof IdeasRoute
   '/pipeline': typeof PipelineRoute
   '/publish': typeof PublishRoute
+  '/render': typeof RenderRoute
   '/scripts': typeof ScriptsRoute
   '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/ideas': typeof IdeasRoute
   '/pipeline': typeof PipelineRoute
   '/publish': typeof PublishRoute
+  '/render': typeof RenderRoute
   '/scripts': typeof ScriptsRoute
   '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/ideas': typeof IdeasRoute
   '/pipeline': typeof PipelineRoute
   '/publish': typeof PublishRoute
+  '/render': typeof RenderRoute
   '/scripts': typeof ScriptsRoute
   '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
@@ -183,6 +192,7 @@ export interface FileRouteTypes {
     | '/ideas'
     | '/pipeline'
     | '/publish'
+    | '/render'
     | '/scripts'
     | '/settings'
     | '/api/health'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/ideas'
     | '/pipeline'
     | '/publish'
+    | '/render'
     | '/scripts'
     | '/settings'
     | '/api/health'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/ideas'
     | '/pipeline'
     | '/publish'
+    | '/render'
     | '/scripts'
     | '/settings'
     | '/api/health'
@@ -241,6 +253,7 @@ export interface RootRouteChildren {
   IdeasRoute: typeof IdeasRoute
   PipelineRoute: typeof PipelineRoute
   PublishRoute: typeof PublishRoute
+  RenderRoute: typeof RenderRoute
   ScriptsRoute: typeof ScriptsRoute
   SettingsRoute: typeof SettingsRoute
   ApiHealthRoute: typeof ApiHealthRoute
@@ -316,6 +329,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublishRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/render': {
+      id: '/render'
+      path: '/render'
+      fullPath: '/render'
+      preLoaderRoute: typeof RenderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/scripts': {
       id: '/scripts'
       path: '/scripts'
@@ -385,6 +405,7 @@ const rootRouteChildren: RootRouteChildren = {
   IdeasRoute: IdeasRoute,
   PipelineRoute: PipelineRoute,
   PublishRoute: PublishRoute,
+  RenderRoute: RenderRoute,
   ScriptsRoute: ScriptsRoute,
   SettingsRoute: SettingsRoute,
   ApiHealthRoute: ApiHealthRoute,
