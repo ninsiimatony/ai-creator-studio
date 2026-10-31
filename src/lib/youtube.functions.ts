@@ -2,6 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { guard, requireUser } from "@/server/context";
+import {
+  fetchAnalytics,
+  fetchRetention,
+  type AnalyticsSummary,
+  type RetentionPoint,
+} from "@/server/analytics";
 import { confirmUpload, setVisibility, startUpload } from "@/server/youtube";
 import { disconnect, fetchChannelStats, startOAuth, type ChannelStats } from "@/server/google";
 
@@ -78,5 +84,24 @@ export const setYoutubeVisibility = createServerFn({ method: "POST" })
     guard(async () => {
       const { db, user, env } = await requireUser();
       return setVisibility({ db, env, userId: user.id, ...data });
+    }),
+  );
+
+/** Real channel analytics from YouTube. Fails clearly (never fakes numbers) when not connected. */
+export const getAnalytics = createServerFn({ method: "POST" })
+  .validator(z.object({ days: z.union([z.literal(7), z.literal(28), z.literal(90)]) }))
+  .handler(async ({ data }): Promise<AnalyticsSummary> =>
+    guard(async () => {
+      const { db, user, env } = await requireUser();
+      return fetchAnalytics(db, env, user.id, data.days);
+    }),
+  );
+
+export const getRetention = createServerFn({ method: "POST" })
+  .validator(z.object({ videoId: vid }))
+  .handler(async ({ data }): Promise<RetentionPoint[]> =>
+    guard(async () => {
+      const { db, user, env } = await requireUser();
+      return fetchRetention(db, env, user.id, data.videoId);
     }),
   );
