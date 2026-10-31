@@ -5,6 +5,8 @@
   "compatibility_date": "2026-10-30",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
+  // Workers AI (free daily allowance): optional image + text-to-speech providers for the renderer.
+  "ai": { "binding": "AI" },
   "d1_databases": [
     {
       "binding": "DB",

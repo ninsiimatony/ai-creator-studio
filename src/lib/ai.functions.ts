@@ -33,6 +33,8 @@ export type IntegrationStatus = {
     channelId?: string | undefined;
   };
   voiceover: { configured: boolean };
+  /** Workers AI binding present: free AI images and free voiceover are available. */
+  mediaAi: { configured: boolean };
 };
 
 async function aiDeps(db: D1Database, env: WorkerEnv, userId: string): Promise<AiDeps> {
@@ -83,6 +85,7 @@ export const getIntegrations = createServerFn({ method: "GET" }).handler(
           channelId: yt?.channel_id,
         },
         voiceover: { configured: !!env.ELEVENLABS_API_KEY },
+        mediaAi: { configured: !!env.AI },
       };
     }),
 );

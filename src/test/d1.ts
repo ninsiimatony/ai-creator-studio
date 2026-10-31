@@ -9,6 +9,8 @@ export async function createTestDb(): Promise<{ db: D1Database; dispose: () => P
   const proxy = await getPlatformProxy<{ DB: D1Database }>({
     configPath: path.resolve(__dirname, "../../wrangler.jsonc"),
     persist: false,
+    // Tests only need the local D1. Skipping remote bindings (Workers AI) keeps them runnable without credentials.
+    remoteBindings: false,
   });
   const db = proxy.env.DB;
   const dir = path.resolve(__dirname, "../../migrations");

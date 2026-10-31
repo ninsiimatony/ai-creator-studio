@@ -5,11 +5,16 @@ import { requireUser } from "@/server/context";
 import { getScript } from "@/server/repo";
 import { chunkNarration, synthesizePart } from "@/server/voiceover";
 
-const Body = z.object({
-  scriptId: z.string().min(1).max(64),
-  part: z.number().int().min(0).max(50),
-  voiceId: z.string().trim().max(64).optional(),
-});
+const Body = z.union([
+  // Voice one scene's narration directly (used by the video renderer for exact sync).
+  z.object({ text: z.string().min(1).max(4500), voiceId: z.string().trim().max(64).optional() }),
+  // Voice one part of a saved script.
+  z.object({
+    scriptId: z.string().min(1).max(64),
+    part: z.number().int().min(0).max(50),
+    voiceId: z.string().trim().max(64).optional(),
+  }),
+]);
 
 const json = (status: number, message: string) =>
   Response.json({ error: message }, { status, headers: { "Cache-Control": "no-store" } });
@@ -25,9 +30,12 @@ export const Route = createFileRoute("/api/voiceover")({
         try {
           const { db, user, env } = await requireUser();
           const body = Body.parse(await request.json().catch(() => ({})));
-          const script = await getScript(db, user.id, body.scriptId);
-          const parts = chunkNarration(script.body);
-          const text = parts[body.part];
+          let text: string | undefined;
+          if ("text" in body) text = body.text;
+          else {
+            const script = await getScript(db, user.id, body.scriptId);
+            text = chunkNarration(script.body)[body.part];
+          }
           if (!text) throw new AppError("There is no such part of the narration.");
           const { audio } = await synthesizePart({
             db,
@@ -40,7 +48,6 @@ export const Route = createFileRoute("/api/voiceover")({
             headers: {
               "Content-Type": "audio/mpeg",
               "Cache-Control": "no-store",
-              "X-Voiceover-Parts": String(parts.length),
             },
           });
         } catch (e) {

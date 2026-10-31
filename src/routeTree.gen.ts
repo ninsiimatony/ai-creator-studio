@@ -22,6 +22,8 @@ import { Route as ScriptsRouteImport } from './routes/scripts'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiVoiceoverRouteImport } from './routes/api/voiceover'
+import { Route as ApiMediaImageRouteImport } from './routes/api/media/image'
+import { Route as ApiMediaTtsRouteImport } from './routes/api/media/tts'
 import { Route as ApiYoutubeThumbnailRouteImport } from './routes/api/youtube/thumbnail'
 import { Route as ApiAuthGoogleCallbackRouteImport } from './routes/api/auth/google/callback'
 
@@ -90,6 +92,16 @@ const ApiVoiceoverRoute = ApiVoiceoverRouteImport.update({
   path: '/api/voiceover',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMediaImageRoute = ApiMediaImageRouteImport.update({
+  id: '/api/media/image',
+  path: '/api/media/image',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMediaTtsRoute = ApiMediaTtsRouteImport.update({
+  id: '/api/media/tts',
+  path: '/api/media/tts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiYoutubeThumbnailRoute = ApiYoutubeThumbnailRouteImport.update({
   id: '/api/youtube/thumbnail',
   path: '/api/youtube/thumbnail',
@@ -115,6 +127,8 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
+  '/api/media/image': typeof ApiMediaImageRoute
+  '/api/media/tts': typeof ApiMediaTtsRoute
   '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
 }
@@ -132,6 +146,8 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
+  '/api/media/image': typeof ApiMediaImageRoute
+  '/api/media/tts': typeof ApiMediaTtsRoute
   '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
 }
@@ -150,6 +166,8 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
+  '/api/media/image': typeof ApiMediaImageRoute
+  '/api/media/tts': typeof ApiMediaTtsRoute
   '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
 }
@@ -169,6 +187,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/health'
     | '/api/voiceover'
+    | '/api/media/image'
+    | '/api/media/tts'
     | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
   fileRoutesByTo: FileRoutesByTo
@@ -186,6 +206,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/health'
     | '/api/voiceover'
+    | '/api/media/image'
+    | '/api/media/tts'
     | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
   id:
@@ -203,6 +225,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/health'
     | '/api/voiceover'
+    | '/api/media/image'
+    | '/api/media/tts'
     | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
   fileRoutesById: FileRoutesById
@@ -221,6 +245,8 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiVoiceoverRoute: typeof ApiVoiceoverRoute
+  ApiMediaImageRoute: typeof ApiMediaImageRoute
+  ApiMediaTtsRoute: typeof ApiMediaTtsRoute
   ApiYoutubeThumbnailRoute: typeof ApiYoutubeThumbnailRoute
   ApiAuthGoogleCallbackRoute: typeof ApiAuthGoogleCallbackRoute
 }
@@ -318,6 +344,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiVoiceoverRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/media/image': {
+      id: '/api/media/image'
+      path: '/api/media/image'
+      fullPath: '/api/media/image'
+      preLoaderRoute: typeof ApiMediaImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/media/tts': {
+      id: '/api/media/tts'
+      path: '/api/media/tts'
+      fullPath: '/api/media/tts'
+      preLoaderRoute: typeof ApiMediaTtsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/youtube/thumbnail': {
       id: '/api/youtube/thumbnail'
       path: '/api/youtube/thumbnail'
@@ -349,6 +389,8 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiVoiceoverRoute: ApiVoiceoverRoute,
+  ApiMediaImageRoute: ApiMediaImageRoute,
+  ApiMediaTtsRoute: ApiMediaTtsRoute,
   ApiYoutubeThumbnailRoute: ApiYoutubeThumbnailRoute,
   ApiAuthGoogleCallbackRoute: ApiAuthGoogleCallbackRoute,
 }

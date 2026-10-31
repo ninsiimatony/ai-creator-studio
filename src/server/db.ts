@@ -15,8 +15,15 @@ export interface D1Database {
   batch(statements: D1PreparedStatement[]): Promise<D1Result[]>;
 }
 
+/** The subset of the Workers AI binding we use. */
+export interface AiBinding {
+  run(model: string, input: Record<string, unknown>): Promise<unknown>;
+}
+
 export type WorkerEnv = {
   DB?: D1Database;
+  /** Workers AI binding (free daily allowance). Optional: image/speech providers are off without it. */
+  AI?: AiBinding;
   SETUP_CODE?: string;
   ANTHROPIC_API_KEY?: string;
   /** Model for long-form writing (default claude-sonnet-5-5). */
