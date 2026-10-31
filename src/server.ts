@@ -44,18 +44,40 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+// Baseline hardening for every response. X-Frame-Options / frame-ancestors are intentionally
+// not set: the Lovable editor previews this app inside an iframe.
+function withSecurityHeaders(request: Request, response: Response): Response {
+  if (response.status === 101) return response; // WebSocket upgrade
+  const headers = new Headers(response.headers);
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  // Server-function responses carry private data (session, workspace): never cache them.
+  if (new URL(request.url).pathname.startsWith("/_serverFn")) {
+    headers.set("Cache-Control", "no-store");
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return withSecurityHeaders(request, await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
       console.error(error);
-      return new Response(renderErrorPage(), {
-        status: 500,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
+      return withSecurityHeaders(
+        request,
+        new Response(renderErrorPage(), {
+          status: 500,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+      );
     }
   },
 };

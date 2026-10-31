@@ -65,7 +65,7 @@ const toSettings = (r: SettingsRow | null): Settings =>
         approvalRequired: r.approval_required === 1,
         timezone: r.timezone,
         budgetCap: r.budget_cap,
-        currency: r.currency,
+        currency: r.currency as Settings["currency"],
       }
     : DEFAULT_SETTINGS;
 

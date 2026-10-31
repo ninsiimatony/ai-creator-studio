@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
@@ -12,8 +12,10 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { StudioProvider } from "@/lib/studio-store";
+import { StudioProvider, demoSnapshot } from "@/lib/studio-store";
 import { AppShell } from "@/components/AppShell";
+import { AuthScreen } from "@/components/AuthScreen";
+import { getSession, loadData } from "@/lib/api.functions";
 
 function NotFoundComponent() {
   return (
@@ -118,16 +120,101 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function Splash({ children }: { children?: ReactNode }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center px-4 text-center">
+      <div role="status" className="text-sm text-muted-foreground">
+        {children ?? "Loading…"}
+      </div>
+    </div>
+  );
+}
+
+/** Decides between demo mode (no database), sign-in, and the signed-in studio. */
+function SessionGate() {
+  const qc = useQueryClient();
+  const session = useQuery({ queryKey: ["session"], queryFn: () => getSession(), retry: false });
+  const refresh = () => qc.invalidateQueries({ queryKey: ["session"] });
+  const signedIn = session.data?.mode === "db" && !!session.data.user;
+  const data = useQuery({
+    queryKey: ["studio-data"],
+    queryFn: () => loadData(),
+    enabled: signedIn,
+    retry: false,
+    staleTime: Infinity,
+    gcTime: 0,
+  });
+
+  if (session.isPending) return <Splash />;
+  if (session.isError || !session.data) {
+    return (
+      <Splash>
+        <p>We couldn't reach the server.</p>
+        <button className="btn mt-3" onClick={() => session.refetch()}>
+          Try again
+        </button>
+      </Splash>
+    );
+  }
+  const info = session.data;
+
+  if (info.mode === "demo") {
+    return (
+      <StudioProvider mode="demo" initial={demoSnapshot}>
+        <AppShell>
+          <Outlet />
+        </AppShell>
+      </StudioProvider>
+    );
+  }
+  if (!info.user) {
+    return (
+      <AuthScreen
+        setupOpen={info.setupOpen}
+        setupConfigured={info.setupConfigured}
+        onDone={refresh}
+      />
+    );
+  }
+  if (data.isError) {
+    return (
+      <Splash>
+        <p>We couldn't load your data.</p>
+        <button className="btn mt-3" onClick={() => data.refetch()}>
+          Try again
+        </button>
+      </Splash>
+    );
+  }
+  if (!data.data) return <Splash />;
+  return (
+    <StudioProvider
+      key={info.user.email}
+      mode="db"
+      initial={data.data}
+      userEmail={info.user.email}
+      onSignOut={() => {
+        qc.removeQueries({ queryKey: ["studio-data"] });
+        void refresh();
+      }}
+      onSessionExpired={() => {
+        qc.removeQueries({ queryKey: ["studio-data"] });
+        void refresh();
+      }}
+    >
+      <AppShell>
+        <Outlet />
+      </AppShell>
+    </StudioProvider>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
-      <StudioProvider>
-        <AppShell>
-          <Outlet />
-        </AppShell>
-      </StudioProvider>
+      <SessionGate />
     </QueryClientProvider>
   );
 }

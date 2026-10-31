@@ -22,18 +22,12 @@ export const Route = createFileRoute("/approvals")({
 });
 
 function Approvals() {
-  const { videos, setVideos } = useStudio();
+  const { videos, decideVideo, returnVideo } = useStudio();
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [confirm, setConfirm] = useState<Record<string, boolean>>({});
   const list = videos.filter((v) => v.approval !== "draft");
-  const act = (id: string, approval: "approved" | "changes") =>
-    setVideos((vs) =>
-      vs.map((v) =>
-        v.id === id
-          ? { ...v, approval, note: notes[id], ...(approval === "changes" ? {} : {}) }
-          : v,
-      ),
-    );
+  const act = (id: string, decision: "approved" | "changes") =>
+    void decideVideo(id, decision, notes[id] ?? "", !!confirm[id]);
   return (
     <>
       <PageHeader
@@ -99,14 +93,7 @@ function Approvals() {
             )}
             {v.note && <p className="mt-3 text-sm text-muted-foreground">Note: {v.note}</p>}
             {v.approval === "changes" && (
-              <button
-                className="btn mt-3"
-                onClick={() =>
-                  setVideos((vs) =>
-                    vs.map((x) => (x.id === v.id ? { ...x, approval: "draft" } : x)),
-                  )
-                }
-              >
+              <button className="btn mt-3" onClick={() => void returnVideo(v.id)}>
                 Return to production
               </button>
             )}

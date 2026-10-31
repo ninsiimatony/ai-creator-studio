@@ -19,18 +19,37 @@ export const Route = createFileRoute("/scripts")({
 });
 
 function Scripts() {
-  const { scripts, setScripts } = useStudio();
+  const { scripts, updateScript, createVideo, mode, saveState } = useStudio();
   const [sel, setSel] = useState(scripts[0]?.id);
+  const [msg, setMsg] = useState("");
   const s = scripts.find((x) => x.id === sel) ?? scripts[0];
-  const upd = (k: keyof Script, v: string) =>
-    setScripts((ss) => ss.map((x) => (x.id === s?.id ? { ...x, [k]: v } : x)));
+  const upd = (k: keyof Script, v: string) => {
+    if (s) updateScript(s.id, { [k]: v });
+  };
   const words = s ? s.body.trim().split(/\s+/).filter(Boolean).length : 0;
   return (
     <>
       <PageHeader
         title="Script editor"
-        desc="Changes are kept in this browser session only (demo)."
-      />
+        desc={
+          mode === "demo"
+            ? "Changes are kept in this browser session only (demo)."
+            : "Changes save automatically to your database."
+        }
+      >
+        {mode === "db" && (
+          <span role="status" className="text-xs text-muted-foreground">
+            {saveState === "saving" && "Saving…"}
+            {saveState === "saved" && "All changes saved"}
+            {saveState === "error" && "Not saved — see the message above"}
+          </span>
+        )}
+      </PageHeader>
+      {scripts.length === 0 && (
+        <p className="panel mb-6 p-6 text-sm text-muted-foreground">
+          No scripts yet. Use “Start script” on an idea in the Idea research page.
+        </p>
+      )}
       <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
         <div>
           <label htmlFor="sel" className="mb-1 block text-xs text-muted-foreground">
@@ -103,9 +122,26 @@ function Scripts() {
                 onChange={(e) => upd("cta", e.target.value)}
               />
             </F>
-            <button className="btn" disabled title="Requires an AI model connection">
-              Generate draft with AI (not connected)
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button className="btn" disabled title="Requires an AI model connection">
+                Generate draft with AI (not connected)
+              </button>
+              <button
+                className="btn"
+                onClick={async () => {
+                  if (await createVideo({ title: s.title, scriptId: s.id })) {
+                    setMsg(`"${s.title}" was added to the production pipeline.`);
+                  }
+                }}
+              >
+                Send to production
+              </button>
+            </div>
+            {msg && (
+              <p role="status" className="text-sm text-primary">
+                {msg}
+              </p>
+            )}
           </div>
         )}
       </div>

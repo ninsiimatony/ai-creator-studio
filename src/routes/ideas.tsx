@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useStudio, type Idea } from "@/lib/studio-store";
+import { useStudio } from "@/lib/studio-store";
 import { Badge, NextStep, PageHeader } from "@/components/ui-bits";
 
 export const Route = createFileRoute("/ideas")({
@@ -22,12 +22,10 @@ export const Route = createFileRoute("/ideas")({
 });
 
 function Ideas() {
-  const { ideas, setIdeas, setScripts } = useStudio();
+  const { ideas, addIdea, setIdeaStatus, startScript } = useStudio();
   const [title, setTitle] = useState("");
   const [topic, setTopic] = useState("AI technology");
   const [msg, setMsg] = useState("");
-  const set = (id: string, status: Idea["status"]) =>
-    setIdeas((is) => is.map((i) => (i.id === id ? { ...i, status } : i)));
   return (
     <>
       <PageHeader
@@ -36,20 +34,10 @@ function Ideas() {
       />
       <form
         className="panel mb-6 grid gap-3 p-4 sm:grid-cols-[1fr_180px_auto]"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
           if (!title.trim()) return;
-          setIdeas((is) => [
-            {
-              id: crypto.randomUUID(),
-              title: title.trim(),
-              topic,
-              angle: "Manual idea",
-              score: 0,
-              status: "new",
-            },
-            ...is,
-          ]);
+          await addIdea(title.trim(), topic);
           setTitle("");
         }}
       >
@@ -60,6 +48,7 @@ function Ideas() {
           id="it"
           className="field"
           placeholder="Add an idea, e.g. 'Can robots feel?'"
+          maxLength={200}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
@@ -80,6 +69,11 @@ function Ideas() {
           {msg}
         </p>
       )}
+      {ideas.length === 0 && (
+        <p className="panel p-6 text-sm text-muted-foreground">
+          No ideas yet. Add your first idea above.
+        </p>
+      )}
       <ul className="grid gap-3 md:grid-cols-2">
         {ideas.map((i) => (
           <li key={i.id} className={`panel p-4 ${i.status === "rejected" ? "opacity-50" : ""}`}>
@@ -92,27 +86,16 @@ function Ideas() {
             </p>
             <p className="mt-1 text-xs text-muted-foreground">Demo score: {i.score || "—"}</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button className="btn" onClick={() => set(i.id, "shortlisted")}>
+              <button className="btn" onClick={() => void setIdeaStatus(i.id, "shortlisted")}>
                 Shortlist
               </button>
-              <button className="btn" onClick={() => set(i.id, "rejected")}>
+              <button className="btn" onClick={() => void setIdeaStatus(i.id, "rejected")}>
                 Reject
               </button>
               <button
                 className="btn"
-                onClick={() => {
-                  setScripts((s) => [
-                    ...s,
-                    {
-                      id: crypto.randomUUID(),
-                      title: i.title,
-                      hook: "",
-                      outline: "",
-                      body: "",
-                      cta: "",
-                    },
-                  ]);
-                  setMsg(`Script draft created for "${i.title}".`);
+                onClick={async () => {
+                  if (await startScript(i.id)) setMsg(`Script draft created for "${i.title}".`);
                 }}
               >
                 Start script
@@ -123,7 +106,7 @@ function Ideas() {
       </ul>
       <div className="mt-6">
         <NextStep title="AI research assistant">
-          Once a cloud backend and AI model are connected, this queue can suggest ideas from trends.
+          Once an AI model is connected (a later phase), this queue can suggest ideas from trends.
           For now, ideas are entered manually.
         </NextStep>
       </div>

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useStudio } from "@/lib/studio-store";
+import { CURRENCIES, type Currency } from "@/lib/types";
 import { PageHeader } from "@/components/ui-bits";
 
 export const Route = createFileRoute("/settings")({
@@ -19,21 +20,24 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
-  const { settings, setSettings } = useStudio();
+  const { settings, saveSettings, mode } = useStudio();
   const [s, setS] = useState(settings);
   const [saved, setSaved] = useState(false);
   return (
     <>
       <PageHeader
         title="Settings"
-        desc="Saved for this browser session only (demo). No money is spent — budget caps apply once paid services are connected."
+        desc={
+          mode === "demo"
+            ? "Saved for this browser session only (demo). No money is spent — budget caps apply once paid services are connected."
+            : "Saved to your database. No money is spent — budget caps apply once paid services are connected."
+        }
       />
       <form
         className="panel max-w-2xl space-y-5 p-5"
         onSubmit={(e) => {
           e.preventDefault();
-          setSettings(s);
-          setSaved(true);
+          void saveSettings(s).then((ok) => setSaved(ok));
         }}
       >
         <L label="Target audience">
@@ -92,11 +96,11 @@ function SettingsPage() {
               className="field"
               value={s.currency}
               onChange={(e) => {
-                setS({ ...s, currency: e.target.value });
+                setS({ ...s, currency: e.target.value as Currency });
                 setSaved(false);
               }}
             >
-              {["USD", "OMR", "EUR"].map((c) => (
+              {CURRENCIES.map((c) => (
                 <option key={c}>{c}</option>
               ))}
             </select>
@@ -126,7 +130,7 @@ function SettingsPage() {
           </button>
           {saved && (
             <span role="status" className="text-sm text-primary">
-              Saved for this session.
+              {mode === "demo" ? "Saved for this session." : "Saved."}
             </span>
           )}
         </div>

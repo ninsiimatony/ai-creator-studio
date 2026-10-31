@@ -39,13 +39,15 @@ export type Video = {
   approval: Approval;
   note?: string | undefined;
 };
+export type Currency = "USD" | "OMR" | "EUR";
+export const CURRENCIES: Currency[] = ["USD", "OMR", "EUR"];
 export type Settings = {
   audience: string;
   format: string;
   approvalRequired: boolean;
   timezone: string;
   budgetCap: number;
-  currency: string;
+  currency: Currency;
 };
 
 export type Snapshot = {

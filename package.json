@@ -11,7 +11,9 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local --persist-to .wrangler/state",
+    "cf:preview": "vite build && wrangler d1 migrations apply DB --local --persist-to .wrangler/state && wrangler dev --config .output/server/wrangler.json --local --persist-to .wrangler/state --ip 127.0.0.1 --var \"SETUP_CODE:$SETUP_CODE\""
   },
   "overrides": {
     "rolldown": "1.2.1"
