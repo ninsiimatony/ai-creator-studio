@@ -19,7 +19,7 @@ function Scripts() {
   const { scripts, setScripts } = useStudio();
   const [sel, setSel] = useState(scripts[0]?.id);
   const s = scripts.find((x) => x.id === sel) ?? scripts[0];
-  const upd = (k: keyof Script, v: string) => setScripts((ss) => ss.map((x) => (x.id === s.id ? { ...x, [k]: v } : x)));
+  const upd = (k: keyof Script, v: string) => setScripts((ss) => ss.map((x) => (x.id === s?.id ? { ...x, [k]: v } : x)));
   const words = s ? s.body.trim().split(/\s+/).filter(Boolean).length : 0;
   return (
     <>

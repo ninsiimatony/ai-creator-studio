@@ -14,7 +14,7 @@ export type Idea = { id: string; title: string; topic: string; angle: string; sc
 export type Script = { id: string; title: string; hook: string; outline: string; body: string; cta: string };
 export type Video = {
   id: string; title: string; stage: Stage; done: Stage[]; scheduled: string;
-  approval: "draft" | "pending" | "approved" | "changes"; note?: string;
+  approval: "draft" | "pending" | "approved" | "changes"; note?: string | undefined;
 };
 export type Settings = { audience: string; format: string; approvalRequired: boolean; timezone: string; budgetCap: number; currency: string };
 
