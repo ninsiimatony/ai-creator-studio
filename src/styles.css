@@ -63,16 +63,30 @@
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
+  * {
+    border-color: var(--color-border);
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    background-image: radial-gradient(ellipse 80% 50% at 100% 0%, color-mix(in oklab, var(--primary) 8%, transparent), transparent);
+    background-image: radial-gradient(
+      ellipse 80% 50% at 100% 0%,
+      color-mix(in oklab, var(--primary) 8%, transparent),
+      transparent
+    );
     background-attachment: fixed;
   }
-  h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; }
-  :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
 }
 
 @utility panel {
@@ -88,17 +102,37 @@
   padding: 0.55rem 0.75rem;
   font-size: 0.875rem;
   color: var(--foreground);
-  &:focus { outline: 2px solid var(--ring); outline-offset: 0; }
+  &:focus {
+    outline: 2px solid var(--ring);
+    outline-offset: 0;
+  }
 }
 @utility btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
-  border-radius: var(--radius-md); padding: 0.5rem 0.9rem; font-size: 0.875rem; font-weight: 500;
-  background: var(--secondary); color: var(--secondary-foreground); border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border: 1px solid var(--border);
   transition: background 150ms;
-  &:hover { background: var(--accent); }
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:hover {
+    background: var(--accent);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 @utility btn-primary {
-  background: var(--primary); color: var(--primary-foreground); border-color: transparent;
-  &:hover { background: color-mix(in oklab, var(--primary) 85%, white); }
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: transparent;
+  &:hover {
+    background: color-mix(in oklab, var(--primary) 85%, white);
+  }
 }
