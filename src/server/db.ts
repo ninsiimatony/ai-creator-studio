@@ -1,5 +1,9 @@
 // Minimal D1 typings (avoids a workers-types dependency in the browser build).
-export interface D1Result<T = unknown> { results: T[]; success: boolean; meta: Record<string, unknown> }
+export interface D1Result<T = unknown> {
+  results: T[];
+  success: boolean;
+  meta: { changes?: number; [k: string]: unknown };
+}
 export interface D1PreparedStatement {
   bind(...values: unknown[]): D1PreparedStatement;
   first<T = unknown>(): Promise<T | null>;
@@ -11,13 +15,22 @@ export interface D1Database {
   batch(statements: D1PreparedStatement[]): Promise<D1Result[]>;
 }
 
-/** Returns the D1 binding, or null when not running inside Cloudflare Workers (Node dev, Lovable preview, tests). */
-export async function getDb(): Promise<D1Database | null> {
+export type WorkerEnv = { DB?: D1Database; SETUP_CODE?: string };
+
+/**
+ * Returns the Worker bindings/secrets, or {} when not running inside Cloudflare Workers
+ * (plain `vite dev`, Lovable preview, unit tests). Callers treat a missing DB as demo mode.
+ */
+export async function getEnv(): Promise<WorkerEnv> {
   try {
     const specifier = "cloudflare:workers";
-    const mod = (await import(/* @vite-ignore */ specifier)) as { env?: { DB?: D1Database } };
-    return mod.env?.DB ?? null;
+    const mod = (await import(/* @vite-ignore */ specifier)) as { env?: WorkerEnv };
+    return mod.env ?? {};
   } catch {
-    return null;
+    return {};
   }
+}
+
+export async function getDb(): Promise<D1Database | null> {
+  return (await getEnv()).DB ?? null;
 }
