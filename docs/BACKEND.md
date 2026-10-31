@@ -4,6 +4,9 @@ Tony AI YouTube Studio runs as a single Cloudflare Worker (TanStack Start SSR + 
 functions) with a Cloudflare D1 (SQLite) database. No paid service is required for local
 development, and nothing here deploys anything by itself.
 
+Integrations (all optional, each shows "Not connected" until its secret exists): Claude (ideas, scripts,
+SEO, thumbnails, storyboards), Google OAuth + YouTube Data/Analytics APIs, ElevenLabs voiceover.
+
 ## How it fits together
 
 ```
@@ -64,20 +67,9 @@ npx tsc --noEmit
 
 `users`, `sessions`, `login_attempts`, `ideas`, `scripts`, `videos`, `approvals`, `settings`.
 
-## Deploying (NOT done yet — requires the owner's approval)
+## Deploying
 
-Creating a remote D1 database and deploying are intentionally manual steps:
-
-1. `npx wrangler login`
-2. `npx wrangler d1 create tony-studio-db` and put the returned `database_id` in `wrangler.jsonc`
-3. `npx wrangler d1 migrations apply DB --remote`
-4. `npx wrangler secret put SETUP_CODE`
-5. `bun run build && npx wrangler deploy --config .output/server/wrangler.json`
-6. Open the site, create the owner account, then **remove or rotate `SETUP_CODE`**.
-
-Costs: Workers Free + D1 Free cost $0 (D1 queries fail rather than bill when free limits are hit).
-Workers Paid is $5/month and may be needed if server rendering exceeds the Free plan's 10 ms CPU
-limit. Verify with real traffic before relying on Free.
+See [DEPLOY.md](DEPLOY.md) for the dedicated Worker, D1 database, secrets and verification steps.
 
 ## Working with Lovable
 

@@ -1,2 +1,9 @@
 # Copy to .dev.vars for local runs that read it (git-ignored). Never commit real secrets.
 SETUP_CODE=choose-a-long-random-string
+# Optional integrations:
+# ANTHROPIC_API_KEY=
+# GOOGLE_CLIENT_ID=
+# GOOGLE_CLIENT_SECRET=
+# TOKEN_ENC_KEY=   # openssl rand -base64 32
+# ELEVENLABS_API_KEY=
+# ELEVENLABS_VOICE_ID=

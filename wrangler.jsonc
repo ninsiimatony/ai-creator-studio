@@ -1,13 +1,15 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tony-ai-youtube-studio",
+  // Dedicated, isolated Worker for this project. Do not reuse names/resources from other projects.
+  "name": "youtube-automation-platform",
   "compatibility_date": "2026-10-30",
   "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "tony-studio-db",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_name": "youtube-automation-db",
+      "database_id": "15ee6196-efbc-4356-906f-e32a8d9e0465",
       "migrations_dir": "migrations",
     },
   ],
