@@ -250,7 +250,7 @@ export async function createVideo(
   return video;
 }
 
-async function getVideo(db: D1Database, uid: string, id: string): Promise<Video> {
+export async function getVideo(db: D1Database, uid: string, id: string): Promise<Video> {
   const row = await db
     .prepare(`SELECT ${VIDEO_COLS} FROM videos WHERE id = ? AND user_id = ?`)
     .bind(id, uid)

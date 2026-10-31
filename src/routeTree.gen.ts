@@ -16,10 +16,12 @@ import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as ChannelRouteImport } from './routes/channel'
 import { Route as IdeasRouteImport } from './routes/ideas'
 import { Route as PipelineRouteImport } from './routes/pipeline'
+import { Route as PublishRouteImport } from './routes/publish'
 import { Route as ScriptsRouteImport } from './routes/scripts'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiVoiceoverRouteImport } from './routes/api/voiceover'
+import { Route as ApiYoutubeThumbnailRouteImport } from './routes/api/youtube/thumbnail'
 import { Route as ApiAuthGoogleCallbackRouteImport } from './routes/api/auth/google/callback'
 
 const IndexRoute = IndexRouteImport.update({
@@ -57,6 +59,11 @@ const PipelineRoute = PipelineRouteImport.update({
   path: '/pipeline',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PublishRoute = PublishRouteImport.update({
+  id: '/publish',
+  path: '/publish',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ScriptsRoute = ScriptsRouteImport.update({
   id: '/scripts',
   path: '/scripts',
@@ -77,6 +84,11 @@ const ApiVoiceoverRoute = ApiVoiceoverRouteImport.update({
   path: '/api/voiceover',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiYoutubeThumbnailRoute = ApiYoutubeThumbnailRouteImport.update({
+  id: '/api/youtube/thumbnail',
+  path: '/api/youtube/thumbnail',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthGoogleCallbackRoute = ApiAuthGoogleCallbackRouteImport.update({
   id: '/api/auth/google/callback',
   path: '/api/auth/google/callback',
@@ -91,10 +103,12 @@ export interface FileRoutesByFullPath {
   '/channel': typeof ChannelRoute
   '/ideas': typeof IdeasRoute
   '/pipeline': typeof PipelineRoute
+  '/publish': typeof PublishRoute
   '/scripts': typeof ScriptsRoute
   '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
+  '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
 }
 export interface FileRoutesByTo {
@@ -105,10 +119,12 @@ export interface FileRoutesByTo {
   '/channel': typeof ChannelRoute
   '/ideas': typeof IdeasRoute
   '/pipeline': typeof PipelineRoute
+  '/publish': typeof PublishRoute
   '/scripts': typeof ScriptsRoute
   '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
+  '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
 }
 export interface FileRoutesById {
@@ -120,10 +136,12 @@ export interface FileRoutesById {
   '/channel': typeof ChannelRoute
   '/ideas': typeof IdeasRoute
   '/pipeline': typeof PipelineRoute
+  '/publish': typeof PublishRoute
   '/scripts': typeof ScriptsRoute
   '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
+  '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
 }
 export interface FileRouteTypes {
@@ -136,10 +154,12 @@ export interface FileRouteTypes {
     | '/channel'
     | '/ideas'
     | '/pipeline'
+    | '/publish'
     | '/scripts'
     | '/settings'
     | '/api/health'
     | '/api/voiceover'
+    | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -150,10 +170,12 @@ export interface FileRouteTypes {
     | '/channel'
     | '/ideas'
     | '/pipeline'
+    | '/publish'
     | '/scripts'
     | '/settings'
     | '/api/health'
     | '/api/voiceover'
+    | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
   id:
     | '__root__'
@@ -164,10 +186,12 @@ export interface FileRouteTypes {
     | '/channel'
     | '/ideas'
     | '/pipeline'
+    | '/publish'
     | '/scripts'
     | '/settings'
     | '/api/health'
     | '/api/voiceover'
+    | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
   fileRoutesById: FileRoutesById
 }
@@ -179,10 +203,12 @@ export interface RootRouteChildren {
   ChannelRoute: typeof ChannelRoute
   IdeasRoute: typeof IdeasRoute
   PipelineRoute: typeof PipelineRoute
+  PublishRoute: typeof PublishRoute
   ScriptsRoute: typeof ScriptsRoute
   SettingsRoute: typeof SettingsRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiVoiceoverRoute: typeof ApiVoiceoverRoute
+  ApiYoutubeThumbnailRoute: typeof ApiYoutubeThumbnailRoute
   ApiAuthGoogleCallbackRoute: typeof ApiAuthGoogleCallbackRoute
 }
 
@@ -237,6 +263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PipelineRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/publish': {
+      id: '/publish'
+      path: '/publish'
+      fullPath: '/publish'
+      preLoaderRoute: typeof PublishRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/scripts': {
       id: '/scripts'
       path: '/scripts'
@@ -265,6 +298,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiVoiceoverRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/youtube/thumbnail': {
+      id: '/api/youtube/thumbnail'
+      path: '/api/youtube/thumbnail'
+      fullPath: '/api/youtube/thumbnail'
+      preLoaderRoute: typeof ApiYoutubeThumbnailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/google/callback': {
       id: '/api/auth/google/callback'
       path: '/api/auth/google/callback'
@@ -283,10 +323,12 @@ const rootRouteChildren: RootRouteChildren = {
   ChannelRoute: ChannelRoute,
   IdeasRoute: IdeasRoute,
   PipelineRoute: PipelineRoute,
+  PublishRoute: PublishRoute,
   ScriptsRoute: ScriptsRoute,
   SettingsRoute: SettingsRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiVoiceoverRoute: ApiVoiceoverRoute,
+  ApiYoutubeThumbnailRoute: ApiYoutubeThumbnailRoute,
   ApiAuthGoogleCallbackRoute: ApiAuthGoogleCallbackRoute,
 }
 export const routeTree = rootRouteImport

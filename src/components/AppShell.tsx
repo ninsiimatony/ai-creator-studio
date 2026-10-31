@@ -9,6 +9,7 @@ const nav = [
   { to: "/scripts", label: "Script editor" },
   { to: "/pipeline", label: "Production" },
   { to: "/approvals", label: "Approvals" },
+  { to: "/publish", label: "Publishing" },
   { to: "/analytics", label: "Analytics" },
   { to: "/channel", label: "YouTube channel" },
   { to: "/settings", label: "Settings" },
