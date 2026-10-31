@@ -12,6 +12,7 @@ import {
   type AiKind,
 } from "@/server/ai";
 import * as repo from "@/server/repo";
+import { draftShortlisted, ideaSweep } from "@/server/automation";
 import { DAILY_CHAR_CAP, chunkNarration, voiceCharsToday } from "@/server/voiceover";
 import type { Idea, Scene } from "@/lib/types";
 
@@ -211,3 +212,33 @@ export const getVoiceoverPlan = createServerFn({ method: "POST" })
       };
     }),
   );
+
+export const runIdeaSweep = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      topics: z.array(z.string().trim().max(120)).max(3),
+      countPerTopic: z.number().int().min(1).max(5),
+    }),
+  )
+  .handler(async ({ data }) =>
+    guard(async () => {
+      const { db, user, env } = await requireUser();
+      return ideaSweep(await aiDeps(db, env, user.id), data.topics, data.countPerTopic);
+    }),
+  );
+
+export const runDraftSweep = createServerFn({ method: "POST" })
+  .validator(z.object({ max: z.number().int().min(1).max(3) }))
+  .handler(async ({ data }) =>
+    guard(async () => {
+      const { db, user, env } = await requireUser();
+      return draftShortlisted(await aiDeps(db, env, user.id), data.max);
+    }),
+  );
+
+export const getAutomationRuns = createServerFn({ method: "GET" }).handler(async () =>
+  guard(async () => {
+    const { db, user } = await requireUser();
+    return repo.listAutomationRuns(db, user.id);
+  }),
+);

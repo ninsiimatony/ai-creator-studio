@@ -10,6 +10,7 @@ const nav = [
   { to: "/pipeline", label: "Production" },
   { to: "/approvals", label: "Approvals" },
   { to: "/publish", label: "Publishing" },
+  { to: "/automation", label: "Automation" },
   { to: "/analytics", label: "Analytics" },
   { to: "/channel", label: "YouTube channel" },
   { to: "/settings", label: "Settings" },

@@ -580,3 +580,21 @@ export async function listAutomationRuns(
     .all<{ id: number; kind: string; status: string; summary: string; createdAt: string }>();
   return r.results;
 }
+
+/** Shortlisted ideas that have no script yet (oldest first). */
+export async function shortlistedWithoutScript(
+  db: D1Database,
+  uid: string,
+  limit: number,
+): Promise<{ id: string; title: string }[]> {
+  const r = await db
+    .prepare(
+      `SELECT i.id, i.title FROM ideas i
+       WHERE i.user_id = ? AND i.status = 'shortlisted'
+         AND NOT EXISTS (SELECT 1 FROM scripts s WHERE s.idea_id = i.id)
+       ORDER BY i.created_at ASC, i.rowid ASC LIMIT ?`,
+    )
+    .bind(uid, limit)
+    .all<{ id: string; title: string }>();
+  return r.results;
+}

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as ApprovalsRouteImport } from './routes/approvals'
+import { Route as AutomationRouteImport } from './routes/automation'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as ChannelRouteImport } from './routes/channel'
 import { Route as IdeasRouteImport } from './routes/ideas'
@@ -37,6 +38,11 @@ const AnalyticsRoute = AnalyticsRouteImport.update({
 const ApprovalsRoute = ApprovalsRouteImport.update({
   id: '/approvals',
   path: '/approvals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AutomationRoute = AutomationRouteImport.update({
+  id: '/automation',
+  path: '/automation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalendarRoute = CalendarRouteImport.update({
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/approvals': typeof ApprovalsRoute
+  '/automation': typeof AutomationRoute
   '/calendar': typeof CalendarRoute
   '/channel': typeof ChannelRoute
   '/ideas': typeof IdeasRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/approvals': typeof ApprovalsRoute
+  '/automation': typeof AutomationRoute
   '/calendar': typeof CalendarRoute
   '/channel': typeof ChannelRoute
   '/ideas': typeof IdeasRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/approvals': typeof ApprovalsRoute
+  '/automation': typeof AutomationRoute
   '/calendar': typeof CalendarRoute
   '/channel': typeof ChannelRoute
   '/ideas': typeof IdeasRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/approvals'
+    | '/automation'
     | '/calendar'
     | '/channel'
     | '/ideas'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/approvals'
+    | '/automation'
     | '/calendar'
     | '/channel'
     | '/ideas'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/approvals'
+    | '/automation'
     | '/calendar'
     | '/channel'
     | '/ideas'
@@ -199,6 +211,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalyticsRoute: typeof AnalyticsRoute
   ApprovalsRoute: typeof ApprovalsRoute
+  AutomationRoute: typeof AutomationRoute
   CalendarRoute: typeof CalendarRoute
   ChannelRoute: typeof ChannelRoute
   IdeasRoute: typeof IdeasRoute
@@ -233,6 +246,13 @@ declare module '@tanstack/react-router' {
       path: '/approvals'
       fullPath: '/approvals'
       preLoaderRoute: typeof ApprovalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/automation': {
+      id: '/automation'
+      path: '/automation'
+      fullPath: '/automation'
+      preLoaderRoute: typeof AutomationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calendar': {
@@ -319,6 +339,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalyticsRoute: AnalyticsRoute,
   ApprovalsRoute: ApprovalsRoute,
+  AutomationRoute: AutomationRoute,
   CalendarRoute: CalendarRoute,
   ChannelRoute: ChannelRoute,
   IdeasRoute: IdeasRoute,
