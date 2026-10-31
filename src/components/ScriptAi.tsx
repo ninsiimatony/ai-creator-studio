@@ -1,8 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useStudio, type Script } from "@/lib/studio-store";
 import { AiBox } from "@/components/ui-bits";
-import { aiScriptDraft, aiStoryboard, type ScriptDraft } from "@/lib/ai.functions";
+import {
+  aiScriptDraft,
+  aiStoryboard,
+  getVoiceoverPlan,
+  type ScriptDraft,
+  type VoiceoverPlan,
+} from "@/lib/ai.functions";
 import { aiBlockedReason, useIntegrations } from "@/lib/use-integrations";
 
 const msgOf = (e: unknown) => (e instanceof Error ? e.message : "Something went wrong.");
@@ -170,6 +176,7 @@ export function ScriptAi({ script }: { script: Script }) {
           This plans the visuals. Rendering video is not connected.
         </p>
       </AiBox>
+      <Voiceover script={script} />
       {info && (
         <p role="status" className="text-sm text-primary">
           {info}
@@ -181,5 +188,130 @@ export function ScriptAi({ script }: { script: Script }) {
         </p>
       )}
     </div>
+  );
+}
+
+type Clip = { part: number; url: string };
+
+/** ElevenLabs voiceover, one part at a time. Audio is played/downloaded, never stored. */
+function Voiceover({ script }: { script: Script }) {
+  const { mode } = useStudio();
+  const integ = useIntegrations();
+  const [plan, setPlan] = useState<VoiceoverPlan | null>(null);
+  const [voiceId, setVoiceId] = useState("");
+  const [busy, setBusy] = useState<number | null>(null);
+  const [clips, setClips] = useState<Clip[]>([]);
+  const [err, setErr] = useState("");
+
+  const configured = integ.data?.voiceover.configured;
+  const blocked =
+    mode === "demo"
+      ? "Voiceover needs the database. It is unavailable in demo mode."
+      : !integ.data
+        ? "Checking voiceover status…"
+        : !configured
+          ? "Not connected — the ELEVENLABS_API_KEY secret has not been added."
+          : null;
+
+  useEffect(() => {
+    if (mode !== "db" || !script.body.trim()) return setPlan(null);
+    let live = true;
+    getVoiceoverPlan({ data: { scriptId: script.id } })
+      .then((p) => live && setPlan(p))
+      .catch(() => live && setPlan(null));
+    return () => {
+      live = false;
+    };
+  }, [mode, script.id, script.body]);
+  useEffect(() => () => clips.forEach((c) => URL.revokeObjectURL(c.url)), [clips]);
+
+  async function generate(part: number) {
+    setBusy(part);
+    setErr("");
+    try {
+      const res = await fetch("/api/voiceover", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ scriptId: script.id, part, voiceId: voiceId.trim() || undefined }),
+      });
+      if (!res.ok) {
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(j.error ?? "The voiceover request failed.");
+      }
+      const url = URL.createObjectURL(await res.blob());
+      setClips((cs) =>
+        [...cs.filter((c) => c.part !== part), { part, url }].sort((a, b) => a.part - b.part),
+      );
+      setPlan(await getVoiceoverPlan({ data: { scriptId: script.id } }));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <AiBox title="Voiceover (ElevenLabs)" blocked={blocked}>
+      <label className="block text-sm">
+        <span className="mb-1 block font-medium">
+          Voice ID (optional if a default is configured)
+        </span>
+        <input
+          className="field"
+          maxLength={64}
+          value={voiceId}
+          onChange={(e) => setVoiceId(e.target.value)}
+          placeholder="From your ElevenLabs voice library"
+        />
+      </label>
+      {!plan && <p className="text-sm text-muted-foreground">Write the narration first.</p>}
+      {plan && (
+        <>
+          <p className="text-xs text-muted-foreground">
+            {plan.chars.toLocaleString()} characters in {plan.parts} part
+            {plan.parts === 1 ? "" : "s"}. Each generation uses ElevenLabs credits from{" "}
+            <em>your</em> ElevenLabs plan. Today: {plan.usedToday.toLocaleString()} /{" "}
+            {plan.dailyCap.toLocaleString()} characters.
+          </p>
+          <ul className="space-y-2">
+            {Array.from({ length: plan.parts }, (_, i) => {
+              const clip = clips.find((c) => c.part === i);
+              return (
+                <li key={i} className="flex flex-wrap items-center gap-2 text-sm">
+                  <button className="btn" disabled={busy !== null} onClick={() => void generate(i)}>
+                    {busy === i
+                      ? "Generating…"
+                      : clip
+                        ? `Regenerate part ${i + 1}`
+                        : `Generate part ${i + 1}`}
+                  </button>
+                  {clip && (
+                    <>
+                      <audio controls src={clip.url} className="h-9 max-w-full" />
+                      <a
+                        className="btn"
+                        href={clip.url}
+                        download={`${script.title || "voiceover"}-part-${i + 1}.mp3`}
+                      >
+                        Download
+                      </a>
+                    </>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Audio is not stored on the server — download each part to keep it. Disclose AI narration to
+        your audience as YouTube requires.
+      </p>
+      {err && (
+        <p role="alert" className="text-sm text-destructive">
+          {err}
+        </p>
+      )}
+    </AiBox>
   );
 }

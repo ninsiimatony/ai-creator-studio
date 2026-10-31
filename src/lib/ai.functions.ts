@@ -12,6 +12,7 @@ import {
   type AiKind,
 } from "@/server/ai";
 import * as repo from "@/server/repo";
+import { DAILY_CHAR_CAP, chunkNarration, voiceCharsToday } from "@/server/voiceover";
 import type { Idea, Scene } from "@/lib/types";
 
 const id = z.string().min(1).max(64);
@@ -190,5 +191,23 @@ export const aiStoryboard = createServerFn({ method: "POST" })
       });
       await repo.setStoryboard(db, user.id, s.id, out.data.scenes);
       return { scenes: out.data.scenes, usage: out.usage };
+    }),
+  );
+
+export type VoiceoverPlan = { chars: number; parts: number; usedToday: number; dailyCap: number };
+
+/** How a script's narration would be split for voiceover, and today's character usage. */
+export const getVoiceoverPlan = createServerFn({ method: "POST" })
+  .validator(z.object({ scriptId: id }))
+  .handler(async ({ data }): Promise<VoiceoverPlan> =>
+    guard(async () => {
+      const { db, user } = await requireUser();
+      const s = await repo.getScript(db, user.id, data.scriptId);
+      return {
+        chars: s.body.trim().length,
+        parts: chunkNarration(s.body).length,
+        usedToday: await voiceCharsToday(db, user.id),
+        dailyCap: DAILY_CHAR_CAP,
+      };
     }),
   );
