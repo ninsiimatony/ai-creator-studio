@@ -26,12 +26,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
-      - name: Type check and tests (must pass before anything is deployed)
+      - name: "Type check and tests (must pass before anything is deployed)"
         run: |
           npx tsc --noEmit
           bun run test
       - run: bun run build
-      - name: Deploy the Worker (uses wrangler.jsonc: dedicated Worker, D1 youtube-automation-db, AI binding)
+      - name: "Deploy the Worker (wrangler.jsonc: dedicated Worker, D1 youtube-automation-db, AI binding)"
         run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
