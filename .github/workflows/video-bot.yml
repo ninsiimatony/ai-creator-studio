@@ -2,6 +2,9 @@ name: video-bot
 
 # Started by the Telegram bot (through the studio). Makes a video with free tools and uploads it to YouTube as PRIVATE.
 on:
+  schedule:
+    # 3 emotional stories a day: 07:00, 13:00 and 19:00 in Oman (03:00, 09:00, 15:00 UTC)
+    - cron: "0 3,9,15 * * *"
   workflow_dispatch:
     inputs:
       topic:
@@ -15,6 +18,10 @@ on:
         description: real or cartoon
         required: true
         default: real
+      tone:
+        description: emotional (optional)
+        required: false
+        default: ""
 
 concurrency:
   group: video-bot
@@ -31,11 +38,15 @@ jobs:
           node-version: 20
       - name: Install ffmpeg and a subtitle font
         run: sudo apt-get update -y && sudo apt-get install -y ffmpeg fonts-dejavu-core
+      - name: Pick today's story (scheduled runs)
+        if: github.event_name == 'schedule'
+        run: node scripts/video-bot/pick-topic.mjs >> "$GITHUB_ENV"
       - name: Make the video
         env:
           STUDIO_URL: https://youtube-automation-platform.ninsiimatony.workers.dev
           AUTOMATION_SECRET: ${{ secrets.AUTOMATION_SECRET }}
-          TOPIC: ${{ inputs.topic }}
-          MINUTES: ${{ inputs.minutes }}
-          STYLE: ${{ inputs.style }}
+          TOPIC: ${{ inputs.topic || env.TOPIC }}
+          MINUTES: ${{ inputs.minutes || env.MINUTES }}
+          STYLE: ${{ inputs.style || env.STYLE }}
+          TONE: ${{ inputs.tone || env.TONE }}
         run: node scripts/video-bot/run.mjs

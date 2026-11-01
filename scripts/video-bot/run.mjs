@@ -9,6 +9,7 @@ const STUDIO = (process.env.STUDIO_URL ?? "").replace(/\/$/, "");
 const SECRET = process.env.AUTOMATION_SECRET ?? "";
 const TOPIC = (process.env.TOPIC ?? "").trim();
 const MINUTES = Math.min(90, Math.max(3, Number(process.env.MINUTES) || 10));
+const TONE = process.env.TONE === "emotional" ? "emotional" : undefined;
 const STYLE = process.env.STYLE === "cartoon" ? "cartoon" : "real";
 const W = MINUTES > 30 ? 1280 : 1920;
 const H = MINUTES > 30 ? 720 : 1080;
@@ -192,7 +193,7 @@ async function main() {
   log("Topic:", TOPIC, "| minutes:", MINUTES, "| style:", STYLE);
 
   // 1. Script
-  const outline = await studio("/api/media/auto-script", { step: "outline", topic: TOPIC, minutes: MINUTES });
+  const outline = await studio("/api/media/auto-script", { step: "outline", topic: TOPIC, minutes: MINUTES, tone: TONE });
   log("Outline:", outline.title, `(${outline.sections.length} parts)`);
   const scenes = [];
   for (let i = 0; i < outline.sections.length; i++) {
@@ -203,6 +204,7 @@ async function main() {
       sections: outline.sections,
       index: i,
       style: STYLE,
+      tone: TONE,
     });
     splitScenes(sec.narration).forEach((narration, k) =>
       scenes.push({ narration, term: sec.visuals[k % Math.max(1, sec.visuals.length)] ?? outline.sections[i] }),
@@ -281,6 +283,7 @@ async function main() {
 
   const description =
     `${outline.title}\n\n${outline.sections.map((s, i) => `${i + 1}. ${s}`).join("\n")}\n\n` +
+    (TONE === "emotional" ? `This is a fictional story, written for reflection and inspiration.\n` : "") +
     `Made with AI narration and stock video clips from Pixabay (https://pixabay.com).`;
   log("Uploading to YouTube (private)...");
   const id = await uploadToYouTube(final, outline.title, description);

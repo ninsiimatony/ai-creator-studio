@@ -30,6 +30,14 @@ const SYSTEM =
   "You write narration for faceless YouTube documentary videos. Plain spoken English, short clear sentences, " +
   "vivid and accurate, no stage directions, no markdown, no emojis, no headings, never mention scenes or the camera.";
 
+const SYSTEM_EMOTIONAL =
+  "You write narration for faceless YouTube videos that tell moving, emotional human stories (fiction, gentle and respectful). " +
+  "A warm, calm storyteller voice. Plain spoken English, short sentences, real feelings, small human details, a bittersweet or hopeful ending. " +
+  "No graphic violence, no medical or self-harm detail, no stage directions, no markdown, no emojis, no headings, never mention scenes or the camera.";
+
+export type Tone = "emotional" | undefined;
+const systemFor = (tone: Tone) => (tone === "emotional" ? SYSTEM_EMOTIONAL : SYSTEM);
+
 export function sectionCount(minutes: number): number {
   const words = Math.max(1, minutes) * 150;
   return Math.min(MAX_SECTIONS, Math.max(2, Math.ceil(words / WORDS_PER_SECTION)));
@@ -58,17 +66,18 @@ export async function writeOutline(p: {
   ai: AiBinding | undefined;
   topic: string;
   minutes: number;
+  tone?: Tone;
 }): Promise<{ title: string; sections: string[] }> {
   if (!p.ai) throw new AppError("The free AI writer is not available on this deployment.");
   const want = sectionCount(p.minutes);
   const text = await ask(
     p.ai,
     [
-      { role: "system", content: SYSTEM },
+      { role: "system", content: systemFor(p.tone) },
       {
         role: "user",
         content:
-          `Plan a ${p.minutes}-minute YouTube video about: ${p.topic}\n\n` +
+          `Plan a ${p.minutes}-minute YouTube video ${p.tone === "emotional" ? "that tells one emotional, human story" : "about"}: ${p.topic}\n\n` +
           `Reply with exactly this format and nothing else:\n` +
           `Title: <a catchy YouTube title>\n` +
           `1. <section heading>\n2. <section heading>\n... up to ${want}.\n\n` +
@@ -110,6 +119,7 @@ export async function writeSection(p: {
   sections: string[];
   index: number;
   style: "real" | "cartoon";
+  tone?: Tone;
 }): Promise<{ narration: string; visuals: string[] }> {
   if (!p.ai) throw new AppError("The free AI writer is not available on this deployment.");
   const heading = p.sections[p.index] ?? p.topic;
@@ -118,7 +128,7 @@ export async function writeSection(p: {
   const text = await ask(
     p.ai,
     [
-      { role: "system", content: SYSTEM },
+      { role: "system", content: systemFor(p.tone) },
       {
         role: "user",
         content:
@@ -127,7 +137,10 @@ export async function writeSection(p: {
           `Write ONLY section ${p.index + 1}: "${heading}". About ${WORDS_PER_SECTION} words of narration.` +
           (first ? " Open with a gripping hook in the first two sentences." : " Continue smoothly from the previous section; do not greet or re-introduce the video.") +
           (last ? " End with a memorable conclusion and ask viewers to subscribe." : " Do not conclude the video.") +
-          `\n\nThen on a new last line write: VISUALS: followed by 8 short ${p.style === "cartoon" ? "animation or cartoon" : "stock video"} search terms (2-3 words each, concrete things that can be filmed, separated by semicolons).`,
+          `\n\nThen on a new last line write: VISUALS: followed by 8 short ${p.style === "cartoon" ? "animation or cartoon" : "stock video"} search terms (2-3 words each, concrete things that can be filmed, separated by semicolons).` +
+          (p.tone === "emotional"
+            ? " For visuals use quiet human moments and places, for example: man sitting alone; rain on window; mother hugging child; old hands; sunset walk; empty street; family dinner; child laughing."
+            : ""),
       },
     ],
     900,

@@ -9,6 +9,7 @@ const Body = z.discriminatedUnion("step", [
     step: z.literal("outline"),
     topic: z.string().min(3).max(500),
     minutes: z.number().int().min(1).max(90),
+    tone: z.enum(["emotional"]).optional(),
   }),
   z.object({
     step: z.literal("section"),
@@ -17,6 +18,7 @@ const Body = z.discriminatedUnion("step", [
     sections: z.array(z.string().min(1).max(200)).min(1).max(50),
     index: z.number().int().min(0).max(49),
     style: z.enum(["real", "cartoon"]),
+    tone: z.enum(["emotional"]).optional(),
   }),
 ]);
 const fail = (status: number, error: string) =>
@@ -34,7 +36,7 @@ export const Route = createFileRoute("/api/media/auto-script")({
           const body = Body.parse(await request.json().catch(() => ({})));
           const out =
             body.step === "outline"
-              ? await writeOutline({ db, userId: user.id, ai: env.AI, topic: body.topic, minutes: body.minutes })
+              ? await writeOutline({ db, userId: user.id, ai: env.AI, topic: body.topic, minutes: body.minutes, tone: body.tone })
               : await writeSection({
                   db,
                   userId: user.id,
@@ -44,6 +46,7 @@ export const Route = createFileRoute("/api/media/auto-script")({
                   sections: body.sections,
                   index: body.index,
                   style: body.style,
+                  tone: body.tone,
                 });
           return Response.json(out, { headers: { "Cache-Control": "no-store" } });
         } catch (e) {
