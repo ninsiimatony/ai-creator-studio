@@ -46,6 +46,8 @@ export const stockClipImage: ImageProvider = {
         ? OK
         : unavailable("Not connected: the PIXABAY_API_KEY secret has not been added."),
   async generate(req) {
+    // Space the requests out so Pixabay's rate limit is not hit.
+    await new Promise((r) => setTimeout(r, 1200));
     const blob = await postForBlob(
       "/api/media/stock-clip",
       { text: req.title, index: req.index },

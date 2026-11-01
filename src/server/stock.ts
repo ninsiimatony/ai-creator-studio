@@ -66,14 +66,20 @@ export async function fetchStockClip(p: {
         per_page: "20",
         safesearch: "true",
       }).toString();
-    let res: Response;
-    try {
-      // Pixabay asks that API responses are cached for 24 hours.
-      res = await f(url, { cf: { cacheTtl: 86400, cacheEverything: true } } as RequestInit);
-    } catch (e) {
-      console.error("pixabay search failed", e);
-      throw new AppError("Could not reach Pixabay. Please try again.");
+    let res: Response | undefined;
+    // Pixabay may answer 429 when clips are requested quickly: wait a little and retry.
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        // Pixabay asks that API responses are cached for 24 hours.
+        res = await f(url, { cf: { cacheTtl: 86400, cacheEverything: true } } as RequestInit);
+      } catch (e) {
+        console.error("pixabay search failed", e);
+        throw new AppError("Could not reach Pixabay. Please try again.");
+      }
+      if (res.status !== 429) break;
+      await new Promise((r) => setTimeout(r, 2500 * (attempt + 1)));
     }
+    if (!res) throw new AppError("Could not reach Pixabay. Please try again.");
     if (res.status === 429)
       throw new AppError("Pixabay says too many requests. Wait one minute and try again.");
     if (res.status === 400 || res.status === 401 || res.status === 403)
