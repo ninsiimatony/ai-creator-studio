@@ -37,6 +37,14 @@ export type WorkerEnv = {
   ELEVENLABS_API_KEY?: string;
   /** Free Pixabay API key for automatic stock video clips. */
   PIXABAY_API_KEY?: string;
+  /** Telegram bot (chat-to-video). Token from @BotFather; chat id = the owner's chat; webhook secret is random. */
+  TELEGRAM_BOT_TOKEN?: string;
+  TELEGRAM_CHAT_ID?: string;
+  TELEGRAM_WEBHOOK_SECRET?: string;
+  /** Fine-grained GitHub token (Actions: read/write on the repo) used to start the video-making job. */
+  GITHUB_TOKEN?: string;
+  /** Shared secret the GitHub job uses to call this studio. */
+  AUTOMATION_SECRET?: string;
   ELEVENLABS_VOICE_ID?: string;
 };
 

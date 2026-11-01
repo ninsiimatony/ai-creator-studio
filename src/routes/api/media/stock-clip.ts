@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { AppError } from "@/server/errors";
-import { requireUser } from "@/server/context";
+import { hasBotBearer, requireUserOrBot } from "@/server/context";
 import { fetchStockClip } from "@/server/stock";
 
 const Body = z.object({
@@ -19,10 +19,10 @@ export const Route = createFileRoute("/api/media/stock-clip")({
   server: {
     handlers: {
       POST: async ({ request }: { request: Request }) => {
-        if (request.headers.get("origin") !== new URL(request.url).origin)
+        if (!hasBotBearer(request) && request.headers.get("origin") !== new URL(request.url).origin)
           return fail(403, "Cross-site request blocked.");
         try {
-          const { env } = await requireUser();
+          const { env } = await requireUserOrBot(request);
           const body = Body.parse(await request.json().catch(() => ({})));
           const { bytes, mime } = await fetchStockClip({
             apiKey: env.PIXABAY_API_KEY,

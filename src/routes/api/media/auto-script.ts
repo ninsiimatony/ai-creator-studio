@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { AppError } from "@/server/errors";
-import { requireUser } from "@/server/context";
+import { hasBotBearer, requireUserOrBot } from "@/server/context";
 import { writeOutline, writeSection } from "@/server/autoscript";
 
 const Body = z.discriminatedUnion("step", [
@@ -27,10 +27,10 @@ export const Route = createFileRoute("/api/media/auto-script")({
   server: {
     handlers: {
       POST: async ({ request }: { request: Request }) => {
-        if (request.headers.get("origin") !== new URL(request.url).origin)
+        if (!hasBotBearer(request) && request.headers.get("origin") !== new URL(request.url).origin)
           return fail(403, "Cross-site request blocked.");
         try {
-          const { db, user, env } = await requireUser();
+          const { db, user, env } = await requireUserOrBot(request);
           const body = Body.parse(await request.json().catch(() => ({})));
           const out =
             body.step === "outline"

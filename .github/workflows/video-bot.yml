@@ -1,0 +1,41 @@
+name: video-bot
+
+# Started by the Telegram bot (through the studio). Makes a video with free tools and uploads it to YouTube as PRIVATE.
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: Video topic
+        required: true
+      minutes:
+        description: Length in minutes
+        required: true
+        default: "10"
+      style:
+        description: real or cartoon
+        required: true
+        default: real
+
+concurrency:
+  group: video-bot
+  cancel-in-progress: false
+
+jobs:
+  make:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install ffmpeg and a subtitle font
+        run: sudo apt-get update -y && sudo apt-get install -y ffmpeg fonts-dejavu-core
+      - name: Make the video
+        env:
+          STUDIO_URL: https://youtube-automation-platform.ninsiimatony.workers.dev
+          AUTOMATION_SECRET: ${{ secrets.AUTOMATION_SECRET }}
+          TOPIC: ${{ inputs.topic }}
+          MINUTES: ${{ inputs.minutes }}
+          STYLE: ${{ inputs.style }}
+        run: node scripts/video-bot/run.mjs

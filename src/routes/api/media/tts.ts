@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { AppError } from "@/server/errors";
-import { requireUser } from "@/server/context";
+import { hasBotBearer, requireUserOrBot } from "@/server/context";
 import { synthesizeSpeech } from "@/server/media";
 
 const Body = z.object({ text: z.string().min(1).max(4000), lang: z.string().max(8).optional() });
@@ -12,10 +12,10 @@ export const Route = createFileRoute("/api/media/tts")({
   server: {
     handlers: {
       POST: async ({ request }: { request: Request }) => {
-        if (request.headers.get("origin") !== new URL(request.url).origin)
+        if (!hasBotBearer(request) && request.headers.get("origin") !== new URL(request.url).origin)
           return fail(403, "Cross-site request blocked.");
         try {
-          const { db, user, env } = await requireUser();
+          const { db, user, env } = await requireUserOrBot(request);
           const body = Body.parse(await request.json().catch(() => ({})));
           const { bytes, mime } = await synthesizeSpeech({
             db,
