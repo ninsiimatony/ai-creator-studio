@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/ui-bits";
 import { RenderStudio } from "@/components/RenderStudio";
+import { AutoVideo } from "@/components/AutoVideo";
 
 export const Route = createFileRoute("/render")({
   head: () => ({
@@ -23,6 +24,7 @@ function Render() {
         title="Render video"
         desc="Turn a script into a finished, YouTube-ready MP4: voiceover, visuals, background music, automatic subtitles and transitions. Everything renders in your browser, so it costs nothing to run."
       />
+      <AutoVideo />
       <RenderStudio />
     </>
   );

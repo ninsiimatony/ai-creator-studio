@@ -32,10 +32,10 @@ type Hit = { videos?: { large?: Rendition; medium?: Rendition; small?: Rendition
 const MAX_CLIP_BYTES = 30 * 1024 * 1024;
 
 /** Medium (about 1280 wide) when it is not huge, else the next size down. */
-export function pickRendition(hit: Hit): string | null {
+export function pickRendition(hit: Hit, small = false): string | null {
   const v = hit.videos;
   if (!v) return null;
-  for (const r of [v.medium, v.small, v.tiny]) {
+  for (const r of small ? [v.small, v.tiny, v.medium] : [v.medium, v.small, v.tiny]) {
     if (r?.url && (r.size === undefined || r.size === 0 || r.size <= MAX_CLIP_BYTES)) return r.url;
   }
   return null;
@@ -45,6 +45,12 @@ export async function fetchStockClip(p: {
   apiKey: string | undefined;
   text: string;
   index?: number;
+  /** Search words chosen by the AI script writer; tried before words taken from the scene text. */
+  query?: string;
+  /** "cartoon" asks Pixabay for animation clips only. */
+  style?: "real" | "cartoon";
+  /** Use the smaller file (640 wide): lighter on memory for long videos. */
+  small?: boolean;
   fetcher?: typeof fetch;
 }): Promise<{ bytes: Uint8Array; mime: string }> {
   if (!p.apiKey)
@@ -53,7 +59,10 @@ export async function fetchStockClip(p: {
   const text = p.text.replace(/\s+/g, " ").trim();
   if (!text) throw new AppError("There is no text to search clips for.");
   const kw = stockKeywords(text);
-  const queries = [...new Set([kw.join(" "), kw[0] ?? "", "technology"].filter(Boolean))];
+  const own = (p.query ?? "").replace(/\s+/g, " ").trim().slice(0, 100);
+  const queries = [
+    ...new Set([own, kw.join(" "), kw[0] ?? "", "technology"].filter(Boolean)),
+  ];
   const index = Math.max(0, Math.floor(p.index ?? 0));
 
   let clipUrl: string | null = null;
@@ -65,6 +74,7 @@ export async function fetchStockClip(p: {
         q: q.slice(0, 100),
         per_page: "20",
         safesearch: "true",
+        ...(p.style === "cartoon" ? { video_type: "animation" } : {}),
       }).toString();
     let res: Response | undefined;
     // Pixabay may answer 429 when clips are requested quickly: wait a little and retry.
@@ -86,9 +96,9 @@ export async function fetchStockClip(p: {
       throw new AppError("Pixabay rejected the API key. Check PIXABAY_API_KEY.");
     if (!res.ok) throw new AppError("Pixabay is not answering right now. Please try again.");
     const json = (await res.json().catch(() => null)) as { hits?: Hit[] } | null;
-    const usable = (json?.hits ?? []).filter((h) => pickRendition(h));
+    const usable = (json?.hits ?? []).filter((h) => pickRendition(h, p.small));
     if (usable.length) {
-      clipUrl = pickRendition(usable[index % usable.length]!);
+      clipUrl = pickRendition(usable[index % usable.length]!, p.small);
       break;
     }
   }

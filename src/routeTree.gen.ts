@@ -23,6 +23,7 @@ import { Route as ScriptsRouteImport } from './routes/scripts'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiVoiceoverRouteImport } from './routes/api/voiceover'
+import { Route as ApiMediaAutoScriptRouteImport } from './routes/api/media/auto-script'
 import { Route as ApiMediaImageRouteImport } from './routes/api/media/image'
 import { Route as ApiMediaStockClipRouteImport } from './routes/api/media/stock-clip'
 import { Route as ApiMediaTtsRouteImport } from './routes/api/media/tts'
@@ -99,6 +100,11 @@ const ApiVoiceoverRoute = ApiVoiceoverRouteImport.update({
   path: '/api/voiceover',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMediaAutoScriptRoute = ApiMediaAutoScriptRouteImport.update({
+  id: '/api/media/auto-script',
+  path: '/api/media/auto-script',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMediaImageRoute = ApiMediaImageRouteImport.update({
   id: '/api/media/image',
   path: '/api/media/image',
@@ -140,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
+  '/api/media/auto-script': typeof ApiMediaAutoScriptRoute
   '/api/media/image': typeof ApiMediaImageRoute
   '/api/media/stock-clip': typeof ApiMediaStockClipRoute
   '/api/media/tts': typeof ApiMediaTtsRoute
@@ -161,6 +168,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
+  '/api/media/auto-script': typeof ApiMediaAutoScriptRoute
   '/api/media/image': typeof ApiMediaImageRoute
   '/api/media/stock-clip': typeof ApiMediaStockClipRoute
   '/api/media/tts': typeof ApiMediaTtsRoute
@@ -183,6 +191,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
+  '/api/media/auto-script': typeof ApiMediaAutoScriptRoute
   '/api/media/image': typeof ApiMediaImageRoute
   '/api/media/stock-clip': typeof ApiMediaStockClipRoute
   '/api/media/tts': typeof ApiMediaTtsRoute
@@ -206,6 +215,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/health'
     | '/api/voiceover'
+    | '/api/media/auto-script'
     | '/api/media/image'
     | '/api/media/stock-clip'
     | '/api/media/tts'
@@ -227,6 +237,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/health'
     | '/api/voiceover'
+    | '/api/media/auto-script'
     | '/api/media/image'
     | '/api/media/stock-clip'
     | '/api/media/tts'
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/health'
     | '/api/voiceover'
+    | '/api/media/auto-script'
     | '/api/media/image'
     | '/api/media/stock-clip'
     | '/api/media/tts'
@@ -270,6 +282,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiVoiceoverRoute: typeof ApiVoiceoverRoute
+  ApiMediaAutoScriptRoute: typeof ApiMediaAutoScriptRoute
   ApiMediaImageRoute: typeof ApiMediaImageRoute
   ApiMediaStockClipRoute: typeof ApiMediaStockClipRoute
   ApiMediaTtsRoute: typeof ApiMediaTtsRoute
@@ -377,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiVoiceoverRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/media/auto-script': {
+      id: '/api/media/auto-script'
+      path: '/api/media/auto-script'
+      fullPath: '/api/media/auto-script'
+      preLoaderRoute: typeof ApiMediaAutoScriptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/media/image': {
       id: '/api/media/image'
       path: '/api/media/image'
@@ -430,6 +450,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiVoiceoverRoute: ApiVoiceoverRoute,
+  ApiMediaAutoScriptRoute: ApiMediaAutoScriptRoute,
   ApiMediaImageRoute: ApiMediaImageRoute,
   ApiMediaStockClipRoute: ApiMediaStockClipRoute,
   ApiMediaTtsRoute: ApiMediaTtsRoute,

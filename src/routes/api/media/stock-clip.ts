@@ -7,6 +7,9 @@ import { fetchStockClip } from "@/server/stock";
 const Body = z.object({
   text: z.string().min(1).max(500),
   index: z.number().int().min(0).max(1000).optional(),
+  query: z.string().max(100).optional(),
+  style: z.enum(["real", "cartoon"]).optional(),
+  small: z.boolean().optional(),
 });
 const fail = (status: number, error: string) =>
   Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
@@ -25,6 +28,9 @@ export const Route = createFileRoute("/api/media/stock-clip")({
             apiKey: env.PIXABAY_API_KEY,
             text: body.text,
             ...(body.index !== undefined ? { index: body.index } : {}),
+            ...(body.query ? { query: body.query } : {}),
+            ...(body.style ? { style: body.style } : {}),
+            ...(body.small ? { small: true } : {}),
           });
           return new Response(bytes as BodyInit, {
             headers: { "Content-Type": mime, "Cache-Control": "no-store" },
