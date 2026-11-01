@@ -9,6 +9,8 @@ export type MediaEnv = {
   server: boolean;
   elevenlabs: boolean;
   workersAi: boolean;
+  /** PIXABAY_API_KEY is set on the server (free stock video clips). */
+  pixabay?: boolean;
 };
 
 export type Availability = { ok: true } | { ok: false; reason: string };

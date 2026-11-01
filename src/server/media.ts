@@ -48,6 +48,14 @@ const isMp3 = (b: Uint8Array) =>
   ((b[0] === 0x49 && b[1] === 0x44 && b[2] === 0x33) ||
     (b[0] === 0xff && ((b[1] ?? 0) & 0xe0) === 0xe0));
 
+const isWav = (b: Uint8Array) =>
+  b.length > 12 && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46;
+const isOgg = (b: Uint8Array) =>
+  b.length > 4 && b[0] === 0x4f && b[1] === 0x67 && b[2] === 0x67 && b[3] === 0x53;
+/** MeloTTS has returned MP3 or WAV depending on version; the browser decodes either. */
+const audioMime = (b: Uint8Array) =>
+  isMp3(b) ? "audio/mpeg" : isWav(b) ? "audio/wav" : isOgg(b) ? "audio/ogg" : null;
+
 function friendly(e: unknown, what: string): AppError {
   console.error(`workers ai ${what} failed`, e);
   return new AppError(
@@ -141,8 +149,9 @@ export async function synthesizeSpeech(p: {
     throw friendly(e, "voiceover");
   }
   const bytes = await audioBytes(res).catch(() => null);
-  if (!bytes || !isMp3(bytes))
+  const mime = bytes ? audioMime(bytes) : null;
+  if (!bytes || !mime)
     throw new AppError("Workers AI returned no usable audio. Please try again.");
   await recordUsage(p.db, p.userId, "tts", "melotts", text.length, 0, 0);
-  return { bytes, mime: "audio/mpeg" };
+  return { bytes, mime };
 }

@@ -35,6 +35,8 @@ export type IntegrationStatus = {
   voiceover: { configured: boolean };
   /** Workers AI binding present: free AI images and free voiceover are available. */
   mediaAi: { configured: boolean };
+  /** Pixabay key present: free automatic stock video clips are available. */
+  stockClips: { configured: boolean };
 };
 
 async function aiDeps(db: D1Database, env: WorkerEnv, userId: string): Promise<AiDeps> {
@@ -86,6 +88,7 @@ export const getIntegrations = createServerFn({ method: "GET" }).handler(
         },
         voiceover: { configured: !!env.ELEVENLABS_API_KEY },
         mediaAi: { configured: !!env.AI },
+        stockClips: { configured: !!env.PIXABAY_API_KEY },
       };
     }),
 );

@@ -70,6 +70,7 @@ export function RenderStudio() {
     server: mode === "db",
     elevenlabs: !!integ.data?.voiceover.configured,
     workersAi: !!integ.data?.mediaAi.configured,
+    pixabay: !!integ.data?.stockClips?.configured,
   };
   const usable = scripts.filter((s) => s.body.trim().length > 20);
 

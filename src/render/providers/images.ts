@@ -1,4 +1,4 @@
-import { canvasAsset, imageAsset, makeTitleCard } from "../assets";
+import { canvasAsset, imageAsset, makeTitleCard, videoClipAsset } from "../assets";
 import { OK, unavailable, type ImageProvider } from "./types";
 import { postForBlob } from "./http";
 
@@ -34,4 +34,25 @@ export const workersAiImage: ImageProvider = {
   },
 };
 
-export const IMAGE_PROVIDERS: ImageProvider[] = [titleCardImage, workersAiImage];
+/** Real video clips from Pixabay, searched from each scene's words. Free; needs the PIXABAY_API_KEY secret. */
+export const stockClipImage: ImageProvider = {
+  id: "pixabay-stock",
+  label: "Pixabay stock video clips (free, real video)",
+  cost: "Free. Real moving clips picked from the scene's words (videos from Pixabay).",
+  availability: (env) =>
+    !env.server
+      ? unavailable("Needs the database (unavailable in demo mode).")
+      : env.pixabay
+        ? OK
+        : unavailable("Not connected: the PIXABAY_API_KEY secret has not been added."),
+  async generate(req) {
+    const blob = await postForBlob(
+      "/api/media/stock-clip",
+      { text: req.title, index: req.index },
+      req.signal,
+    );
+    return videoClipAsset(blob);
+  },
+};
+
+export const IMAGE_PROVIDERS: ImageProvider[] = [titleCardImage, workersAiImage, stockClipImage];

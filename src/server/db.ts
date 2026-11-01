@@ -35,6 +35,8 @@ export type WorkerEnv = {
   /** Base64 of 32 random bytes; encrypts stored Google refresh tokens. */
   TOKEN_ENC_KEY?: string;
   ELEVENLABS_API_KEY?: string;
+  /** Free Pixabay API key for automatic stock video clips. */
+  PIXABAY_API_KEY?: string;
   ELEVENLABS_VOICE_ID?: string;
 };
 
