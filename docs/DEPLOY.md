@@ -14,7 +14,20 @@ No custom domain or DNS record is touched.
 
 ## Deploy (two options)
 
-### A. From your computer (about 5 minutes)
+### A0. One safe command from your terminal (recommended)
+
+```bash
+git clone https://github.com/ninsiimatony/ai-creator-studio && cd ai-creator-studio
+git checkout feature/phase1-d1-backend
+bash scripts/deploy-local.sh --check   # optional: runs every safety check, deploys nothing
+bash scripts/deploy-local.sh           # checks, builds, deploys, creates the sign-up code, verifies the live site
+```
+
+Needs Node 20+, bun (`npm i -g bun`), git, curl and openssl. It logs you in through your browser, confirms the dedicated
+database and that no other Worker would be overwritten, deploys only `youtube-automation-platform`, and prints the
+verified URL. It never touches DNS, routes, domains, other Workers or other databases.
+
+### A. From your computer, step by step (about 5 minutes)
 
 ```bash
 git clone https://github.com/ninsiimatony/ai-creator-studio && cd ai-creator-studio
