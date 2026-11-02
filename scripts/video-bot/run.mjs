@@ -117,36 +117,34 @@ function srtFor(narration, dur) {
     .join("\n");
 }
 
-/** Thumbnail: AI picture + big title text, 1280x720 JPEG. */
+/** Picks one of Tony's face photos (scripts/video-bot/faces) to match the story's feeling. */
+function pickFace(title, topic) {
+  const t = `${title} ${topic}`.toLowerCase();
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  if (/secret|shock|never|truth|unbelievable|surpris|mystery|hidden|discover|found out|strange/.test(t)) return "shocked";
+  if (/hope|kind|happy|success|smile|gift|friend|saved|thank|reunion|together|celebrat|love/.test(t)) return pick(["thumbsup", "pointing"]);
+  if (/why|how|what if|lesson|learn|understand/.test(t)) return pick(["thinking", "pointing"]);
+  if (/lost|loss|grave|alone|lonely|cry|empty|goodbye|last|died|passed|miss|wait|tears|sad|hungry|poor/.test(t)) return pick(["crying", "sad"]);
+  return TONE === "emotional" ? pick(["crying", "sad", "pointing", "thinking"]) : pick(["pointing", "thinking", "shocked"]);
+}
+
+/** Thumbnail: AI background + Tony's face + big title text, 1280x720 JPEG. */
 async function makeThumbnail(title) {
   const prompt =
     TONE === "emotional"
-      ? `Cinematic emotional photograph for a story titled "${title}", real people, deep feelings, soft dramatic light, shallow depth of field, warm and blue tones, ultra detailed, 8k, no text`
-      : `Eye-catching cinematic image for a YouTube video titled "${title}", vivid colors, dramatic lighting, sharp focus, ultra detailed, 8k, no text`;
+      ? `Cinematic emotional background scene for a story titled "${title}", soft dramatic light, warm and blue tones, shallow depth of field, ultra detailed, 8k, no people in foreground, no text`
+      : `Eye-catching cinematic background for a YouTube video titled "${title}", vivid colors, dramatic lighting, ultra detailed, 8k, no text`;
   const img = await studio("/api/media/image", { prompt: prompt.slice(0, 900) }, { raw: true });
   const src = path.join(WORK, "thumb-src.jpg");
   await writeFile(src, img);
-  const words = title.replace(/["“”]/g, "").toUpperCase().split(/\s+/).filter(Boolean);
-  const lines = [];
-  let cur = "";
-  for (const w of words) {
-    if ((cur + " " + w).trim().length > 18 && cur) {
-      lines.push(cur);
-      cur = w;
-    } else cur = (cur + " " + w).trim();
-  }
-  if (cur) lines.push(cur);
-  await writeFile(path.join(WORK, "thumb.txt"), lines.slice(0, 3).join("\n"));
+  const face = pickFace(title, TOPIC);
+  const here = path.dirname(new URL(import.meta.url).pathname);
   const out = path.join(WORK, "thumb.jpg");
-  await run("ffmpeg", [
-    "-y", "-i", src,
-    "-vf",
-    "scale=1280:1280:flags=lanczos,crop=1280:720:0:280,eq=brightness=-0.06:saturation=1.15," +
-      "drawbox=x=0:y=ih*0.55:w=iw:h=ih*0.45:color=black@0.45:t=fill," +
-      "drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:textfile=thumb.txt:" +
-      "fontsize=78:fontcolor=white:borderw=5:bordercolor=black:line_spacing=10:x=48:y=h-th-48",
-    "-q:v", "3", out,
-  ], { cwd: WORK });
+  log("Thumbnail face:", face);
+  await run("python3", [
+    path.join(here, "thumb.py"), src, path.join(here, "faces", `${face}.png`),
+    face === "pointing" ? "left" : "right", title, out,
+  ]);
   return out;
 }
 
