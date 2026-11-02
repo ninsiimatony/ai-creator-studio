@@ -180,6 +180,11 @@ async function uploadToYouTube(file, title, description) {
   );
   if (!init.ok) {
     const t = await init.text();
+    if (init.status === 403 && /quota/i.test(t)) {
+      const q = new Error("YouTube daily upload limit reached.");
+      q.quota = true;
+      throw q;
+    }
     throw new Error(init.status === 401 ? "Google access expired. Reconnect YouTube in the studio." : `YouTube refused the upload (${init.status}): ${t.slice(0, 200)}`);
   }
   const url = init.headers.get("location");
@@ -233,6 +238,12 @@ async function main() {
   await rm(WORK, { recursive: true, force: true });
   await mkdir(WORK, { recursive: true });
   log("Topic:", TOPIC, "| minutes:", MINUTES, "| style:", STYLE);
+  // Check YouTube access first, so we never spend 20 minutes making a video we cannot upload.
+  try {
+    await studio("/api/automation/youtube-token", {});
+  } catch (e) {
+    throw new Error(`Google access expired. Reconnect YouTube in the studio. (${e.message})`);
+  }
 
   // 1. Script
   const outline = await studio("/api/media/auto-script", { step: "outline", topic: TOPIC, minutes: MINUTES, tone: TONE });
@@ -265,7 +276,7 @@ async function main() {
     await writeFile(path.join(WORK, "seg.srt"), srtFor(sc.narration, dur));
     let clip = null;
     try {
-      await wait(1100);
+      await wait(500);
       clip = path.join(WORK, `c${id}.mp4`);
       await writeFile(
         clip,
@@ -294,7 +305,7 @@ async function main() {
         "-vf", vf,
         "-af", "apad",
         "-map", "0:v:0", "-map", "1:a:0",
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+        "-c:v", "libx264", "-preset", "ultrafast", "-crf", "24",
         "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2",
         seg,
       ],
@@ -406,7 +417,12 @@ async function main() {
 main()
   .catch(async (e) => {
     console.error(e);
-    await notify(`❌ I could not finish the video.\nReason: ${String(e.message ?? e).slice(0, 500)}`);
+    if (e?.quota) {
+      // Retrying today would only fail again. Finish quietly; tomorrow's videos continue as normal.
+      await notify("⚠️ YouTube's daily upload limit is full. This video is skipped today. Tomorrow's 3 videos continue normally.");
+      return;
+    }
+    await notify(`❌ I could not finish the video (I will try again automatically).\nReason: ${String(e.message ?? e).slice(0, 500)}`);
     process.exitCode = 1;
   })
   .finally(() => rm(WORK, { recursive: true, force: true }).catch(() => {}));
