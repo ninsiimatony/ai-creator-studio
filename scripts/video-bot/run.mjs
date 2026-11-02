@@ -173,7 +173,7 @@ async function uploadToYouTube(file, title, description) {
         "x-upload-content-type": "video/mp4",
       },
       body: JSON.stringify({
-        snippet: { title: title.slice(0, 100), description: description.slice(0, 4900), categoryId: TONE === "emotional" ? "22" : "28" },
+        snippet: { title: title.slice(0, 100), description: description.slice(0, 4900), tags: globalThis.__videoTags ?? [], categoryId: TONE === "emotional" ? "22" : "28" },
         status: { privacyStatus: "private", selfDeclaredMadeForKids: false, containsSyntheticMedia: true },
       }),
     },
@@ -323,10 +323,23 @@ async function main() {
     "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", final,
   ]);
 
+  const topicTags = TOPIC.toLowerCase().replace(/[^a-z ]/g, " ").split(/\s+/)
+    .filter((w) => w.length > 3 && !["about", "their", "with", "from", "that", "this", "until", "every", "after"].includes(w))
+    .slice(0, 3).map((w) => `#${w}`);
+  const baseTags = TONE === "emotional"
+    ? ["#emotionalstory", "#sadstory", "#lifelessons", "#storytime", "#touchingstory"]
+    : ["#explained", "#documentary", "#facts"];
+  const hashtags = [...new Set([...baseTags, ...topicTags])].slice(0, 8);
   const description =
-    `${outline.title}\n\n${outline.sections.map((s, i) => `${i + 1}. ${s}`).join("\n")}\n\n` +
+    `${outline.title}\n\n` +
+    (TONE === "emotional"
+      ? `If this story touched your heart, please like, share and subscribe for a new emotional story every day.\n\n`
+      : `Like and subscribe for more.\n\n`) +
+    `${outline.sections.map((s, i) => `${i + 1}. ${s}`).join("\n")}\n\n` +
     (TONE === "emotional" ? `This is a fictional story, written for reflection and inspiration.\n` : "") +
-    `Made with AI narration and stock video clips from Pixabay (https://pixabay.com).`;
+    `Made with AI narration and stock video clips from Pixabay (https://pixabay.com).\n\n` +
+    hashtags.join(" ");
+  globalThis.__videoTags = hashtags.map((h) => h.slice(1));
   log("Uploading to YouTube (private)...");
   const id = await uploadToYouTube(final, outline.title, description);
   let thumbNote = "";
