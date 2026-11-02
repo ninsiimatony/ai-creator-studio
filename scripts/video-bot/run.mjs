@@ -380,6 +380,20 @@ async function main() {
     );
     shortNote = `\n\nShort (1 min): https://youtu.be/${shortId}\nPublish it: https://studio.youtube.com/video/${shortId}/edit`;
     log("Short uploaded:", shortId);
+    // Also send the Short file to Telegram, ready to post on TikTok.
+    try {
+      const caption =
+        `${outline.title} 💔\nFull story on YouTube: @TonyNinsiima\n\n` +
+        `${hashtags.join(" ")} #fyp #storytime #emotional`;
+      const res = await fetch(`${STUDIO}/api/automation/notify-video?caption=${encodeURIComponent(caption)}`, {
+        method: "POST",
+        headers: { authorization: `Bearer ${SECRET}`, "content-type": "video/mp4" },
+        body: await readFile(shortFile),
+      });
+      log("Short sent to Telegram:", res.status);
+    } catch (e) {
+      log("telegram video skipped:", e.message);
+    }
   } catch (e) {
     log("short skipped:", e.message);
   }

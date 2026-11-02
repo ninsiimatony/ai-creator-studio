@@ -26,6 +26,7 @@ import { Route as ApiPrivacyRouteImport } from './routes/api/privacy'
 import { Route as ApiTelegramRouteImport } from './routes/api/telegram'
 import { Route as ApiVoiceoverRouteImport } from './routes/api/voiceover'
 import { Route as ApiAutomationNotifyRouteImport } from './routes/api/automation/notify'
+import { Route as ApiAutomationNotifyVideoRouteImport } from './routes/api/automation/notify-video'
 import { Route as ApiAutomationYoutubeTokenRouteImport } from './routes/api/automation/youtube-token'
 import { Route as ApiMediaAutoScriptRouteImport } from './routes/api/media/auto-script'
 import { Route as ApiMediaImageRouteImport } from './routes/api/media/image'
@@ -119,6 +120,12 @@ const ApiAutomationNotifyRoute = ApiAutomationNotifyRouteImport.update({
   path: '/api/automation/notify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAutomationNotifyVideoRoute =
+  ApiAutomationNotifyVideoRouteImport.update({
+    id: '/api/automation/notify-video',
+    path: '/api/automation/notify-video',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAutomationYoutubeTokenRoute =
   ApiAutomationYoutubeTokenRouteImport.update({
     id: '/api/automation/youtube-token',
@@ -174,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/api/telegram': typeof ApiTelegramRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
   '/api/automation/notify': typeof ApiAutomationNotifyRoute
+  '/api/automation/notify-video': typeof ApiAutomationNotifyVideoRoute
   '/api/automation/youtube-token': typeof ApiAutomationYoutubeTokenRoute
   '/api/media/auto-script': typeof ApiMediaAutoScriptRoute
   '/api/media/image': typeof ApiMediaImageRoute
@@ -200,6 +208,7 @@ export interface FileRoutesByTo {
   '/api/telegram': typeof ApiTelegramRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
   '/api/automation/notify': typeof ApiAutomationNotifyRoute
+  '/api/automation/notify-video': typeof ApiAutomationNotifyVideoRoute
   '/api/automation/youtube-token': typeof ApiAutomationYoutubeTokenRoute
   '/api/media/auto-script': typeof ApiMediaAutoScriptRoute
   '/api/media/image': typeof ApiMediaImageRoute
@@ -227,6 +236,7 @@ export interface FileRoutesById {
   '/api/telegram': typeof ApiTelegramRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
   '/api/automation/notify': typeof ApiAutomationNotifyRoute
+  '/api/automation/notify-video': typeof ApiAutomationNotifyVideoRoute
   '/api/automation/youtube-token': typeof ApiAutomationYoutubeTokenRoute
   '/api/media/auto-script': typeof ApiMediaAutoScriptRoute
   '/api/media/image': typeof ApiMediaImageRoute
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/api/telegram'
     | '/api/voiceover'
     | '/api/automation/notify'
+    | '/api/automation/notify-video'
     | '/api/automation/youtube-token'
     | '/api/media/auto-script'
     | '/api/media/image'
@@ -281,6 +292,7 @@ export interface FileRouteTypes {
     | '/api/telegram'
     | '/api/voiceover'
     | '/api/automation/notify'
+    | '/api/automation/notify-video'
     | '/api/automation/youtube-token'
     | '/api/media/auto-script'
     | '/api/media/image'
@@ -307,6 +319,7 @@ export interface FileRouteTypes {
     | '/api/telegram'
     | '/api/voiceover'
     | '/api/automation/notify'
+    | '/api/automation/notify-video'
     | '/api/automation/youtube-token'
     | '/api/media/auto-script'
     | '/api/media/image'
@@ -334,6 +347,7 @@ export interface RootRouteChildren {
   ApiTelegramRoute: typeof ApiTelegramRoute
   ApiVoiceoverRoute: typeof ApiVoiceoverRoute
   ApiAutomationNotifyRoute: typeof ApiAutomationNotifyRoute
+  ApiAutomationNotifyVideoRoute: typeof ApiAutomationNotifyVideoRoute
   ApiAutomationYoutubeTokenRoute: typeof ApiAutomationYoutubeTokenRoute
   ApiMediaAutoScriptRoute: typeof ApiMediaAutoScriptRoute
   ApiMediaImageRoute: typeof ApiMediaImageRoute
@@ -464,6 +478,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAutomationNotifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/automation/notify-video': {
+      id: '/api/automation/notify-video'
+      path: '/api/automation/notify-video'
+      fullPath: '/api/automation/notify-video'
+      preLoaderRoute: typeof ApiAutomationNotifyVideoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/automation/youtube-token': {
       id: '/api/automation/youtube-token'
       path: '/api/automation/youtube-token'
@@ -534,6 +555,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTelegramRoute: ApiTelegramRoute,
   ApiVoiceoverRoute: ApiVoiceoverRoute,
   ApiAutomationNotifyRoute: ApiAutomationNotifyRoute,
+  ApiAutomationNotifyVideoRoute: ApiAutomationNotifyVideoRoute,
   ApiAutomationYoutubeTokenRoute: ApiAutomationYoutubeTokenRoute,
   ApiMediaAutoScriptRoute: ApiMediaAutoScriptRoute,
   ApiMediaImageRoute: ApiMediaImageRoute,
