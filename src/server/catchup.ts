@@ -8,7 +8,7 @@ import type { D1Database, WorkerEnv } from "./db";
 const REPO = "ninsiimatony/ai-creator-studio";
 const REF = "main";
 const SLOT_MINUTES_UTC = [3 * 60 + 17, 9 * 60 + 17, 15 * 60 + 17];
-const MAX_ATTEMPTS = 6;
+const MAX_ATTEMPTS = 4;
 const LOST_AFTER_MS = 12 * 60 * 1000; // dispatched but GitHub never showed a run
 const STUCK_AFTER_MS = 100 * 60 * 1000; // run still going far too long
 
@@ -21,6 +21,7 @@ async function ensureTable(db: D1Database) {
       "CREATE TABLE IF NOT EXISTS video_slots (day TEXT NOT NULL, slot INTEGER NOT NULL, topic TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0, dispatched_at TEXT, PRIMARY KEY (day, slot))",
     )
     .run();
+  await db.prepare("ALTER TABLE video_slots ADD COLUMN note TEXT").run().catch(() => {});
 }
 
 function dayOfYear(d: Date) {
@@ -89,6 +90,8 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
       }
       if (mine && mine.status !== "completed" && age < STUCK_AFTER_MS) return `slot ${slot} running`;
       if (!mine && age < LOST_AFTER_MS) return `slot ${slot} starting`;
+      // Wait longer after each failure (20, 40, 60 min) so a daily limit or outage has time to clear.
+      if (mine?.status === "completed" && age < row.attempts * 20 * 60 * 1000) return `slot ${slot} waiting to retry`;
       // failed, cancelled, lost or stuck -> fall through and start it again
     }
 
@@ -114,7 +117,9 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
       );
       return `dispatched slot ${slot}`;
     } catch (e) {
-      await db.prepare("UPDATE video_slots SET attempts=attempts+1 WHERE day=? AND slot=?").bind(day, slot).run();
+      const why = e instanceof Error ? e.message : String(e);
+      await db.prepare("UPDATE video_slots SET attempts=attempts+1, note=? WHERE day=? AND slot=?").bind(why.slice(0, 300), day, slot).run();
+      if (row.attempts === 2) await notify(`⚠️ Video ${slot + 1} could not start: ${why}`);
       console.error("catch-up dispatch failed", e);
       return `dispatch failed slot ${slot}, will retry`;
     }
