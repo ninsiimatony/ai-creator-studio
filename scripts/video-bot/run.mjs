@@ -16,6 +16,31 @@ const H = MINUTES > 30 ? 720 : 1080;
 const WORK = path.join(os.tmpdir(), "videobot");
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Natural human-sounding voices (free Microsoft neural voices). One voice per video, picked from the topic.
+// If they are not reachable, we fall back to the studio's built-in voice, so a video is never lost.
+const EDGE_VOICES = ["en-US-AndrewNeural", "en-US-AvaNeural", "en-US-GuyNeural", "en-US-JennyNeural"];
+const EDGE_VOICE = EDGE_VOICES[[...TOPIC].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % EDGE_VOICES.length];
+let edgeFails = 0;
+async function speak(text, file) {
+  if (edgeFails < 3) {
+    try {
+      const txt = file + ".txt";
+      await writeFile(txt, text);
+      await run("python3", ["-m", "edge_tts", "--voice", EDGE_VOICE, "--rate=-4%", "--file", txt, "--write-media", file]);
+      const st = await stat(file);
+      if (st.size > 2000) {
+        edgeFails = 0;
+        return;
+      }
+      throw new Error("empty audio");
+    } catch (e) {
+      edgeFails++;
+      if (edgeFails === 1 || edgeFails === 3) log("natural voice failed, using fallback:", String(e.message).slice(0, 160));
+    }
+  }
+  await writeFile(file, await studio("/api/media/tts", { text, lang: "en" }, { raw: true }));
+}
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 
 async function studio(pathname, body, { raw = false } = {}) {
@@ -237,7 +262,7 @@ async function main() {
   if (!STUDIO || !SECRET || !TOPIC) throw new Error("Missing STUDIO_URL, AUTOMATION_SECRET or TOPIC.");
   await rm(WORK, { recursive: true, force: true });
   await mkdir(WORK, { recursive: true });
-  log("Topic:", TOPIC, "| minutes:", MINUTES, "| style:", STYLE);
+  log("Topic:", TOPIC, "| minutes:", MINUTES, "| style:", STYLE, "| voice:", EDGE_VOICE);
   // Check YouTube access first, so we never spend 20 minutes making a video we cannot upload.
   try {
     await studio("/api/automation/youtube-token", {});
@@ -271,7 +296,7 @@ async function main() {
     const sc = scenes[i];
     const id = String(i).padStart(4, "0");
     const voice = path.join(WORK, `v${id}.bin`);
-    await writeFile(voice, await studio("/api/media/tts", { text: sc.narration, lang: "en" }, { raw: true }));
+    await speak(sc.narration, voice);
     const dur = (await duration(voice)) + 0.5;
     await writeFile(path.join(WORK, "seg.srt"), srtFor(sc.narration, dur));
     let clip = null;
