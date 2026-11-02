@@ -35,7 +35,7 @@ jobs:
         with:
           node-version: 20
       - name: Install ffmpeg and a subtitle font
-        run: sudo apt-get update -y && sudo apt-get install -y ffmpeg fonts-dejavu-core python3-pil
+        run: sudo apt-get update -y && sudo apt-get install -y ffmpeg fonts-dejavu-core python3-pil && (python3 -m pip install --user --break-system-packages edge-tts || pip3 install --user edge-tts || true)
       - name: Pick today's story (scheduled runs)
         if: github.event_name == 'schedule'
         run: node scripts/video-bot/pick-topic.mjs >> "$GITHUB_ENV"
