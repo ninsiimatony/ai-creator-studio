@@ -6,6 +6,6 @@ const day = Math.floor((now - Date.UTC(now.getUTCFullYear(), 0, 0)) / 86400000);
 const slot = Math.min(2, Math.floor(now.getUTCHours() / 8));
 const topic = topics[(day * 3 + slot) % topics.length];
 console.log(`TOPIC=${topic}`);
-console.log("MINUTES=10");
+console.log("MINUTES=12");
 console.log("STYLE=real");
 console.log("TONE=emotional");
