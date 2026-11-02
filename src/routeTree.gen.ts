@@ -22,6 +22,7 @@ import { Route as RenderRouteImport } from './routes/render'
 import { Route as ScriptsRouteImport } from './routes/scripts'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as ApiPrivacyRouteImport } from './routes/api/privacy'
 import { Route as ApiTelegramRouteImport } from './routes/api/telegram'
 import { Route as ApiVoiceoverRouteImport } from './routes/api/voiceover'
 import { Route as ApiAutomationNotifyRouteImport } from './routes/api/automation/notify'
@@ -98,6 +99,11 @@ const ApiHealthRoute = ApiHealthRouteImport.update({
   path: '/api/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPrivacyRoute = ApiPrivacyRouteImport.update({
+  id: '/api/privacy',
+  path: '/api/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTelegramRoute = ApiTelegramRouteImport.update({
   id: '/api/telegram',
   path: '/api/telegram',
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/scripts': typeof ScriptsRoute
   '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/privacy': typeof ApiPrivacyRoute
   '/api/telegram': typeof ApiTelegramRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
   '/api/automation/notify': typeof ApiAutomationNotifyRoute
@@ -189,6 +196,7 @@ export interface FileRoutesByTo {
   '/scripts': typeof ScriptsRoute
   '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/privacy': typeof ApiPrivacyRoute
   '/api/telegram': typeof ApiTelegramRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
   '/api/automation/notify': typeof ApiAutomationNotifyRoute
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/scripts': typeof ScriptsRoute
   '/settings': typeof SettingsRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/privacy': typeof ApiPrivacyRoute
   '/api/telegram': typeof ApiTelegramRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
   '/api/automation/notify': typeof ApiAutomationNotifyRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/scripts'
     | '/settings'
     | '/api/health'
+    | '/api/privacy'
     | '/api/telegram'
     | '/api/voiceover'
     | '/api/automation/notify'
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
     | '/scripts'
     | '/settings'
     | '/api/health'
+    | '/api/privacy'
     | '/api/telegram'
     | '/api/voiceover'
     | '/api/automation/notify'
@@ -292,6 +303,7 @@ export interface FileRouteTypes {
     | '/scripts'
     | '/settings'
     | '/api/health'
+    | '/api/privacy'
     | '/api/telegram'
     | '/api/voiceover'
     | '/api/automation/notify'
@@ -318,6 +330,7 @@ export interface RootRouteChildren {
   ScriptsRoute: typeof ScriptsRoute
   SettingsRoute: typeof SettingsRoute
   ApiHealthRoute: typeof ApiHealthRoute
+  ApiPrivacyRoute: typeof ApiPrivacyRoute
   ApiTelegramRoute: typeof ApiTelegramRoute
   ApiVoiceoverRoute: typeof ApiVoiceoverRoute
   ApiAutomationNotifyRoute: typeof ApiAutomationNotifyRoute
@@ -423,6 +436,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/privacy': {
+      id: '/api/privacy'
+      path: '/api/privacy'
+      fullPath: '/api/privacy'
+      preLoaderRoute: typeof ApiPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/telegram': {
       id: '/api/telegram'
       path: '/api/telegram'
@@ -510,6 +530,7 @@ const rootRouteChildren: RootRouteChildren = {
   ScriptsRoute: ScriptsRoute,
   SettingsRoute: SettingsRoute,
   ApiHealthRoute: ApiHealthRoute,
+  ApiPrivacyRoute: ApiPrivacyRoute,
   ApiTelegramRoute: ApiTelegramRoute,
   ApiVoiceoverRoute: ApiVoiceoverRoute,
   ApiAutomationNotifyRoute: ApiAutomationNotifyRoute,
