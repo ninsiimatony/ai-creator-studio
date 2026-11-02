@@ -117,6 +117,50 @@ function srtFor(narration, dur) {
     .join("\n");
 }
 
+/** Thumbnail: AI picture + big title text, 1280x720 JPEG. */
+async function makeThumbnail(title) {
+  const prompt =
+    TONE === "emotional"
+      ? `Cinematic emotional photograph for a story titled "${title}", real people, deep feelings, soft dramatic light, shallow depth of field, warm and blue tones, ultra detailed, 8k, no text`
+      : `Eye-catching cinematic image for a YouTube video titled "${title}", vivid colors, dramatic lighting, sharp focus, ultra detailed, 8k, no text`;
+  const img = await studio("/api/media/image", { prompt: prompt.slice(0, 900) }, { raw: true });
+  const src = path.join(WORK, "thumb-src.jpg");
+  await writeFile(src, img);
+  const words = title.replace(/["“”]/g, "").toUpperCase().split(/\s+/).filter(Boolean);
+  const lines = [];
+  let cur = "";
+  for (const w of words) {
+    if ((cur + " " + w).trim().length > 18 && cur) {
+      lines.push(cur);
+      cur = w;
+    } else cur = (cur + " " + w).trim();
+  }
+  if (cur) lines.push(cur);
+  await writeFile(path.join(WORK, "thumb.txt"), lines.slice(0, 3).join("\n"));
+  const out = path.join(WORK, "thumb.jpg");
+  await run("ffmpeg", [
+    "-y", "-i", src,
+    "-vf",
+    "scale=1280:1280:flags=lanczos,crop=1280:720:0:280,eq=brightness=-0.06:saturation=1.15," +
+      "drawbox=x=0:y=ih*0.55:w=iw:h=ih*0.45:color=black@0.45:t=fill," +
+      "drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:textfile=thumb.txt:" +
+      "fontsize=78:fontcolor=white:borderw=5:bordercolor=black:line_spacing=10:x=48:y=h-th-48",
+    "-q:v", "3", out,
+  ], { cwd: WORK });
+  return out;
+}
+
+async function setThumbnail(videoId, file) {
+  const { accessToken } = await studio("/api/automation/youtube-token", {});
+  const body = await readFile(file);
+  const res = await fetch(`https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=${videoId}`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${accessToken}`, "content-type": "image/jpeg" },
+    body,
+  });
+  if (!res.ok) throw new Error(`thumbnail ${res.status}: ${(await res.text()).slice(0, 200)}`);
+}
+
 async function uploadToYouTube(file, title, description) {
   const { accessToken } = await studio("/api/automation/youtube-token", {});
   const size = (await stat(file)).size;
@@ -131,7 +175,7 @@ async function uploadToYouTube(file, title, description) {
         "x-upload-content-type": "video/mp4",
       },
       body: JSON.stringify({
-        snippet: { title: title.slice(0, 100), description: description.slice(0, 4900), categoryId: "28" },
+        snippet: { title: title.slice(0, 100), description: description.slice(0, 4900), categoryId: TONE === "emotional" ? "22" : "28" },
         status: { privacyStatus: "private", selfDeclaredMadeForKids: false, containsSyntheticMedia: true },
       }),
     },
@@ -287,8 +331,17 @@ async function main() {
     `Made with AI narration and stock video clips from Pixabay (https://pixabay.com).`;
   log("Uploading to YouTube (private)...");
   const id = await uploadToYouTube(final, outline.title, description);
+  let thumbNote = "";
+  try {
+    log("Making thumbnail...");
+    await setThumbnail(id, await makeThumbnail(outline.title));
+    log("Thumbnail set");
+  } catch (e) {
+    log("thumbnail skipped:", e.message);
+    thumbNote = "\n(Thumbnail could not be set this time.)";
+  }
   await notify(
-    `✅ Your video is ready (PRIVATE)\n"${outline.title}" · ${Math.round(total / 60)} min\n\nWatch: https://youtu.be/${id}\nPublish it: https://studio.youtube.com/video/${id}/edit\n\nIt is private until you press Publish.`,
+    `✅ Your video is ready (PRIVATE)\n"${outline.title}" · ${Math.round(total / 60)} min\n\nWatch: https://youtu.be/${id}\nPublish it: https://studio.youtube.com/video/${id}/edit\n\nIt is private until you press Publish.${thumbNote}`,
   );
   log("All done:", id);
 }
