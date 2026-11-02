@@ -80,7 +80,7 @@ export async function writeOutline(p: {
           `Plan a ${p.minutes}-minute YouTube video ${p.tone === "emotional" ? "that tells one emotional, human story" : "about"}: ${p.topic}\n\n` +
           `Reply with exactly this format and nothing else:\n` +
           (p.tone === "emotional"
-            ? `Title: <an emotional curiosity title under 60 characters that makes people need to know what happened, in the style of: He Waited 10 Years For His Son To Call / She Kept Setting The Table For Two / The Old Man Nobody Visited>\n`
+            ? `Title: <a dramatic emotional title under 60 characters, Title Case, built on a clear conflict and a strong word like Mocked, Ignored, Forgotten, Abandoned, Laughed At, Left Alone or Shocked, so people need to know what happened, for example: Old Man Ignored By His Children, Then This Happens / Waiter Mocked For Being Poor, Gets The Last Laugh / Grandmother Forgotten At Care Home Until One Visit>\n`
             : `Title: <a catchy YouTube title>\n`) +
           `1. <section heading>\n2. <section heading>\n... up to ${want}.\n\n` +
           `Write exactly ${want} sections that flow as one story: a strong hook first, a satisfying ending last.`,

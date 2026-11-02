@@ -25,6 +25,7 @@ import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiPrivacyRouteImport } from './routes/api/privacy'
 import { Route as ApiTelegramRouteImport } from './routes/api/telegram'
 import { Route as ApiVoiceoverRouteImport } from './routes/api/voiceover'
+import { Route as ApiAutomationCatchupRouteImport } from './routes/api/automation/catchup'
 import { Route as ApiAutomationNotifyRouteImport } from './routes/api/automation/notify'
 import { Route as ApiAutomationNotifyVideoRouteImport } from './routes/api/automation/notify-video'
 import { Route as ApiAutomationYoutubeTokenRouteImport } from './routes/api/automation/youtube-token'
@@ -115,6 +116,11 @@ const ApiVoiceoverRoute = ApiVoiceoverRouteImport.update({
   path: '/api/voiceover',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAutomationCatchupRoute = ApiAutomationCatchupRouteImport.update({
+  id: '/api/automation/catchup',
+  path: '/api/automation/catchup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAutomationNotifyRoute = ApiAutomationNotifyRouteImport.update({
   id: '/api/automation/notify',
   path: '/api/automation/notify',
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/api/privacy': typeof ApiPrivacyRoute
   '/api/telegram': typeof ApiTelegramRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
+  '/api/automation/catchup': typeof ApiAutomationCatchupRoute
   '/api/automation/notify': typeof ApiAutomationNotifyRoute
   '/api/automation/notify-video': typeof ApiAutomationNotifyVideoRoute
   '/api/automation/youtube-token': typeof ApiAutomationYoutubeTokenRoute
@@ -207,6 +214,7 @@ export interface FileRoutesByTo {
   '/api/privacy': typeof ApiPrivacyRoute
   '/api/telegram': typeof ApiTelegramRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
+  '/api/automation/catchup': typeof ApiAutomationCatchupRoute
   '/api/automation/notify': typeof ApiAutomationNotifyRoute
   '/api/automation/notify-video': typeof ApiAutomationNotifyVideoRoute
   '/api/automation/youtube-token': typeof ApiAutomationYoutubeTokenRoute
@@ -235,6 +243,7 @@ export interface FileRoutesById {
   '/api/privacy': typeof ApiPrivacyRoute
   '/api/telegram': typeof ApiTelegramRoute
   '/api/voiceover': typeof ApiVoiceoverRoute
+  '/api/automation/catchup': typeof ApiAutomationCatchupRoute
   '/api/automation/notify': typeof ApiAutomationNotifyRoute
   '/api/automation/notify-video': typeof ApiAutomationNotifyVideoRoute
   '/api/automation/youtube-token': typeof ApiAutomationYoutubeTokenRoute
@@ -264,6 +273,7 @@ export interface FileRouteTypes {
     | '/api/privacy'
     | '/api/telegram'
     | '/api/voiceover'
+    | '/api/automation/catchup'
     | '/api/automation/notify'
     | '/api/automation/notify-video'
     | '/api/automation/youtube-token'
@@ -291,6 +301,7 @@ export interface FileRouteTypes {
     | '/api/privacy'
     | '/api/telegram'
     | '/api/voiceover'
+    | '/api/automation/catchup'
     | '/api/automation/notify'
     | '/api/automation/notify-video'
     | '/api/automation/youtube-token'
@@ -318,6 +329,7 @@ export interface FileRouteTypes {
     | '/api/privacy'
     | '/api/telegram'
     | '/api/voiceover'
+    | '/api/automation/catchup'
     | '/api/automation/notify'
     | '/api/automation/notify-video'
     | '/api/automation/youtube-token'
@@ -346,6 +358,7 @@ export interface RootRouteChildren {
   ApiPrivacyRoute: typeof ApiPrivacyRoute
   ApiTelegramRoute: typeof ApiTelegramRoute
   ApiVoiceoverRoute: typeof ApiVoiceoverRoute
+  ApiAutomationCatchupRoute: typeof ApiAutomationCatchupRoute
   ApiAutomationNotifyRoute: typeof ApiAutomationNotifyRoute
   ApiAutomationNotifyVideoRoute: typeof ApiAutomationNotifyVideoRoute
   ApiAutomationYoutubeTokenRoute: typeof ApiAutomationYoutubeTokenRoute
@@ -471,6 +484,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiVoiceoverRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/automation/catchup': {
+      id: '/api/automation/catchup'
+      path: '/api/automation/catchup'
+      fullPath: '/api/automation/catchup'
+      preLoaderRoute: typeof ApiAutomationCatchupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/automation/notify': {
       id: '/api/automation/notify'
       path: '/api/automation/notify'
@@ -554,6 +574,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPrivacyRoute: ApiPrivacyRoute,
   ApiTelegramRoute: ApiTelegramRoute,
   ApiVoiceoverRoute: ApiVoiceoverRoute,
+  ApiAutomationCatchupRoute: ApiAutomationCatchupRoute,
   ApiAutomationNotifyRoute: ApiAutomationNotifyRoute,
   ApiAutomationNotifyVideoRoute: ApiAutomationNotifyVideoRoute,
   ApiAutomationYoutubeTokenRoute: ApiAutomationYoutubeTokenRoute,

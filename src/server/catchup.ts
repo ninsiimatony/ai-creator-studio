@@ -1,0 +1,123 @@
+// Reliable "3 videos a day" scheduler. Cloudflare cron calls runCatchup every 15 minutes.
+// For each of today's 3 slots (07:17, 13:17, 19:17 Oman = 03:17, 09:17, 15:17 UTC) it makes sure a video was
+// made. If a slot was skipped, failed, or GitHub/network was down, it starts it again on the next tick.
+import topics from "../../scripts/video-bot/topics.json";
+import { dispatchVideoJob, sendTelegram } from "./bot";
+import type { D1Database, WorkerEnv } from "./db";
+
+const REPO = "ninsiimatony/ai-creator-studio";
+const REF = "main";
+const SLOT_MINUTES_UTC = [3 * 60 + 17, 9 * 60 + 17, 15 * 60 + 17];
+const MAX_ATTEMPTS = 6;
+const LOST_AFTER_MS = 12 * 60 * 1000; // dispatched but GitHub never showed a run
+const STUCK_AFTER_MS = 100 * 60 * 1000; // run still going far too long
+
+type Row = { day: string; slot: number; topic: string; status: string; attempts: number; dispatched_at: string | null };
+type Run = { display_title: string; status: string; conclusion: string | null; created_at: string };
+
+async function ensureTable(db: D1Database) {
+  await db
+    .prepare(
+      "CREATE TABLE IF NOT EXISTS video_slots (day TEXT NOT NULL, slot INTEGER NOT NULL, topic TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0, dispatched_at TEXT, PRIMARY KEY (day, slot))",
+    )
+    .run();
+}
+
+function dayOfYear(d: Date) {
+  return Math.floor((d.getTime() - Date.UTC(d.getUTCFullYear(), 0, 0)) / 86400000);
+}
+
+async function fetchRuns(token: string): Promise<Run[] | null> {
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${REPO}/actions/workflows/video-bot.yml/runs?event=workflow_dispatch&per_page=40`,
+      {
+        headers: {
+          authorization: `Bearer ${token}`,
+          accept: "application/vnd.github+json",
+          "x-github-api-version": "2022-11-28",
+          "user-agent": "tony-ai-youtube-studio",
+        },
+      },
+    );
+    if (!res.ok) return null;
+    const json = (await res.json()) as { workflow_runs?: Run[] };
+    return json.workflow_runs ?? [];
+  } catch {
+    return null; // network problem: try again next tick
+  }
+}
+
+export async function runCatchup(env: WorkerEnv): Promise<string> {
+  const db = env.DB;
+  if (!db || !env.GITHUB_TOKEN) return "not configured";
+  await ensureTable(db);
+  const notify = async (text: string) => {
+    if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID)
+      await sendTelegram(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, text).catch(() => {});
+  };
+
+  const now = new Date();
+  const day = now.toISOString().slice(0, 10);
+  const minuteOfDay = now.getUTCHours() * 60 + now.getUTCMinutes();
+  const list = topics as string[];
+  const runs = await fetchRuns(env.GITHUB_TOKEN);
+
+  for (let slot = 0; slot < 3; slot++) {
+    if (minuteOfDay < SLOT_MINUTES_UTC[slot]) break; // slot not due yet
+    const topic = list[(dayOfYear(now) * 3 + slot) % list.length];
+    await db
+      .prepare("INSERT OR IGNORE INTO video_slots (day, slot, topic) VALUES (?, ?, ?)")
+      .bind(day, slot, topic)
+      .run();
+    const row = await db
+      .prepare("SELECT day, slot, topic, status, attempts, dispatched_at FROM video_slots WHERE day = ? AND slot = ?")
+      .bind(day, slot)
+      .first<Row>();
+    if (!row || row.status === "done" || row.status === "gave_up") continue;
+
+    if (row.status === "dispatched" && row.dispatched_at) {
+      if (!runs) return "github unreachable, will retry"; // cannot tell; wait for next tick
+      const since = new Date(row.dispatched_at).getTime() - 120000;
+      const mine = runs
+        .filter((r) => r.display_title === row.topic && new Date(r.created_at).getTime() >= since)
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+      const age = now.getTime() - new Date(row.dispatched_at).getTime();
+      if (mine?.status === "completed" && mine.conclusion === "success") {
+        await db.prepare("UPDATE video_slots SET status='done' WHERE day=? AND slot=?").bind(day, slot).run();
+        continue;
+      }
+      if (mine && mine.status !== "completed" && age < STUCK_AFTER_MS) return `slot ${slot} running`;
+      if (!mine && age < LOST_AFTER_MS) return `slot ${slot} starting`;
+      // failed, cancelled, lost or stuck -> fall through and start it again
+    }
+
+    if (row.attempts >= MAX_ATTEMPTS) {
+      await db.prepare("UPDATE video_slots SET status='gave_up' WHERE day=? AND slot=?").bind(day, slot).run();
+      await notify(`⚠️ Video ${slot + 1} of today failed ${MAX_ATTEMPTS} times. Send me a topic here to make it by hand.`);
+      continue;
+    }
+
+    try {
+      await dispatchVideoJob({
+        token: env.GITHUB_TOKEN,
+        repo: REPO,
+        ref: REF,
+        req: { topic: row.topic, minutes: 15, style: "real", tone: "emotional" },
+      });
+      await db
+        .prepare("UPDATE video_slots SET status='dispatched', attempts=attempts+1, dispatched_at=? WHERE day=? AND slot=?")
+        .bind(now.toISOString(), day, slot)
+        .run();
+      await notify(
+        `🎬 Starting video ${slot + 1} of 3${row.attempts > 0 ? ` (retry ${row.attempts})` : ""}: ${row.topic}`,
+      );
+      return `dispatched slot ${slot}`;
+    } catch (e) {
+      await db.prepare("UPDATE video_slots SET attempts=attempts+1 WHERE day=? AND slot=?").bind(day, slot).run();
+      console.error("catch-up dispatch failed", e);
+      return `dispatch failed slot ${slot}, will retry`;
+    }
+  }
+  return "all caught up";
+}

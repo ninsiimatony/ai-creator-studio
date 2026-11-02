@@ -7,6 +7,8 @@
   "observability": { "enabled": true },
   // Workers AI (free daily allowance): optional image + text-to-speech providers for the renderer.
   "ai": { "binding": "AI" },
+  // Catch-up check every 15 minutes: makes sure all 3 daily videos get made (retries skipped/failed ones).
+  "triggers": { "crons": ["*/15 * * * *"] },
   "d1_databases": [
     {
       "binding": "DB",

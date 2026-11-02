@@ -1,10 +1,8 @@
 name: video-bot
+run-name: ${{ inputs.topic || 'video-bot' }}
 
 # Started by the Telegram bot (through the studio). Makes a video with free tools and uploads it to YouTube as PRIVATE.
 on:
-  schedule:
-    # 3 emotional stories a day: 07:00, 13:00 and 19:00 in Oman (03:00, 09:00, 15:00 UTC)
-    - cron: "0 3,9,15 * * *"
   workflow_dispatch:
     inputs:
       topic:

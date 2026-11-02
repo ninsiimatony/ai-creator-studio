@@ -5,8 +5,13 @@
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { fileURLToPath } from "node:url";
 
 export default defineConfig({
+  // Nitro plugin that runs the 3-videos-a-day catch-up on Cloudflare cron ticks.
+  nitro: {
+    plugins: [fileURLToPath(new URL("./src/server/scheduler-plugin.ts", import.meta.url))],
+  } as never,
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
