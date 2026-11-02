@@ -31,9 +31,11 @@ const SYSTEM =
   "vivid and accurate, no stage directions, no markdown, no emojis, no headings, never mention scenes or the camera.";
 
 const SYSTEM_EMOTIONAL =
-  "You write narration for faceless YouTube videos that tell moving, emotional human stories (fiction, gentle and respectful). " +
-  "A warm, calm storyteller voice. Plain spoken English, short sentences, real feelings, small human details, a bittersweet or hopeful ending. " +
-  "No graphic violence, no medical or self-harm detail, no stage directions, no markdown, no emojis, no headings, never mention scenes or the camera.";
+  "You write narration for faceless YouTube videos that tell gripping, dramatic human stories about love, heartbreak, betrayal, cheating, family and fresh love (fiction). " +
+  "Tell it like a gripping story told to a friend: plain spoken English, short sentences, strong emotion, real dialogue (use phrases like she said, he whispered), named characters, small vivid details, secrets, tension and at least one big twist or shock. " +
+  "Every section must move the story forward and end on a hook that makes people need to hear what happens next. Never be slow, vague or preachy. " +
+  "End with a satisfying payoff: the truth comes out, someone gets what they deserve, or love wins, with real emotion. " +
+  "No explicit sexual content, no graphic violence, no medical or self-harm detail, no stage directions, no markdown, no emojis, no headings, never mention scenes or the camera.";
 
 export type Tone = "emotional" | undefined;
 const systemFor = (tone: Tone) => (tone === "emotional" ? SYSTEM_EMOTIONAL : SYSTEM);
@@ -140,12 +142,12 @@ export async function writeSection(p: {
           (first ? " Open with a gripping hook in the first two sentences." : " Continue smoothly from the previous section; do not greet or re-introduce the video.") +
           (last
             ? p.tone === "emotional"
-              ? " End with a touching conclusion, then ask the viewers one gentle personal question they can answer in the comments (for example: When did you last call your mother? Who is the person you miss the most?), and finally ask them to subscribe for a new story every day."
+              ? " End with a touching conclusion, then ask the viewers one gentle personal question they can answer in the comments (for example: Would you have forgiven him? What would you have done in her place? Have you ever been betrayed by someone you loved?), and finally ask them to subscribe for a new story every day."
               : " End with a memorable conclusion and ask viewers to subscribe."
             : " Do not conclude the video.") +
           `\n\nThen on a new last line write: VISUALS: followed by 8 short ${p.style === "cartoon" ? "animation or cartoon" : "stock video"} search terms (2-3 words each, concrete things that can be filmed, separated by semicolons).` +
           (p.tone === "emotional"
-            ? " For visuals use quiet human moments and places, for example: man sitting alone; rain on window; mother hugging child; old hands; sunset walk; empty street; family dinner; child laughing."
+            ? " For visuals use people doing the action of the story, for example: couple arguing; woman crying; man reading phone; wedding ring; hugging at airport; woman walking away; man waiting at door; couple dinner; wedding; rain on window."
             : ""),
       },
     ],
