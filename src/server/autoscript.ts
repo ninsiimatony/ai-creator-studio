@@ -79,7 +79,9 @@ export async function writeOutline(p: {
         content:
           `Plan a ${p.minutes}-minute YouTube video ${p.tone === "emotional" ? "that tells one emotional, human story" : "about"}: ${p.topic}\n\n` +
           `Reply with exactly this format and nothing else:\n` +
-          `Title: <a catchy YouTube title>\n` +
+          (p.tone === "emotional"
+            ? `Title: <an emotional curiosity title under 60 characters that makes people need to know what happened, in the style of: He Waited 10 Years For His Son To Call / She Kept Setting The Table For Two / The Old Man Nobody Visited>\n`
+            : `Title: <a catchy YouTube title>\n`) +
           `1. <section heading>\n2. <section heading>\n... up to ${want}.\n\n` +
           `Write exactly ${want} sections that flow as one story: a strong hook first, a satisfying ending last.`,
       },
@@ -136,7 +138,11 @@ export async function writeSection(p: {
           `Full plan: ${p.sections.map((s, i) => `${i + 1}. ${s}`).join(" | ")}\n\n` +
           `Write ONLY section ${p.index + 1}: "${heading}". About ${WORDS_PER_SECTION} words of narration.` +
           (first ? " Open with a gripping hook in the first two sentences." : " Continue smoothly from the previous section; do not greet or re-introduce the video.") +
-          (last ? " End with a memorable conclusion and ask viewers to subscribe." : " Do not conclude the video.") +
+          (last
+            ? p.tone === "emotional"
+              ? " End with a touching conclusion, then ask the viewers one gentle personal question they can answer in the comments (for example: When did you last call your mother? Who is the person you miss the most?), and finally ask them to subscribe for a new story every day."
+              : " End with a memorable conclusion and ask viewers to subscribe."
+            : " Do not conclude the video.") +
           `\n\nThen on a new last line write: VISUALS: followed by 8 short ${p.style === "cartoon" ? "animation or cartoon" : "stock video"} search terms (2-3 words each, concrete things that can be filmed, separated by semicolons).` +
           (p.tone === "emotional"
             ? " For visuals use quiet human moments and places, for example: man sitting alone; rain on window; mother hugging child; old hands; sunset walk; empty street; family dinner; child laughing."

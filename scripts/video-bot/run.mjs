@@ -351,8 +351,40 @@ async function main() {
     log("thumbnail skipped:", e.message);
     thumbNote = "\n(Thumbnail could not be set this time.)";
   }
+  // Short: first ~55 seconds as a vertical 1080x1920 clip, linking to the full story.
+  let shortNote = "";
+  try {
+    log("Making Short...");
+    const shortFile = path.join(WORK, "short.mp4");
+    const tl = [];
+    for (const w of outline.title.toUpperCase().split(/\s+/)) {
+      const last = tl[tl.length - 1];
+      if (last !== undefined && (last + " " + w).length <= 20) tl[tl.length - 1] = last + " " + w;
+      else tl.push(w);
+    }
+    await writeFile(path.join(WORK, "short-title.txt"), tl.slice(0, 3).join("\n"));
+    await run("ffmpeg", [
+      "-y", "-ss", "0", "-t", "55", "-i", final,
+      "-filter_complex",
+      "[0:v]split[a][b];[a]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=20:2[bg];" +
+        "[b]scale=1080:-2[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2," +
+        "drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:textfile=short-title.txt:" +
+        "fontsize=58:fontcolor=white:borderw=4:bordercolor=black:line_spacing=12:x=(w-text_w)/2:y=200,format=yuv420p[v]",
+      "-map", "[v]", "-map", "0:a", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+      "-c:a", "aac", "-b:a", "128k", "-shortest", shortFile,
+    ], { cwd: WORK });
+    const shortId = await uploadToYouTube(
+      shortFile,
+      `${outline.title.slice(0, 85)} #shorts`,
+      `Watch the full story: https://youtu.be/${id}\n\n${hashtags.join(" ")} #shorts`,
+    );
+    shortNote = `\n\nShort (1 min): https://youtu.be/${shortId}\nPublish it: https://studio.youtube.com/video/${shortId}/edit`;
+    log("Short uploaded:", shortId);
+  } catch (e) {
+    log("short skipped:", e.message);
+  }
   await notify(
-    `✅ Your video is ready (PRIVATE)\n"${outline.title}" · ${Math.round(total / 60)} min\n\nWatch: https://youtu.be/${id}\nPublish it: https://studio.youtube.com/video/${id}/edit\n\nIt is private until you press Publish.${thumbNote}`,
+    `✅ Your video is ready (PRIVATE)\n"${outline.title}" · ${Math.round(total / 60)} min\n\nWatch: https://youtu.be/${id}\nPublish it: https://studio.youtube.com/video/${id}/edit\n\nIt is private until you press Publish.${thumbNote}${shortNote}`,
   );
   log("All done:", id);
 }
