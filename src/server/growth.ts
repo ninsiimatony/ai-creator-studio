@@ -3,6 +3,7 @@ import { askAi } from "./autoscript";
 import { sendTelegram } from "./bot";
 import type { WorkerEnv } from "./db";
 import { getAccessToken } from "./google";
+import { setNote } from "./topicgen";
 
 const day = (d: Date) => d.toISOString().slice(0, 10);
 const addDays = (d: Date, n: number) => new Date(d.getTime() + n * 86400000);
@@ -97,7 +98,30 @@ export async function runWeeklyReport(env: WorkerEnv, force = false): Promise<st
     } catch {
       tips = "";
     }
-    await send(`📈 Weekly report\n\n${facts}\n\n${tips ? `💡 Tips\n${tips}` : ""}`.slice(0, 3900));
+    let themeLine = "";
+    if ((top.rows ?? []).length && cur.views > 0) {
+      try {
+        const th = await askAi(
+          env.AI!,
+          [
+            {
+              role: "system",
+              content:
+                "Below are the best videos of an emotional-story channel with their views. In ONE line of at most 25 words, name the story themes " +
+                "that did best (example: cheating husband, secret child, family betrayal). Reply with only that line.",
+            },
+            { role: "user", content: topLines.join("\n") },
+          ],
+          80,
+        );
+        const line = th.split("\n")[0].slice(0, 220);
+        await setNote(db, "winning_themes", line);
+        themeLine = `\n\n🎯 Best themes (next stories will lean toward these): ${line}`;
+      } catch {
+        /* skip */
+      }
+    }
+    await send(`📈 Weekly report\n\n${facts}\n\n${tips ? `💡 Tips\n${tips}` : ""}${themeLine}`.slice(0, 3900));
     if (!force) await db.prepare("INSERT OR IGNORE INTO weekly_reports (week, sent_at) VALUES (?, ?)").bind(week, now.toISOString()).run();
     return "sent";
   } catch (e) {

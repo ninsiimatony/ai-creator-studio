@@ -1,5 +1,6 @@
 import { runCatchup } from "./catchup";
 import { runWeeklyReport } from "./growth";
+import { refillTopics } from "./topicgen";
 
 // Nitro plugin: Cloudflare cron ticks run the catch-up check.
 export default (nitroApp: { hooks: { hook: (name: string, fn: (ctx: { env: never }) => Promise<void>) => void } }) => {
@@ -8,6 +9,12 @@ export default (nitroApp: { hooks: { hook: (name: string, fn: (ctx: { env: never
       console.log("catch-up:", await runCatchup(env));
     } catch (e) {
       console.error("catch-up crashed", e);
+    }
+    try {
+      const t = await refillTopics(env);
+      if (t !== "already checked" && t !== "enough topics") console.log("topics:", t);
+    } catch (e) {
+      console.error("topic refill crashed", e);
     }
     try {
       const r = await runWeeklyReport(env);

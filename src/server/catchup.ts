@@ -3,6 +3,7 @@
 // made. If a slot was skipped, failed, or GitHub/network was down, it starts it again on the next tick.
 import topics from "../../scripts/video-bot/topics.json";
 import { dispatchVideoJob, sendTelegram } from "./bot";
+import { pickTopic } from "./topicgen";
 import type { D1Database, WorkerEnv } from "./db";
 
 const REPO = "ninsiimatony/ai-creator-studio";
@@ -66,7 +67,9 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
 
   for (let slot = 0; slot < 3; slot++) {
     if (minuteOfDay < SLOT_MINUTES_UTC[slot]) break; // slot not due yet
-    const topic = list[(dayOfYear(now) * 3 + slot) % list.length];
+    let topic = list[(dayOfYear(now) * 3 + slot) % list.length];
+    const existing = await db.prepare("SELECT 1 AS x FROM video_slots WHERE day = ? AND slot = ?").bind(day, slot).first();
+    if (!existing) topic = await pickTopic(db, topic); // fresh topic first, built-in list as backup
     await db
       .prepare("INSERT OR IGNORE INTO video_slots (day, slot, topic) VALUES (?, ?, ?)")
       .bind(day, slot, topic)

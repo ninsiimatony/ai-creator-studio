@@ -389,6 +389,7 @@ async function main() {
   globalThis.__videoTags = hashtags.map((h) => h.slice(1));
   // Policy check (advice only; never blocks the upload).
   let policyNote = "";
+  let policyRisk = "low";
   try {
     const pc = await studio("/api/media/auto-script", {
       step: "policy",
@@ -396,6 +397,7 @@ async function main() {
       description,
       script: scenes.map((x) => x.narration).join(" "),
     });
+    policyRisk = pc.risk;
     log("Policy check:", pc.risk, JSON.stringify(pc.issues));
     if (pc.risk !== "low" && pc.issues?.length)
       policyNote = `\n\n⚠️ YouTube safety check (${pc.risk}) - look before you publish:\n` + pc.issues.map((x) => "- " + x).join("\n");
@@ -410,10 +412,20 @@ async function main() {
     if (total < 6 * 60) problems.push(`short video (${Math.round(total / 60)} min)`);
     if (size < 8 * 1024 * 1024) problems.push(`small file (${Math.round(size / 1048576)} MB)`);
     if (scenes.length < 25) problems.push(`only ${scenes.length} scenes`);
+    const audio = await run("ffprobe", ["-v", "error", "-select_streams", "a", "-show_entries", "stream=codec_type", "-of", "csv=p=0", final]);
+    if (!audio.trim()) {
+      problems.push("NO SOUND in the video");
+      policyRisk = "high";
+    }
     log("Quality check:", problems.length ? problems.join(", ") : "OK");
     policyNote += problems.length ? `\n\n⚠️ Quality check: ${problems.join(", ")}. Watch it before you publish.` : "\n✅ Quality check: OK";
   } catch (e) {
     log("Quality check skipped:", String(e.message).slice(0, 80));
+  }
+  if (process.env.BLOCK_ON_HIGH === "1" && policyRisk === "high") {
+    await notify(`🛑 Video "${outline.title}" was NOT uploaded because the checks found a high risk.${policyNote}`);
+    log("Blocked by checks");
+    return;
   }
   log("Uploading to YouTube (private)...");
   const id = await uploadToYouTube(final, outline.title, description);
