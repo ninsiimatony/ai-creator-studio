@@ -55,7 +55,7 @@ async function studio(pathname, body, { raw = false } = {}) {
       if (res.ok) return raw ? Buffer.from(await res.arrayBuffer()) : await res.json();
       const j = await res.json().catch(() => ({}));
       last = j.error ?? `HTTP ${res.status}`;
-      if (res.status === 400 && /Daily|limit|not connected|not available/i.test(last)) break;
+      if (res.status === 400 && /Daily|limit|not connected|not available|No stock clip/i.test(last)) break;
     } catch (e) {
       last = String(e?.message ?? e);
     }
@@ -317,17 +317,32 @@ async function main() {
     const dur = (await duration(voice)) + 0.5;
     await writeFile(path.join(WORK, "seg.srt"), srtFor(sc.narration, dur));
     let clip = null;
+    let animated = false;
     try {
       await wait(500);
       clip = path.join(WORK, `c${id}.mp4`);
-      await writeFile(
-        clip,
-        await studio(
+      let bytes = null;
+      if (CHANNEL === 2) {
+        // First choice: a real cartoon clip that no video has used before. When none is left, use a normal clip with the cartoon filter.
+        try {
+          bytes = await studio(
+            "/api/media/stock-clip",
+            { text: sc.narration.slice(0, 400), query: sc.term, index: i + CLIP_OFFSET, style: "cartoon", strict: true },
+            { raw: true },
+          );
+          animated = true;
+        } catch {
+          bytes = null;
+        }
+      }
+      if (!bytes) {
+        bytes = await studio(
           "/api/media/stock-clip",
           { text: sc.narration.slice(0, 400), query: sc.term, index: i + CLIP_OFFSET, style: CHANNEL === 2 ? "real" : STYLE },
           { raw: true },
-        ),
-      );
+        );
+      }
+      await writeFile(clip, bytes);
     } catch (e) {
       log(`Scene ${i + 1}: no clip (${e.message}); using a plain background`);
       clip = null;
@@ -336,7 +351,7 @@ async function main() {
     const vf =
       (clip ? `scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},` : "") +
       // Channel 2: turn normal clips into a painted cartoon look (many more clips to choose from, so no repeats).
-      (clip && CHANNEL === 2
+      (clip && CHANNEL === 2 && !animated
         ? `split[o][e];[e]edgedetect=mode=canny:low=0.10:high=0.30,negate[ed];[o]hqdn3d=8:6:10:8,eq=saturation=1.45:contrast=1.06:brightness=0.02,lutyuv=y='floor(val/16)*16+8'[c];[c][ed]blend=all_mode=multiply:all_opacity=0.75,`
         : "") +
       `fps=30,format=yuv420p,subtitles=seg.srt:force_style='FontName=DejaVu Sans,FontSize=20,Bold=1,Outline=2,Shadow=0,MarginV=36'`;
