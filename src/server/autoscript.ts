@@ -199,3 +199,42 @@ export async function writeSection(p: {
   await recordUsage(p.db, p.userId, "script", SCRIPT_MODEL, heading.length, out.narration.length, 0);
   return out;
 }
+
+/** Pre-upload YouTube policy check. Advice only: never blocks a video. */
+export async function writePolicyCheck(p: {
+  ai: AiBinding | undefined;
+  title: string;
+  description: string;
+  script: string;
+}): Promise<{ risk: "low" | "medium" | "high"; issues: string[] }> {
+  if (!p.ai) throw new AppError("The free AI writer is not available on this deployment.");
+  const text = await ask(
+    p.ai,
+    [
+      {
+        role: "system",
+        content:
+          "You check a YouTube video's text against YouTube policies before upload. Look for: advertiser-unfriendly content " +
+          "(sexual content, graphic violence, hate, harassment, self-harm, dangerous acts), child-safety problems, " +
+          "misleading or clickbait titles that the story does not deliver, real people named in defamatory ways, " +
+          "copyright problems, and spam-like text. The video is a fictional emotional story, so normal relationship drama is fine. " +
+          "Reply in exactly this format and nothing else: first line 'RISK: low' or 'RISK: medium' or 'RISK: high'. " +
+          "Then up to 4 lines, each starting with '- ', each one short plain problem. If there is no problem write '- none'.",
+      },
+      {
+        role: "user",
+        content: `TITLE: ${p.title.slice(0, 200)}\n\nDESCRIPTION: ${p.description.slice(0, 800)}\n\nSCRIPT:\n${p.script.slice(0, 6000)}`,
+      },
+    ],
+    260,
+  );
+  const m = /RISK:\s*(low|medium|high)/i.exec(text);
+  const risk = (m ? m[1].toLowerCase() : "low") as "low" | "medium" | "high";
+  const issues = text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.startsWith("- ") && !/^-\s*none/i.test(l))
+    .map((l) => l.slice(2).slice(0, 200))
+    .slice(0, 4);
+  return { risk, issues };
+}

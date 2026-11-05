@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { AppError } from "@/server/errors";
 import { hasBotBearer, requireUserOrBot } from "@/server/context";
-import { writeOutline, writeSceneTerms, writeSection } from "@/server/autoscript";
+import { writeOutline, writePolicyCheck, writeSceneTerms, writeSection } from "@/server/autoscript";
 
 const Body = z.discriminatedUnion("step", [
   z.object({
@@ -19,6 +19,12 @@ const Body = z.discriminatedUnion("step", [
     index: z.number().int().min(0).max(49),
     style: z.enum(["real", "cartoon"]),
     tone: z.enum(["emotional"]).optional(),
+  }),
+  z.object({
+    step: z.literal("policy"),
+    title: z.string().min(1).max(300),
+    description: z.string().max(5000),
+    script: z.string().min(1).max(40000),
   }),
   z.object({
     step: z.literal("scenes"),
@@ -40,7 +46,9 @@ export const Route = createFileRoute("/api/media/auto-script")({
           const { db, user, env } = await requireUserOrBot(request);
           const body = Body.parse(await request.json().catch(() => ({})));
           const out =
-            body.step === "scenes"
+            body.step === "policy"
+              ? await writePolicyCheck({ ai: env.AI, title: body.title, description: body.description, script: body.script })
+              : body.step === "scenes"
               ? await writeSceneTerms({ db, userId: user.id, ai: env.AI, scenes: body.scenes, style: body.style })
               : body.step === "outline"
               ? await writeOutline({ db, userId: user.id, ai: env.AI, topic: body.topic, minutes: body.minutes, tone: body.tone })

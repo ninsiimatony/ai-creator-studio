@@ -387,6 +387,22 @@ async function main() {
     `Made with AI narration and stock video clips from Pixabay (https://pixabay.com).\n\n` +
     hashtags.join(" ");
   globalThis.__videoTags = hashtags.map((h) => h.slice(1));
+  // Policy check (advice only; never blocks the upload).
+  let policyNote = "";
+  try {
+    const pc = await studio("/api/media/auto-script", {
+      step: "policy",
+      title: outline.title,
+      description,
+      script: scenes.map((x) => x.narration).join(" "),
+    });
+    log("Policy check:", pc.risk, JSON.stringify(pc.issues));
+    if (pc.risk !== "low" && pc.issues?.length)
+      policyNote = `\n\n⚠️ YouTube safety check (${pc.risk}) - look before you publish:\n` + pc.issues.map((x) => "- " + x).join("\n");
+    else policyNote = "\n\n🛡 YouTube safety check: OK";
+  } catch (e) {
+    log("Policy check skipped:", String(e.message).slice(0, 80));
+  }
   log("Uploading to YouTube (private)...");
   const id = await uploadToYouTube(final, outline.title, description);
   let thumbNote = "";
@@ -445,7 +461,7 @@ async function main() {
     log("short skipped:", e.message);
   }
   await notify(
-    `✅ Your video is ready (PRIVATE)\n"${outline.title}" · ${Math.round(total / 60)} min\n\nWatch: https://youtu.be/${id}\nPublish it: https://studio.youtube.com/video/${id}/edit\n\nIt is private until you press Publish.${thumbNote}${shortNote}`,
+    `✅ Your video is ready (PRIVATE)\n"${outline.title}" · ${Math.round(total / 60)} min\n\nWatch: https://youtu.be/${id}\nPublish it: https://studio.youtube.com/video/${id}/edit\n\nIt is private until you press Publish.${thumbNote}${shortNote}${policyNote}`,
   );
   log("All done:", id);
 }
