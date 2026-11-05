@@ -61,7 +61,9 @@ export async function fetchStockClip(p: {
   const kw = stockKeywords(text);
   const own = (p.query ?? "").replace(/\s+/g, " ").trim().slice(0, 100);
   const queries = [
-    ...new Set([own, kw.join(" "), kw[0] ?? "", "technology"].filter(Boolean)),
+    ...new Set(
+      [own, own.split(" ").slice(0, 2).join(" "), kw.join(" "), kw[0] ?? "", "technology"].filter(Boolean),
+    ),
   ];
   const index = Math.max(0, Math.floor(p.index ?? 0));
 

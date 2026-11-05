@@ -284,8 +284,19 @@ async function main() {
       style: STYLE,
       tone: TONE,
     });
-    splitScenes(sec.narration).forEach((narration, k) =>
-      scenes.push({ narration, term: sec.visuals[k % Math.max(1, sec.visuals.length)] ?? outline.sections[i] }),
+    const parts = splitScenes(sec.narration);
+    // Ask the AI for one filmable search phrase per scene, so each clip matches its own sentences.
+    let terms = [];
+    try {
+      terms = (await studio("/api/media/auto-script", { step: "scenes", scenes: parts.slice(0, 40), style: STYLE })).terms ?? [];
+    } catch (e) {
+      log(`Part ${i + 1}: scene matching skipped (${String(e.message).slice(0, 80)})`);
+    }
+    parts.forEach((narration, k) =>
+      scenes.push({
+        narration,
+        term: terms[k] || sec.visuals[k % Math.max(1, sec.visuals.length)] || outline.sections[i],
+      }),
     );
     log(`Script part ${i + 1}/${outline.sections.length} done`);
   }

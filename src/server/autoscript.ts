@@ -96,6 +96,47 @@ export async function writeOutline(p: {
   return { title: out.title || p.topic, sections: out.sections };
 }
 
+/** One stock-footage search phrase per scene sentence, so the picture matches what the narration says. */
+export async function writeSceneTerms(p: {
+  db: D1Database;
+  userId: string;
+  ai: AiBinding | undefined;
+  scenes: string[];
+  style: "real" | "cartoon";
+}): Promise<{ terms: string[] }> {
+  if (!p.ai) throw new AppError("The free AI writer is not available on this deployment.");
+  const list = p.scenes.map((s, i) => `${i + 1}. ${s.slice(0, 400)}`).join("\n");
+  const text = await ask(
+    p.ai,
+    [
+      {
+        role: "system",
+        content:
+          "You are a film editor choosing stock footage. For each numbered scene of a narrated story, write ONE search phrase " +
+          "of 2 to 4 words for a ${KIND} clip that shows what the narration describes: the people, what they are doing, and where. " +
+          "Use only things a camera can film (for example: woman crying kitchen, man waiting bus stop, couple arguing living room, " +
+          "old man walking alone, wedding ring close up, rain window night). Never use abstract words like betrayal, trust or love. " +
+          "Reply with exactly one line per scene in the form '1: phrase' and nothing else.".replace(
+            "${KIND}",
+            p.style === "cartoon" ? "cartoon or animation" : "real stock video",
+          ),
+      },
+      { role: "user", content: list },
+    ],
+    60 + p.scenes.length * 25,
+  );
+  const terms: string[] = p.scenes.map(() => "");
+  for (const line of text.split(/\r?\n/)) {
+    const m = line.match(/^\s*(\d+)\s*[:.)\-]\s*(.+)$/);
+    if (!m) continue;
+    const i = Number(m[1]) - 1;
+    const t = m[2]!.replace(/[^a-zA-Z0-9 ]/g, " ").replace(/\s+/g, " ").trim().split(" ").slice(0, 5).join(" ");
+    if (i >= 0 && i < terms.length && t.length >= 3) terms[i] = t;
+  }
+  await recordUsage(p.db, p.userId, "script", SCRIPT_MODEL, list.length, text.length, 0);
+  return { terms };
+}
+
 /** Split the AI reply into narration and the "VISUALS:" search terms line. */
 export function parseSection(text: string): { narration: string; visuals: string[] } {
   const idx = text.search(/^\s*visuals?\s*:/im);
