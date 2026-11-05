@@ -287,14 +287,14 @@ async function main() {
       title: outline.title,
       sections: outline.sections,
       index: i,
-      style: STYLE,
+      style: CHANNEL === 2 ? "real" : STYLE,
       tone: TONE,
     });
     const parts = splitScenes(sec.narration);
     // Ask the AI for one filmable search phrase per scene, so each clip matches its own sentences.
     let terms = [];
     try {
-      terms = (await studio("/api/media/auto-script", { step: "scenes", scenes: parts.slice(0, 40), style: STYLE })).terms ?? [];
+      terms = (await studio("/api/media/auto-script", { step: "scenes", scenes: parts.slice(0, 40), style: CHANNEL === 2 ? "real" : STYLE })).terms ?? [];
     } catch (e) {
       log(`Part ${i + 1}: scene matching skipped (${String(e.message).slice(0, 80)})`);
     }
@@ -324,7 +324,7 @@ async function main() {
         clip,
         await studio(
           "/api/media/stock-clip",
-          { text: sc.narration.slice(0, 400), query: sc.term, index: i + CLIP_OFFSET, style: STYLE },
+          { text: sc.narration.slice(0, 400), query: sc.term, index: i + CLIP_OFFSET, style: CHANNEL === 2 ? "real" : STYLE },
           { raw: true },
         ),
       );
@@ -335,6 +335,10 @@ async function main() {
     const seg = path.join(WORK, `seg${id}.mp4`);
     const vf =
       (clip ? `scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},` : "") +
+      // Channel 2: turn normal clips into a painted cartoon look (many more clips to choose from, so no repeats).
+      (clip && CHANNEL === 2
+        ? `split[o][e];[e]edgedetect=mode=canny:low=0.10:high=0.30,negate[ed];[o]hqdn3d=8:6:10:8,eq=saturation=1.45:contrast=1.06:brightness=0.02,lutyuv=y='floor(val/16)*16+8'[c];[c][ed]blend=all_mode=multiply:all_opacity=0.75,`
+        : "") +
       `fps=30,format=yuv420p,subtitles=seg.srt:force_style='FontName=DejaVu Sans,FontSize=20,Bold=1,Outline=2,Shadow=0,MarginV=36'`;
     const input = clip
       ? ["-stream_loop", "-1", "-i", clip]
