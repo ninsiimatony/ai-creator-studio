@@ -26,6 +26,8 @@ async function ask(ai: AiBinding, messages: Msg[], maxTokens: number): Promise<s
   return text.trim();
 }
 
+export { ask as askAi };
+
 const SYSTEM =
   "You write narration for faceless YouTube documentary videos. Plain spoken English, short clear sentences, " +
   "vivid and accurate, no stage directions, no markdown, no emojis, no headings, never mention scenes or the camera.";
