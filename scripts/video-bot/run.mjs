@@ -403,6 +403,18 @@ async function main() {
   } catch (e) {
     log("Policy check skipped:", String(e.message).slice(0, 80));
   }
+  // Quality check (advice only): catch a video that came out too short, too small or with too few scenes.
+  try {
+    const { size } = await stat(final);
+    const problems = [];
+    if (total < 6 * 60) problems.push(`short video (${Math.round(total / 60)} min)`);
+    if (size < 8 * 1024 * 1024) problems.push(`small file (${Math.round(size / 1048576)} MB)`);
+    if (scenes.length < 25) problems.push(`only ${scenes.length} scenes`);
+    log("Quality check:", problems.length ? problems.join(", ") : "OK");
+    policyNote += problems.length ? `\n\n⚠️ Quality check: ${problems.join(", ")}. Watch it before you publish.` : "\n✅ Quality check: OK";
+  } catch (e) {
+    log("Quality check skipped:", String(e.message).slice(0, 80));
+  }
   log("Uploading to YouTube (private)...");
   const id = await uploadToYouTube(final, outline.title, description);
   let thumbNote = "";
