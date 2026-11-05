@@ -158,18 +158,20 @@ function pickFace(title, topic) {
 /** Thumbnail: AI background + Tony's face + big title text, 1280x720 JPEG. */
 async function makeThumbnail(title) {
   const prompt =
-    TONE === "emotional"
+    CHANNEL === 2
+      ? `Colorful 3D animated cartoon movie scene for a story titled "${title}", Pixar style, expressive characters, warm cinematic lighting, ultra detailed, no text`
+      : TONE === "emotional"
       ? `Cinematic emotional background scene for a story titled "${title}", soft dramatic light, warm and blue tones, shallow depth of field, ultra detailed, 8k, no people in foreground, no text`
       : `Eye-catching cinematic background for a YouTube video titled "${title}", vivid colors, dramatic lighting, ultra detailed, 8k, no text`;
   const img = await studio("/api/media/image", { prompt: prompt.slice(0, 900) }, { raw: true });
   const src = path.join(WORK, "thumb-src.jpg");
   await writeFile(src, img);
-  const face = pickFace(title, TOPIC);
+  const face = CHANNEL === 2 ? "none" : pickFace(title, TOPIC); // channel 2 is faceless
   const here = path.dirname(new URL(import.meta.url).pathname);
   const out = path.join(WORK, "thumb.jpg");
   log("Thumbnail face:", face);
   await run("python3", [
-    path.join(here, "thumb.py"), src, path.join(here, "faces", `${face}.png`),
+    path.join(here, "thumb.py"), src, face === "none" ? "none" : path.join(here, "faces", `${face}.png`),
     face === "pointing" ? "left" : "right", title, out,
   ]);
   return out;

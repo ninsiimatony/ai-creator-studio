@@ -17,9 +17,11 @@ for x in range(W):
     t = x / W if side == "left" else 1 - x / W
     d.line([(x, 0), (x, H)], fill=(0, 0, 0, int(190 * max(0, min(1, (t - 0.25) / 0.5)))))
 bg = Image.alpha_composite(bg, ov)
-face = Image.open(face_path).convert("RGBA")
+NOFACE = face_path == "none"
+face = Image.new("RGBA", (10, H), (0, 0, 0, 0)) if NOFACE else Image.open(face_path).convert("RGBA")
 fh = int(H * 1.0)
-face = face.resize((int(face.width * fh / face.height), fh), Image.LANCZOS)
+if not NOFACE:
+    face = face.resize((int(face.width * fh / face.height), fh), Image.LANCZOS)
 # fade the inner edge so a cut-off photo edge never shows as a hard line
 from PIL import ImageChops
 m = Image.new("L", face.size, 255); md = ImageDraw.Draw(m)
@@ -33,8 +35,9 @@ face.putalpha(ImageChops.multiply(face.split()[3], m))
 glow = Image.new("RGBA", (W, H), (0, 0, 0, 0)); gd = ImageDraw.Draw(glow)
 fx = W - face.width + 30 if side == "right" else -30
 gd.ellipse((fx + 40, 80, fx + face.width - 40, H + 200), fill=(255, 190, 80, 110))
-bg = Image.alpha_composite(bg, glow.filter(ImageFilter.GaussianBlur(70)))
-bg.alpha_composite(face, (fx, H - face.height))
+if not NOFACE:
+    bg = Image.alpha_composite(bg, glow.filter(ImageFilter.GaussianBlur(70)))
+    bg.alpha_composite(face, (fx, H - face.height))
 # text block on the other side
 area_x = 40 if side == "right" else face.width - 10
 area_w = (W - face.width + 10) - 60 if side == "right" else W - area_x - 40
