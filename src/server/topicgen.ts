@@ -8,6 +8,11 @@ async function ensure(db: D1Database) {
     .prepare("CREATE TABLE IF NOT EXISTS extra_topics (id INTEGER PRIMARY KEY AUTOINCREMENT, topic TEXT NOT NULL UNIQUE, used INTEGER NOT NULL DEFAULT 0, created_at TEXT)")
     .run();
   await db.prepare("CREATE TABLE IF NOT EXISTS app_notes (key TEXT PRIMARY KEY, value TEXT)").run();
+  try {
+    await db.prepare("ALTER TABLE extra_topics ADD COLUMN channel INTEGER NOT NULL DEFAULT 1").run();
+  } catch {
+    /* column already exists */
+  }
 }
 
 export async function getNote(db: D1Database, key: string): Promise<string> {
@@ -20,10 +25,10 @@ export async function setNote(db: D1Database, key: string, value: string) {
 }
 
 /** Next unused fresh topic, or the fallback from the built-in list. */
-export async function pickTopic(db: D1Database, fallback: string): Promise<string> {
+export async function pickTopic(db: D1Database, fallback: string, channel = 1): Promise<string> {
   try {
     await ensure(db);
-    const row = await db.prepare("SELECT id, topic FROM extra_topics WHERE used=0 ORDER BY id LIMIT 1").first<{ id: number; topic: string }>();
+    const row = await db.prepare("SELECT id, topic FROM extra_topics WHERE used=0 AND channel=? ORDER BY id LIMIT 1").bind(channel).first<{ id: number; topic: string }>();
     if (!row) return fallback;
     await db.prepare("UPDATE extra_topics SET used=1 WHERE id=?").bind(row.id).run();
     return row.topic;
@@ -89,4 +94,39 @@ export async function refillTopics(env: WorkerEnv): Promise<string> {
     if ((r as { meta?: { changes?: number } }).meta?.changes) added++;
   }
   return `added ${added} topics (${titles.length ? "with" : "without"} internet ideas)`;
+}
+
+/** Second channel: different stories (family, faith, hope), own topic pool. Only runs once that channel is connected. */
+export async function refillTopics2(env: WorkerEnv): Promise<string> {
+  const db = env.DB;
+  if (!db || !env.AI) return "not configured";
+  await ensure(db);
+  const today = new Date().toISOString().slice(0, 10);
+  if ((await getNote(db, "topics2_refill_day")) === today) return "already checked";
+  const left = (await db.prepare("SELECT COUNT(*) AS n FROM extra_topics WHERE used=0 AND channel=2").first<{ n: number }>())?.n ?? 0;
+  await setNote(db, "topics2_refill_day", today);
+  if (left >= 8) return "enough topics";
+  const text = await askAi(
+    env.AI,
+    [
+      {
+        role: "system",
+        content:
+          "You invent story topics for a YouTube channel of emotional fictional FAMILY and LIFE stories: parents and children, forgiveness, " +
+          "faith tested, sacrifice, honesty rewarded, a poor person who surprises everyone, a reunion after many years. " +
+          "NOT romance or cheating. Write 10 ORIGINAL topics, one per line, each 12 to 25 words, a clear situation with a conflict and a twist " +
+          "to come. No real names or places of real people, no explicit content. Plain English. Reply with only the 10 lines, no numbers.",
+      },
+      { role: "user", content: "Write the 10 topics." },
+    ],
+    800,
+  );
+  let added = 0;
+  for (const raw of text.split("\n")) {
+    const t = raw.replace(/^\s*(\d+[.)]|[-*•])\s*/, "").trim();
+    if (t.length < 25 || t.length > 260) continue;
+    const r = await db.prepare("INSERT OR IGNORE INTO extra_topics (topic, created_at, channel) VALUES (?, ?, 2)").bind(t, new Date().toISOString()).run();
+    if ((r as { meta?: { changes?: number } }).meta?.changes) added++;
+  }
+  return `added ${added} channel-2 topics`;
 }

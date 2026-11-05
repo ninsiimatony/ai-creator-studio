@@ -32,6 +32,8 @@ export type WorkerEnv = {
   AI_MODEL_FAST?: string;
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
+  GOOGLE_CLIENT_ID_2?: string;
+  GOOGLE_CLIENT_SECRET_2?: string;
   /** Base64 of 32 random bytes; encrypts stored Google refresh tokens. */
   TOKEN_ENC_KEY?: string;
   ELEVENLABS_API_KEY?: string;

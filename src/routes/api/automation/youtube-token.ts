@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppError } from "@/server/errors";
 import { requireUserOrBot, hasBotBearer } from "@/server/context";
 import { getAccessToken } from "@/server/google";
+import { getAccessToken2 } from "@/server/google2";
 
 const fail = (status: number, error: string) =>
   Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
@@ -14,7 +15,9 @@ export const Route = createFileRoute("/api/automation/youtube-token")({
         if (!hasBotBearer(request)) return fail(403, "Not allowed.");
         try {
           const { db, env, user } = await requireUserOrBot(request);
-          const { accessToken } = await getAccessToken(db, env, user.id, fetch);
+          const body = (await request.json().catch(() => ({}))) as { channel?: number };
+          const { accessToken } =
+            body.channel === 2 ? await getAccessToken2(db, env, fetch) : await getAccessToken(db, env, user.id, fetch);
           return Response.json({ accessToken }, { headers: { "Cache-Control": "no-store" } });
         } catch (e) {
           if (e instanceof AppError) return fail(400, e.message);
