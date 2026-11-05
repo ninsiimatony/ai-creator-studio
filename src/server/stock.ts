@@ -27,7 +27,7 @@ export function stockKeywords(text: string): string[] {
 }
 
 type Rendition = { url?: string; size?: number };
-type Hit = { videos?: { large?: Rendition; medium?: Rendition; small?: Rendition; tiny?: Rendition } };
+type Hit = { id?: number; videos?: { large?: Rendition; medium?: Rendition; small?: Rendition; tiny?: Rendition } };
 
 const MAX_CLIP_BYTES = 30 * 1024 * 1024;
 
@@ -51,8 +51,12 @@ export async function fetchStockClip(p: {
   style?: "real" | "cartoon";
   /** Use the smaller file (640 wide): lighter on memory for long videos. */
   small?: boolean;
+  /** Pixabay clip ids not to use again (so videos do not repeat clips). */
+  exclude?: number[];
+  /** Only a fresh clip for the exact search; no fallback searches. Throws when none is left. */
+  strict?: boolean;
   fetcher?: typeof fetch;
-}): Promise<{ bytes: Uint8Array; mime: string }> {
+}): Promise<{ bytes: Uint8Array; mime: string; id?: number }> {
   if (!p.apiKey)
     throw new AppError("Stock clips are not connected. Add the PIXABAY_API_KEY secret.");
   const f = p.fetcher ?? fetch;
@@ -62,12 +66,17 @@ export async function fetchStockClip(p: {
   const own = (p.query ?? "").replace(/\s+/g, " ").trim().slice(0, 100);
   const queries = [
     ...new Set(
-      [own, own.split(" ").slice(0, 2).join(" "), kw.join(" "), kw[0] ?? "", "technology"].filter(Boolean),
+      (p.strict
+        ? [own, own.split(" ").slice(0, 2).join(" "), kw.join(" "), kw[0] ?? ""]
+        : [own, own.split(" ").slice(0, 2).join(" "), kw.join(" "), kw[0] ?? "", "technology"]
+      ).filter(Boolean),
     ),
   ];
   const index = Math.max(0, Math.floor(p.index ?? 0));
 
   let clipUrl: string | null = null;
+  let clipId: number | undefined;
+  const skip = new Set(p.exclude ?? []);
   for (const q of queries) {
     const url =
       "https://pixabay.com/api/videos/?" +
@@ -99,8 +108,12 @@ export async function fetchStockClip(p: {
     if (!res.ok) throw new AppError("Pixabay is not answering right now. Please try again.");
     const json = (await res.json().catch(() => null)) as { hits?: Hit[] } | null;
     const usable = (json?.hits ?? []).filter((h) => pickRendition(h, p.small));
-    if (usable.length) {
-      clipUrl = pickRendition(usable[index % usable.length]!, p.small);
+    const fresh = skip.size ? usable.filter((h) => h.id === undefined || !skip.has(h.id)) : usable;
+    const pool = fresh.length ? fresh : p.strict ? [] : usable;
+    if (pool.length) {
+      const hit = pool[index % pool.length]!;
+      clipUrl = pickRendition(hit, p.small);
+      clipId = hit.id;
       break;
     }
   }
@@ -119,5 +132,5 @@ export async function fetchStockClip(p: {
   const bytes = new Uint8Array(await clip.arrayBuffer());
   if (!bytes.length || bytes.length > MAX_CLIP_BYTES)
     throw new AppError("The stock clip was empty or too large. Please try again.");
-  return { bytes, mime: "video/mp4" };
+  return { bytes, mime: "video/mp4", ...(clipId !== undefined ? { id: clipId } : {}) };
 }
