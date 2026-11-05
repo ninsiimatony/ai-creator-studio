@@ -64,9 +64,11 @@ async function studio(pathname, body, { raw = false } = {}) {
   throw new Error(last || "The studio did not answer.");
 }
 
+const CHANNEL = process.env.CHANNEL === "2" ? 2 : 1;
+
 async function notify(text) {
   try {
-    await studio("/api/automation/notify", { text });
+    await studio("/api/automation/notify", { text: CHANNEL === 2 ? `[Channel 2] ${text}` : text });
   } catch (e) {
     log("notify failed:", e.message);
   }
@@ -174,7 +176,7 @@ async function makeThumbnail(title) {
 }
 
 async function setThumbnail(videoId, file) {
-  const { accessToken } = await studio("/api/automation/youtube-token", {});
+  const { accessToken } = await studio("/api/automation/youtube-token", { channel: CHANNEL });
   const body = await readFile(file);
   const res = await fetch(`https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=${videoId}`, {
     method: "POST",
@@ -185,7 +187,7 @@ async function setThumbnail(videoId, file) {
 }
 
 async function uploadToYouTube(file, title, description) {
-  const { accessToken } = await studio("/api/automation/youtube-token", {});
+  const { accessToken } = await studio("/api/automation/youtube-token", { channel: CHANNEL });
   const size = (await stat(file)).size;
   const init = await fetch(
     "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status",
@@ -265,7 +267,7 @@ async function main() {
   log("Topic:", TOPIC, "| minutes:", MINUTES, "| style:", STYLE, "| voice:", EDGE_VOICE);
   // Check YouTube access first, so we never spend 20 minutes making a video we cannot upload.
   try {
-    await studio("/api/automation/youtube-token", {});
+    await studio("/api/automation/youtube-token", { channel: CHANNEL });
   } catch (e) {
     throw new Error(`Google access expired. Reconnect YouTube in the studio. (${e.message})`);
   }

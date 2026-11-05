@@ -36,6 +36,7 @@ import { Route as ApiMediaStockClipRouteImport } from './routes/api/media/stock-
 import { Route as ApiMediaTtsRouteImport } from './routes/api/media/tts'
 import { Route as ApiYoutubeThumbnailRouteImport } from './routes/api/youtube/thumbnail'
 import { Route as ApiAuthGoogleCallbackRouteImport } from './routes/api/auth/google/callback'
+import { Route as ApiAuthGoogle2StartRouteImport } from './routes/api/auth/google2/start'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -175,6 +176,11 @@ const ApiAuthGoogleCallbackRoute = ApiAuthGoogleCallbackRouteImport.update({
   path: '/api/auth/google/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthGoogle2StartRoute = ApiAuthGoogle2StartRouteImport.update({
+  id: '/api/auth/google2/start',
+  path: '/api/auth/google2/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -204,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/api/media/tts': typeof ApiMediaTtsRoute
   '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
+  '/api/auth/google2/start': typeof ApiAuthGoogle2StartRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -233,6 +240,7 @@ export interface FileRoutesByTo {
   '/api/media/tts': typeof ApiMediaTtsRoute
   '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
+  '/api/auth/google2/start': typeof ApiAuthGoogle2StartRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -263,6 +271,7 @@ export interface FileRoutesById {
   '/api/media/tts': typeof ApiMediaTtsRoute
   '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
+  '/api/auth/google2/start': typeof ApiAuthGoogle2StartRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -294,6 +303,7 @@ export interface FileRouteTypes {
     | '/api/media/tts'
     | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
+    | '/api/auth/google2/start'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -323,6 +333,7 @@ export interface FileRouteTypes {
     | '/api/media/tts'
     | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
+    | '/api/auth/google2/start'
   id:
     | '__root__'
     | '/'
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/api/media/tts'
     | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
+    | '/api/auth/google2/start'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -382,6 +394,7 @@ export interface RootRouteChildren {
   ApiMediaTtsRoute: typeof ApiMediaTtsRoute
   ApiYoutubeThumbnailRoute: typeof ApiYoutubeThumbnailRoute
   ApiAuthGoogleCallbackRoute: typeof ApiAuthGoogleCallbackRoute
+  ApiAuthGoogle2StartRoute: typeof ApiAuthGoogle2StartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -575,6 +588,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthGoogleCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/google2/start': {
+      id: '/api/auth/google2/start'
+      path: '/api/auth/google2/start'
+      fullPath: '/api/auth/google2/start'
+      preLoaderRoute: typeof ApiAuthGoogle2StartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -606,6 +626,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMediaTtsRoute: ApiMediaTtsRoute,
   ApiYoutubeThumbnailRoute: ApiYoutubeThumbnailRoute,
   ApiAuthGoogleCallbackRoute: ApiAuthGoogleCallbackRoute,
+  ApiAuthGoogle2StartRoute: ApiAuthGoogle2StartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

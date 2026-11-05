@@ -20,6 +20,10 @@ on:
         description: emotional (optional)
         required: false
         default: ""
+      channel:
+        description: 2 for the second channel (optional)
+        required: false
+        default: ""
 
 concurrency:
   group: video-bot
@@ -47,5 +51,6 @@ jobs:
           MINUTES: ${{ inputs.minutes || env.MINUTES }}
           STYLE: ${{ inputs.style || env.STYLE }}
           TONE: ${{ inputs.tone || env.TONE }}
+          CHANNEL: ${{ inputs.channel }}
           BLOCK_ON_HIGH: ${{ vars.BLOCK_ON_HIGH }}
         run: node scripts/video-bot/run.mjs
