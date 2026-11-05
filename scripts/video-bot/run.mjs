@@ -65,6 +65,8 @@ async function studio(pathname, body, { raw = false } = {}) {
 }
 
 const CHANNEL = process.env.CHANNEL === "2" ? 2 : 1;
+// Random start so different videos pick different clips from the same search.
+const CLIP_OFFSET = Math.floor(Math.random() * 20);
 
 async function notify(text) {
   try {
@@ -322,7 +324,7 @@ async function main() {
         clip,
         await studio(
           "/api/media/stock-clip",
-          { text: sc.narration.slice(0, 400), query: sc.term, index: i, style: STYLE },
+          { text: sc.narration.slice(0, 400), query: sc.term, index: i + CLIP_OFFSET, style: STYLE },
           { raw: true },
         ),
       );
@@ -377,7 +379,9 @@ async function main() {
   const topicTags = TOPIC.toLowerCase().replace(/[^a-z ]/g, " ").split(/\s+/)
     .filter((w) => w.length > 3 && !["about", "their", "with", "from", "that", "this", "until", "every", "after"].includes(w))
     .slice(0, 3).map((w) => `#${w}`);
-  const baseTags = TONE === "emotional"
+  const baseTags = CHANNEL === 2
+    ? ["#animation", "#cartoonstory", "#animatedstory", "#familystory", "#faith", "#hope"]
+    : TONE === "emotional"
     ? ["#emotionalstory", "#sadstory", "#lifelessons", "#storytime", "#touchingstory"]
     : ["#explained", "#documentary", "#facts"];
   const hashtags = [...new Set([...baseTags, ...topicTags])].slice(0, 8);
