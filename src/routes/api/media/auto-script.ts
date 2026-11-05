@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { AppError } from "@/server/errors";
 import { hasBotBearer, requireUserOrBot } from "@/server/context";
-import { writeOutline, writeSection } from "@/server/autoscript";
+import { writeOutline, writeSceneTerms, writeSection } from "@/server/autoscript";
 
 const Body = z.discriminatedUnion("step", [
   z.object({
@@ -20,6 +20,11 @@ const Body = z.discriminatedUnion("step", [
     style: z.enum(["real", "cartoon"]),
     tone: z.enum(["emotional"]).optional(),
   }),
+  z.object({
+    step: z.literal("scenes"),
+    scenes: z.array(z.string().min(1).max(600)).min(1).max(40),
+    style: z.enum(["real", "cartoon"]),
+  }),
 ]);
 const fail = (status: number, error: string) =>
   Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
@@ -35,7 +40,9 @@ export const Route = createFileRoute("/api/media/auto-script")({
           const { db, user, env } = await requireUserOrBot(request);
           const body = Body.parse(await request.json().catch(() => ({})));
           const out =
-            body.step === "outline"
+            body.step === "scenes"
+              ? await writeSceneTerms({ db, userId: user.id, ai: env.AI, scenes: body.scenes, style: body.style })
+              : body.step === "outline"
               ? await writeOutline({ db, userId: user.id, ai: env.AI, topic: body.topic, minutes: body.minutes, tone: body.tone })
               : await writeSection({
                   db,
