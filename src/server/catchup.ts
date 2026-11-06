@@ -6,6 +6,7 @@ import topics2 from "../../scripts/video-bot/topics2.json";
 import { channel2Connected } from "./google2";
 import { dispatchVideoJob, sendTelegram } from "./bot";
 import { pickTopic } from "./topicgen";
+import { runWatchdog } from "./watchdog";
 import type { D1Database, WorkerEnv } from "./db";
 
 const REPO = "ninsiimatony/ai-creator-studio";
@@ -56,6 +57,7 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
   const db = env.DB;
   if (!db || !env.GITHUB_TOKEN) return "not configured";
   await ensureTable(db);
+  await runWatchdog(env).catch((e) => console.log("watchdog:", String(e).slice(0, 100)));
   const notify = async (text: string) => {
     if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID)
       await sendTelegram(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, text).catch(() => {});
