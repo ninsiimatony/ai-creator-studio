@@ -182,7 +182,7 @@ export async function writeSection(p: {
           `Video title: ${p.title}\nTopic: ${p.topic}\n` +
           `Full plan: ${p.sections.map((s, i) => `${i + 1}. ${s}`).join(" | ")}\n\n` +
           `Write ONLY section ${p.index + 1}: "${heading}". About ${WORDS_PER_SECTION} words of narration.` +
-          (first ? " Open with a gripping hook in the first two sentences." : " Continue smoothly from the previous section; do not greet or re-introduce the video.") +
+          (first ? " The very first sentence must drop the listener into the most shocking or emotional moment of the story (the hook), then go back and explain how it happened. No greeting, no slow introduction, no scene-setting before the hook." : " Continue smoothly from the previous section; do not greet or re-introduce the video.") +
           (last
             ? p.tone === "emotional"
               ? " End with a touching conclusion, then ask the viewers one gentle personal question they can answer in the comments (for example: Would you have forgiven him? What would you have done in her place? Have you ever been betrayed by someone you loved?), and finally ask them to subscribe for a new story every day."

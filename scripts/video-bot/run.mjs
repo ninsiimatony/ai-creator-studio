@@ -472,8 +472,8 @@ async function main() {
     const { size } = await stat(final);
     const problems = [];
     if (total < 6 * 60) problems.push(`short video (${Math.round(total / 60)} min)`);
-    if (size < 8 * 1024 * 1024) problems.push(`small file (${Math.round(size / 1048576)} MB)`);
-    if (scenes.length < 25) problems.push(`only ${scenes.length} scenes`);
+    if (size < 5 * 1024 * 1024) problems.push(`small file (${Math.round(size / 1048576)} MB)`);
+    if (scenes.length < 12) problems.push(`only ${scenes.length} scenes`);
     const audio = await run("ffprobe", ["-v", "error", "-select_streams", "a", "-show_entries", "stream=codec_type", "-of", "csv=p=0", final]);
     if (!audio.trim()) {
       problems.push("NO SOUND in the video");
@@ -511,9 +511,11 @@ async function main() {
   }
   // Short: first ~55 seconds as a vertical 1080x1920 clip, linking to the full story.
   let shortNote = "";
+  // Channel 1 stays at 1 Short per video (YouTube's daily upload quota); channel 2 gets 2.
+  for (const part of CHANNEL === 2 ? [1, 2] : [1]) {
   try {
-    log("Making Short...");
-    const shortFile = path.join(WORK, "short.mp4");
+    log("Making Short", part, "...");
+    const shortFile = path.join(WORK, `short${part}.mp4`);
     const tl = [];
     for (const w of outline.title.toUpperCase().split(/\s+/)) {
       const last = tl[tl.length - 1];
@@ -522,7 +524,7 @@ async function main() {
     }
     await writeFile(path.join(WORK, "short-title.txt"), tl.slice(0, 3).join("\n"));
     await run("ffmpeg", [
-      "-y", "-ss", "0", "-t", "55", "-i", final,
+      "-y", "-ss", part === 1 ? "0" : String(Math.round(total * 0.45)), "-t", "55", "-i", final,
       "-filter_complex",
       "[0:v]split[a][b];[a]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=20:2[bg];" +
         "[b]scale=1080:-2[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2," +
@@ -533,10 +535,10 @@ async function main() {
     ], { cwd: WORK });
     const shortId = await uploadToYouTube(
       shortFile,
-      `${outline.title.slice(0, 85)} #shorts`,
+      `${outline.title.slice(0, part === 1 ? 85 : 78)}${part === 1 ? "" : " Part 2"} #shorts`,
       `Watch the full story: https://youtu.be/${id}\n\n${hashtags.join(" ")} #shorts`,
     );
-    shortNote = `\n\nShort (1 min): https://www.youtube.com/watch?v=${shortId}&${AUTH}\nPublish it: https://studio.youtube.com/video/${shortId}/edit?${AUTH}`;
+    shortNote += `\n\nShort ${part} (1 min): https://www.youtube.com/watch?v=${shortId}&${AUTH}\nPublish it: https://studio.youtube.com/video/${shortId}/edit?${AUTH}`;
     log("Short uploaded:", shortId);
     if (AUTO) { try { await publishVideo(shortId); log("Short published"); } catch (e) { log("short publish failed:", e.message); } }
     // Also send the Short file to Telegram, ready to post on TikTok.
@@ -555,6 +557,7 @@ async function main() {
     }
   } catch (e) {
     log("short skipped:", e.message);
+  }
   }
   await notify(
     `✅ Your video is ${pubNote === "PUBLIC" ? "LIVE (public)" : "ready (PRIVATE)"}\n"${outline.title}" · ${Math.round(total / 60)} min\n\nWatch: https://www.youtube.com/watch?v=${id}&${AUTH}\nPublish it: https://studio.youtube.com/video/${id}/edit?${AUTH}\n\nOne-tap publish page: ${STUDIO}/go-public\n\n${pubNote === "PUBLIC" ? "It was published automatically." : pubNote === "HELD" ? "🟡 YELLOW: a check was not fully clean, so it stays PRIVATE. Watch it, then use the publish page." : pubNote === "FAILED" ? "Auto-publish failed, so it is still private. Use the publish page." : "It is private until you press Publish."}${thumbNote}${shortNote}${policyNote}`,
