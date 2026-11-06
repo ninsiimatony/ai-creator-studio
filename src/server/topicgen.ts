@@ -112,9 +112,9 @@ export async function refillTopics2(env: WorkerEnv): Promise<string> {
       {
         role: "system",
         content:
-          "You invent story topics for a YouTube channel of emotional fictional FAMILY and LIFE stories: parents and children, forgiveness, " +
-          "faith tested, sacrifice, honesty rewarded, a poor person who surprises everyone, a reunion after many years. " +
-          "NOT romance or cheating. Write 10 ORIGINAL topics, one per line, each 12 to 25 words, a clear situation with a conflict and a twist " +
+          "You invent story topics for a YouTube channel of ORIGINAL scary cartoon stories starring a small pale gray-green goblin keeper with yellow eyes " +
+          "who guards cursed doors, keys, cellars, mirrors, attics, haunted houses and forgotten places. Kids and teens find strange things, break a rule, and a twist follows. " +
+          "No gore, no real people, no copying any existing story. Write 10 ORIGINAL topics, one per line, each 12 to 25 words, a clear situation with a conflict and a twist " +
           "to come. No real names or places of real people, no explicit content. Plain English. Reply with only the 10 lines, no numbers.",
       },
       { role: "user", content: "Write the 10 topics." },

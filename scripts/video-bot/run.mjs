@@ -9,7 +9,12 @@ const STUDIO = (process.env.STUDIO_URL ?? "").replace(/\/$/, "");
 const SECRET = process.env.AUTOMATION_SECRET ?? "";
 const TOPIC = (process.env.TOPIC ?? "").trim();
 const MINUTES = Math.min(90, Math.max(3, Number(process.env.MINUTES) || 10));
-const TONE = process.env.TONE === "emotional" ? "emotional" : undefined;
+const TONE = process.env.TONE === "emotional" ? "emotional" : process.env.TONE === "scary" ? "scary" : undefined;
+const SCARY = TONE === "scary";
+// Look of every picture in the scary channel (one recurring goblin keeper, original character design).
+const GOBLIN_STYLE =
+  "Stylized 3D animated horror-cartoon film still, wide cinematic shot, dark moody lighting, blue and green fog, no text. " +
+  "A small pale gray-green goblin keeper with huge bloodshot yellow eyes, long drooping pointed ears, tiny sharp teeth and a ragged green-and-black striped sweater appears in the scene. Scene: ";
 const STYLE = process.env.STYLE === "cartoon" ? "cartoon" : "real";
 const W = MINUTES > 30 ? 1280 : 1920;
 const H = MINUTES > 30 ? 720 : 1080;
@@ -20,14 +25,14 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 // Natural human-sounding voices (free Microsoft neural voices). One voice per video, picked from the topic.
 // If they are not reachable, we fall back to the studio's built-in voice, so a video is never lost.
 const EDGE_VOICES = ["en-US-AndrewNeural", "en-US-AvaNeural", "en-US-GuyNeural", "en-US-JennyNeural"];
-const EDGE_VOICE = EDGE_VOICES[[...TOPIC].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % EDGE_VOICES.length];
+const EDGE_VOICE = SCARY ? "en-US-ChristopherNeural" : EDGE_VOICES[[...TOPIC].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % EDGE_VOICES.length];
 let edgeFails = 0;
 async function speak(text, file) {
   if (edgeFails < 3) {
     try {
       const txt = file + ".txt";
       await writeFile(txt, text);
-      await run("python3", ["-m", "edge_tts", "--voice", EDGE_VOICE, "--rate=-4%", "--file", txt, "--write-media", file]);
+      await run("python3", ["-m", "edge_tts", "--voice", EDGE_VOICE, SCARY ? "--rate=-12%" : "--rate=-4%", ...(SCARY ? ["--pitch=-6Hz"] : []), "--file", txt, "--write-media", file]);
       const st = await stat(file);
       if (st.size > 2000) {
         edgeFails = 0;
@@ -164,10 +169,12 @@ async function makeThumbnail(title) {
   const pickOne = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const r = Math.random();
   // ch1: 40% Tony's face, 35% AI-made person, 25% scene only. ch2 (no real faces): 50% cartoon character, 50% scene.
-  const mode = CHANNEL === 2 ? (r < 0.5 ? "person" : "scene") : r < 0.4 ? "tony" : r < 0.75 ? "person" : "scene";
+  const mode = SCARY ? "scene" : CHANNEL === 2 ? (r < 0.5 ? "person" : "scene") : r < 0.4 ? "tony" : r < 0.75 ? "person" : "scene";
   const sceneLook = pickOne(["warm golden light", "cool blue night light", "soft sunrise glow", "moody dramatic shadows", "rainy window light", "candle light"]);
   let prompt;
-  if (mode === "person") {
+  if (SCARY) {
+    prompt = GOBLIN_STYLE.replace("wide cinematic shot", "dramatic close-up") + `the goblin peeks out of the dark, creepy atmosphere for a scary story titled "${title}", glowing yellow eyes, strong contrast`;
+  } else if (mode === "person") {
     const feel = pickOne(["shocked", "heartbroken, eyes full of tears", "worried", "hopeful and smiling softly", "angry and hurt", "surprised"]);
     if (CHANNEL === 2) {
       const who = pickOne(["a cute cartoon mother", "a cute cartoon father", "a cartoon little girl", "a cartoon little boy", "a kind cartoon grandmother", "a cartoon grandfather"]);
@@ -236,7 +243,7 @@ async function uploadToYouTube(file, title, description) {
         "x-upload-content-type": "video/mp4",
       },
       body: JSON.stringify({
-        snippet: { title: title.slice(0, 100), description: description.slice(0, 4900), tags: globalThis.__videoTags ?? [], categoryId: TONE === "emotional" ? "22" : "28" },
+        snippet: { title: title.slice(0, 100), description: description.slice(0, 4900), tags: globalThis.__videoTags ?? [], categoryId: SCARY ? "24" : TONE === "emotional" ? "22" : "28" },
         status: { privacyStatus: "private", selfDeclaredMadeForKids: false, containsSyntheticMedia: true },
       }),
     },
@@ -325,7 +332,7 @@ async function main() {
     const parts = splitScenes(sec.narration);
     // Ask the AI for one filmable search phrase per scene, so each clip matches its own sentences.
     let terms = [];
-    try {
+    if (!SCARY) try {
       terms = (await studio("/api/media/auto-script", { step: "scenes", scenes: parts.slice(0, 40), style: CHANNEL === 2 ? "real" : STYLE })).terms ?? [];
     } catch (e) {
       log(`Part ${i + 1}: scene matching skipped (${String(e.message).slice(0, 80)})`);
@@ -341,6 +348,7 @@ async function main() {
 
   // 2. One scene at a time: voice, clip, encode.
   const segs = [];
+  let curImg = null, imgN = 0, imgT = 0;
   for (let i = 0; i < scenes.length; i++) {
     const sc = scenes[i];
     const id = String(i).padStart(4, "0");
@@ -348,6 +356,48 @@ async function main() {
     await speak(sc.narration, voice);
     const dur = (await duration(voice)) + 0.5;
     await writeFile(path.join(WORK, "seg.srt"), srtFor(sc.narration, dur));
+    if (SCARY) {
+      if (i % 4 === 0) {
+        const chunk = scenes.slice(i, i + 4).map((x) => x.narration).join(" ").replace(/\s+/g, " ").slice(0, 230);
+        try {
+          const img = await studio("/api/media/image", { prompt: GOBLIN_STYLE + chunk }, { raw: true });
+          curImg = path.join(WORK, `img${i}.` + (img[0] === 0x89 ? "png" : "jpg"));
+          await writeFile(curImg, img);
+          imgN++;
+          imgT = 0;
+        } catch (e) {
+          log(`Picture ${imgN + 1}: reusing the last picture (${String(e.message).slice(0, 80)})`);
+        }
+        await wait(300);
+      }
+      const frames = Math.ceil(dur * 30);
+      const off = Math.round(imgT * 30);
+      const zoom = imgN % 2 === 0 ? `min(1.0+0.00025*(${off}+on),1.4)` : `max(1.4-0.00025*(${off}+on),1.0)`;
+      const sub = `subtitles=seg.srt:force_style='FontName=DejaVu Sans,FontSize=20,Bold=1,Outline=2,Shadow=0,MarginV=36'`;
+      const vfs = curImg
+        ? `scale=2240:2240,crop=2240:1260,zoompan=z='${zoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${W}x${H}:fps=30,vignette=PI/4,format=yuv420p,${sub}`
+        : `fps=30,format=yuv420p,${sub}`;
+      const segS = path.join(WORK, `seg${id}.mp4`);
+      await ffmpeg(
+        [
+          ...(curImg ? ["-loop", "1", "-framerate", "30", "-i", curImg] : ["-f", "lavfi", "-i", `color=c=0x05080f:s=${W}x${H}:r=30`]),
+          "-i", voice,
+          "-t", dur.toFixed(3),
+          "-vf", vfs,
+          "-af", "aecho=0.8:0.55:80:0.22,apad",
+          "-map", "0:v:0", "-map", "1:a:0",
+          "-c:v", "libx264", "-preset", "ultrafast", "-crf", "24",
+          "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2",
+          segS,
+        ],
+        { cwd: WORK },
+      );
+      imgT += dur;
+      segs.push(`file '${path.basename(segS)}'`);
+      await rm(voice, { force: true });
+      if ((i + 1) % 20 === 0 || i === scenes.length - 1) log(`Scene ${i + 1}/${scenes.length} done`);
+      continue;
+    }
     let clip = null;
     let animated = false;
     try {
@@ -417,8 +467,9 @@ async function main() {
   const total = await duration(body);
   log("Joined video:", Math.round(total / 60), "minutes");
   const final = path.join(WORK, "final.mp4");
-  const music =
-    "aevalsrc=0.05*sin(2*PI*110*t)+0.04*sin(2*PI*164.8*t)+0.03*sin(2*PI*220*t)*(0.6+0.4*sin(2*PI*0.07*t)):s=48000:d=" +
+  const music = SCARY
+    ? "aevalsrc=0.07*sin(2*PI*55*t)+0.06*sin(2*PI*58.3*t)+0.04*sin(2*PI*82.4*t)*(0.5+0.5*sin(2*PI*0.05*t))+0.02*sin(2*PI*220*t)*(0.5+0.5*sin(2*PI*0.11*t)):s=48000:d=" + Math.ceil(total)
+    : "aevalsrc=0.05*sin(2*PI*110*t)+0.04*sin(2*PI*164.8*t)+0.03*sin(2*PI*220*t)*(0.6+0.4*sin(2*PI*0.07*t)):s=48000:d=" +
     Math.ceil(total);
   await ffmpeg([
     "-i", body, "-f", "lavfi", "-i", music,
@@ -430,7 +481,9 @@ async function main() {
   const topicTags = TOPIC.toLowerCase().replace(/[^a-z ]/g, " ").split(/\s+/)
     .filter((w) => w.length > 3 && !["about", "their", "with", "from", "that", "this", "until", "every", "after"].includes(w))
     .slice(0, 3).map((w) => `#${w}`);
-  const baseTags = CHANNEL === 2
+  const baseTags = SCARY
+    ? ["#scarystories", "#horrorstory", "#goblin", "#animatedhorror", "#creepystories", "#storytime"]
+    : CHANNEL === 2
     ? ["#animation", "#cartoonstory", "#animatedstory", "#familystory", "#faith", "#hope"]
     : TONE === "emotional"
     ? ["#emotionalstory", "#sadstory", "#lifelessons", "#storytime", "#touchingstory"]
@@ -438,12 +491,14 @@ async function main() {
   const hashtags = [...new Set([...baseTags, ...topicTags])].slice(0, 8);
   const description =
     `${outline.title}\n\n` +
-    (TONE === "emotional"
+    (SCARY
+      ? `If you love scary stories, please like, share and subscribe for a new scary story every day. Would you have opened the door? Tell us in the comments.\n\n`
+      : TONE === "emotional"
       ? `If this story touched your heart, please like, share and subscribe for a new emotional story every day.\n\n`
       : `Like and subscribe for more.\n\n`) +
     `${outline.sections.map((s, i) => `${i + 1}. ${s}`).join("\n")}\n\n` +
-    (TONE === "emotional" ? `This is a fictional story, written for reflection and inspiration.\n` : "") +
-    `Made with AI narration and stock video clips from Pixabay (https://pixabay.com).\n\n` +
+    (SCARY ? `This is an original fictional story.\n` : TONE === "emotional" ? `This is a fictional story, written for reflection and inspiration.\n` : "") +
+    (SCARY ? `Made with AI narration and AI-generated artwork.\n\n` : `Made with AI narration and stock video clips from Pixabay (https://pixabay.com).\n\n`) +
     hashtags.join(" ");
   globalThis.__videoTags = hashtags.map((h) => h.slice(1));
   // Policy check (advice only; never blocks the upload).
@@ -544,8 +599,8 @@ async function main() {
     // Also send the Short file to Telegram, ready to post on TikTok.
     try {
       const caption =
-        `${outline.title} 💔\nFull story on YouTube: ${CHANNEL === 2 ? "Little Hope Tales" : "@TonyNinsiima"}\n\n` +
-        `${hashtags.join(" ")} #fyp #storytime #emotional`;
+        `${outline.title} ${SCARY ? "👻" : "💔"}\nFull story on YouTube: ${CHANNEL === 2 ? "Little Hope Tales" : "@TonyNinsiima"}\n\n` +
+        `${hashtags.join(" ")} #fyp #storytime ${SCARY ? "#scary" : "#emotional"}`;
       const res = await fetch(`${STUDIO}/api/automation/notify-video?caption=${encodeURIComponent(caption)}`, {
         method: "POST",
         headers: { authorization: `Bearer ${SECRET}`, "content-type": "video/mp4" },
