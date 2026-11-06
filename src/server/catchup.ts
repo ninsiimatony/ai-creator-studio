@@ -113,6 +113,12 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
       continue;
     }
 
+    // Claim the slot first (only one overlapping timer tick can win), so a video can never be started twice.
+    const claim = await db
+      .prepare("UPDATE video_slots SET status='dispatching', attempts=attempts+1, dispatched_at=? WHERE day=? AND slot=? AND attempts=? AND status=?")
+      .bind(now.toISOString(), day, slot, row.attempts, row.status)
+      .run();
+    if (!(claim as { meta?: { changes?: number } }).meta?.changes) return `slot ${slot} is being handled by another run`;
     try {
       await dispatchVideoJob({
         token: env.GITHUB_TOKEN,
@@ -120,17 +126,14 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
         ref: REF,
         req: { topic: row.topic, minutes: 10, style: isCh2 ? "cartoon" : "real", tone: isCh2 ? "scary" : "emotional", channel: isCh2 ? 2 : undefined },
       });
-      await db
-        .prepare("UPDATE video_slots SET status='dispatched', attempts=attempts+1, dispatched_at=? WHERE day=? AND slot=?")
-        .bind(now.toISOString(), day, slot)
-        .run();
+      await db.prepare("UPDATE video_slots SET status='dispatched' WHERE day=? AND slot=?").bind(day, slot).run();
       await notify(
         `🎬 Starting ${label}${row.attempts > 0 ? ` (retry ${row.attempts})` : ""}: ${row.topic}`,
       );
       return `dispatched slot ${slot}`;
     } catch (e) {
       const why = e instanceof Error ? e.message : String(e);
-      await db.prepare("UPDATE video_slots SET attempts=attempts+1, note=? WHERE day=? AND slot=?").bind(why.slice(0, 300), day, slot).run();
+      await db.prepare("UPDATE video_slots SET status='pending', note=? WHERE day=? AND slot=?").bind(why.slice(0, 300), day, slot).run();
       if (row.attempts === 2) await notify(`⚠️ Video ${slot + 1} could not start: ${why}`);
       console.error("catch-up dispatch failed", e);
       return `dispatch failed slot ${slot}, will retry`;

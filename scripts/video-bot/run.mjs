@@ -600,6 +600,33 @@ async function main() {
       problems.push("NO SOUND in the video");
       policyRisk = "high";
     }
+    // Black or frozen-empty screens: more than 8 seconds of pure black in total.
+    try {
+      const bl = await new Promise((resolve) => {
+        const p = spawn("ffmpeg", ["-hide_banner", "-i", final, "-vf", "blackdetect=d=1:pix_th=0.04", "-an", "-f", "null", "-"]);
+        let o = "";
+        p.stderr.on("data", (d) => (o += d));
+        p.on("close", () => resolve(o));
+        p.on("error", () => resolve(""));
+      });
+      let black = 0;
+      for (const m of String(bl).matchAll(/black_duration:([\d.]+)/g)) black += Number(m[1]);
+      if (black > 8) problems.push(`${Math.round(black)} seconds of black screen`);
+    } catch { /* optional check */ }
+    // Clipping / distortion: the loudest peak must stay below 0 dB.
+    try {
+      const vd = await new Promise((resolve) => {
+        const p = spawn("ffmpeg", ["-hide_banner", "-i", final, "-vn", "-af", "volumedetect", "-f", "null", "-"]);
+        let o = "";
+        p.stderr.on("data", (d) => (o += d));
+        p.on("close", () => resolve(o));
+        p.on("error", () => resolve(""));
+      });
+      const mx = String(vd).match(/max_volume:\s*(-?[\d.]+) dB/);
+      if (mx && Number(mx[1]) >= -0.05) problems.push("audio may be clipping (too loud)");
+      const mean = String(vd).match(/mean_volume:\s*(-?[\d.]+) dB/);
+      if (mean && Number(mean[1]) < -38) problems.push("audio is very quiet");
+    } catch { /* optional check */ }
     if (problems.length) green = false;
     log("Quality check:", problems.length ? problems.join(", ") : "OK");
     policyNote += problems.length ? `\n\n⚠️ Quality check: ${problems.join(", ")}. Watch it before you publish.` : "\n✅ Quality check: OK";
@@ -617,10 +644,6 @@ async function main() {
   let pubNote = "";
   const AUTO = process.env.AUTO_PUBLISH !== "0" && green;
   if (process.env.AUTO_PUBLISH !== "0" && !green) pubNote = "HELD";
-  if (AUTO) {
-    try { await publishVideo(id); log("Published (public)"); pubNote = "PUBLIC"; }
-    catch (e) { log("auto-publish failed:", e.message); pubNote = "FAILED"; }
-  }
   let thumbNote = "";
   try {
     log("Making thumbnail...");
@@ -629,6 +652,11 @@ async function main() {
   } catch (e) {
     log("thumbnail skipped:", e.message);
     thumbNote = "\n(Thumbnail could not be set this time.)";
+  }
+  // Publish only now, after the thumbnail step, so viewers never see a video without its picture.
+  if (AUTO) {
+    try { await publishVideo(id); log("Published (public)"); pubNote = "PUBLIC"; }
+    catch (e) { log("auto-publish failed:", e.message); pubNote = "FAILED"; }
   }
   // Short: first ~55 seconds as a vertical 1080x1920 clip, linking to the full story.
   let shortNote = "";
