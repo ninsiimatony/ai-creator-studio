@@ -1,5 +1,5 @@
 // Reliable "3 videos a day" scheduler. Cloudflare cron calls runCatchup every 15 minutes.
-// For each of today's 3 slots (07:17, 13:17, 19:17 Oman = 03:17, 09:17, 15:17 UTC) it makes sure a video was
+// For each of today's 3 slots (15:17, 20:17, 02:17 Oman = 11:17, 16:17, 22:17 UTC) it makes sure a video was
 // made. If a slot was skipped, failed, or GitHub/network was down, it starts it again on the next tick.
 import topics from "../../scripts/video-bot/topics.json";
 import topics2 from "../../scripts/video-bot/topics2.json";
@@ -10,7 +10,7 @@ import type { D1Database, WorkerEnv } from "./db";
 
 const REPO = "ninsiimatony/ai-creator-studio";
 const REF = "main";
-const SLOT_MINUTES_UTC = [3 * 60 + 17, 9 * 60 + 17, 15 * 60 + 17, 23 * 60 + 17]; // slot 3 = second channel: starts 03:17 Oman (6:17 PM New York), live about 7:20 PM New York
+const SLOT_MINUTES_UTC = [11 * 60 + 17, 16 * 60 + 17, 22 * 60 + 17, 23 * 60 + 17]; // main channel starts 15:17, 20:17, 02:17 Oman (live ~7 AM, 12 PM, 6 PM New York); slot 3 = second channel: starts 03:17 Oman (6:17 PM New York), live about 7:20 PM New York
 const MAX_ATTEMPTS = 4;
 const LOST_AFTER_MS = 12 * 60 * 1000; // dispatched but GitHub never showed a run
 const STUCK_AFTER_MS = 100 * 60 * 1000; // run still going far too long
