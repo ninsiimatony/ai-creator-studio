@@ -1,7 +1,7 @@
 // Makes a video from a topic using only free services, then uploads it to YouTube as PRIVATE.
 // Runs on a GitHub Actions computer (ffmpeg installed). Talks to the studio with the AUTOMATION_SECRET.
 import { spawn } from "node:child_process";
-import { mkdir, readFile, writeFile, rm, stat, open } from "node:fs/promises";
+import { mkdir, readFile, writeFile, rm, stat, open, readdir } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 
@@ -190,16 +190,29 @@ async function makeThumbnail(title) {
   } else {
     prompt = `Eye-catching cinematic background for a YouTube video titled "${title}", vivid colors, dramatic lighting, ultra detailed, 8k, no text`;
   }
-  const img = await studio("/api/media/image", { prompt: prompt.slice(0, 900) }, { raw: true });
+  // Hand-picked, attractive pictures (scripts/video-bot/thumbs/ch1 or ch2) are used most of the time; the free AI picture is the backup.
+  let img = null;
+  let libUsed = false;
+  try {
+    const dir = path.join(path.dirname(new URL(import.meta.url).pathname), "thumbs", CHANNEL === 2 ? "ch2" : "ch1");
+    const files = (await readdir(dir)).filter((f) => /\.(jpe?g|png)$/i.test(f));
+    if (files.length && Math.random() < 0.85) {
+      img = await readFile(path.join(dir, pickOne(files)));
+      libUsed = true;
+    }
+  } catch {
+    img = null;
+  }
+  if (!img) img = await studio("/api/media/image", { prompt: prompt.slice(0, 900) }, { raw: true });
   const src = path.join(WORK, "thumb-src.jpg");
   await writeFile(src, img);
-  const face = mode === "tony" ? pickFace(title, TOPIC) : "none";
+  const face = mode === "tony" && !libUsed ? pickFace(title, TOPIC) : "none";
   const here = path.dirname(new URL(import.meta.url).pathname);
   const out = path.join(WORK, "thumb.jpg");
   log("Thumbnail mode:", mode, "face:", face);
   await run("python3", [
     path.join(here, "thumb.py"), src, face === "none" ? "none" : path.join(here, "faces", `${face}.png`),
-    face === "pointing" ? "left" : "right", title, out, mode === "person" ? "half" : "full",
+    face === "pointing" ? "left" : "right", title, out, mode === "person" || libUsed ? "half" : "full",
   ]);
   return out;
 }
