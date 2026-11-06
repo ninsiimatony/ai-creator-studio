@@ -449,6 +449,7 @@ async function main() {
   // Policy check (advice only; never blocks the upload).
   let policyNote = "";
   let policyRisk = "low";
+  let green = true; // GREEN = every check passed. Anything else = YELLOW (stay private) or RED (rejected).
   try {
     const pc = await studio("/api/media/auto-script", {
       step: "policy",
@@ -457,11 +458,13 @@ async function main() {
       script: scenes.map((x) => x.narration).join(" "),
     });
     policyRisk = pc.risk;
+    if (pc.risk !== "low") green = false;
     log("Policy check:", pc.risk, JSON.stringify(pc.issues));
     if (pc.risk !== "low" && pc.issues?.length)
       policyNote = `\n\n⚠️ YouTube safety check (${pc.risk}) - look before you publish:\n` + pc.issues.map((x) => "- " + x).join("\n");
     else policyNote = "\n\n🛡 YouTube safety check: OK";
   } catch (e) {
+    green = false;
     log("Policy check skipped:", String(e.message).slice(0, 80));
   }
   // Quality check (advice only): catch a video that came out too short, too small or with too few scenes.
@@ -476,12 +479,14 @@ async function main() {
       problems.push("NO SOUND in the video");
       policyRisk = "high";
     }
+    if (problems.length) green = false;
     log("Quality check:", problems.length ? problems.join(", ") : "OK");
     policyNote += problems.length ? `\n\n⚠️ Quality check: ${problems.join(", ")}. Watch it before you publish.` : "\n✅ Quality check: OK";
   } catch (e) {
+    green = false;
     log("Quality check skipped:", String(e.message).slice(0, 80));
   }
-  if (process.env.BLOCK_ON_HIGH === "1" && policyRisk === "high") {
+  if (process.env.BLOCK_ON_HIGH !== "0" && policyRisk === "high") {
     await notify(`🛑 Video "${outline.title}" was NOT uploaded because the checks found a high risk.${policyNote}`);
     log("Blocked by checks");
     return;
@@ -489,7 +494,8 @@ async function main() {
   log("Uploading to YouTube (private)...");
   const id = await uploadToYouTube(final, outline.title, description);
   let pubNote = "";
-  const AUTO = process.env.AUTO_PUBLISH !== "0";
+  const AUTO = process.env.AUTO_PUBLISH !== "0" && green;
+  if (process.env.AUTO_PUBLISH !== "0" && !green) pubNote = "HELD";
   if (AUTO) {
     try { await publishVideo(id); log("Published (public)"); pubNote = "PUBLIC"; }
     catch (e) { log("auto-publish failed:", e.message); pubNote = "FAILED"; }
@@ -551,7 +557,7 @@ async function main() {
     log("short skipped:", e.message);
   }
   await notify(
-    `✅ Your video is ${pubNote === "PUBLIC" ? "LIVE (public)" : "ready (PRIVATE)"}\n"${outline.title}" · ${Math.round(total / 60)} min\n\nWatch: https://www.youtube.com/watch?v=${id}&${AUTH}\nPublish it: https://studio.youtube.com/video/${id}/edit?${AUTH}\n\nOne-tap publish page: ${STUDIO}/go-public\n\n${pubNote === "PUBLIC" ? "It was published automatically." : pubNote === "FAILED" ? "Auto-publish failed, so it is still private. Use the publish page." : "It is private until you press Publish."}${thumbNote}${shortNote}${policyNote}`,
+    `✅ Your video is ${pubNote === "PUBLIC" ? "LIVE (public)" : "ready (PRIVATE)"}\n"${outline.title}" · ${Math.round(total / 60)} min\n\nWatch: https://www.youtube.com/watch?v=${id}&${AUTH}\nPublish it: https://studio.youtube.com/video/${id}/edit?${AUTH}\n\nOne-tap publish page: ${STUDIO}/go-public\n\n${pubNote === "PUBLIC" ? "It was published automatically." : pubNote === "HELD" ? "🟡 YELLOW: a check was not fully clean, so it stays PRIVATE. Watch it, then use the publish page." : pubNote === "FAILED" ? "Auto-publish failed, so it is still private. Use the publish page." : "It is private until you press Publish."}${thumbNote}${shortNote}${policyNote}`,
   );
   log("All done:", id);
 }
