@@ -1,7 +1,7 @@
 // Telegram chat-to-video: parse a chat message into a video request and hand it to the GitHub job.
 import { AppError } from "./errors";
 
-export type VideoRequest = { topic: string; minutes: number; style: "real" | "cartoon"; tone?: "emotional"; channel?: number };
+export type VideoRequest = { topic: string; minutes: number; style: "real" | "cartoon"; tone?: "emotional" | "scary"; channel?: number };
 
 export const MAX_MINUTES = 90;
 export const DEFAULT_MINUTES = 10;

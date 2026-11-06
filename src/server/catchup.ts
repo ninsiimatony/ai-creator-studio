@@ -118,7 +118,7 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
         token: env.GITHUB_TOKEN,
         repo: REPO,
         ref: REF,
-        req: { topic: row.topic, minutes: 10, style: isCh2 ? "cartoon" : "real", tone: "emotional", channel: isCh2 ? 2 : undefined },
+        req: { topic: row.topic, minutes: 10, style: isCh2 ? "cartoon" : "real", tone: isCh2 ? "scary" : "emotional", channel: isCh2 ? 2 : undefined },
       });
       await db
         .prepare("UPDATE video_slots SET status='dispatched', attempts=attempts+1, dispatched_at=? WHERE day=? AND slot=?")

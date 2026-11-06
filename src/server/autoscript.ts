@@ -39,8 +39,14 @@ const SYSTEM_EMOTIONAL =
   "End with a satisfying payoff: the truth comes out, someone gets what they deserve, or love wins, with real emotion. " +
   "No explicit sexual content, no graphic violence, no medical or self-harm detail, no stage directions, no markdown, no emojis, no headings, never mention scenes or the camera.";
 
-export type Tone = "emotional" | undefined;
-const systemFor = (tone: Tone) => (tone === "emotional" ? SYSTEM_EMOTIONAL : SYSTEM);
+const SYSTEM_SCARY =
+  "You write narration for a faceless YouTube channel of original scary cartoon stories for teens and adults, starring a small pale gray-green goblin keeper with huge yellow eyes who guards cursed doors, keys, cellars and haunted houses. " +
+  "Tell it like a spooky campfire story: plain spoken English, short sentences, creeping dread, named characters, real dialogue (she whispered, it giggled), small creepy details, rising tension, and a big twist or shock. " +
+  "Every section must move the story forward and end on a cliffhanger line. Never be slow, vague or preachy. Finish with a chilling or satisfying twist ending. " +
+  "Fully original: never copy or imitate any existing story, show or creator. No gore, no graphic violence, no sexual content, no self-harm, no real people, no stage directions, no markdown, no emojis, no headings, never mention scenes or the camera.";
+
+export type Tone = "emotional" | "scary" | undefined;
+const systemFor = (tone: Tone) => (tone === "emotional" ? SYSTEM_EMOTIONAL : tone === "scary" ? SYSTEM_SCARY : SYSTEM);
 
 export function sectionCount(minutes: number): number {
   const words = Math.max(1, minutes) * 150;
@@ -81,9 +87,11 @@ export async function writeOutline(p: {
       {
         role: "user",
         content:
-          `Plan a ${p.minutes}-minute YouTube video ${p.tone === "emotional" ? "that tells one emotional, human story" : "about"}: ${p.topic}\n\n` +
+          `Plan a ${p.minutes}-minute YouTube video ${p.tone === "emotional" ? "that tells one emotional, human story" : p.tone === "scary" ? "that tells one original scary cartoon story" : "about"}: ${p.topic}\n\n` +
           `Reply with exactly this format and nothing else:\n` +
-          (p.tone === "emotional"
+          (p.tone === "scary"
+            ? `Title: <a creepy, curiosity-driven title under 60 characters, Title Case, that promises a scary secret, for example: The Goblin Who Guards The Cellar Door / Do Not Open The Door At Midnight / The Key That Whispers Your Name>\n`
+            : p.tone === "emotional"
             ? `Title: <a dramatic emotional title under 60 characters, Title Case, built on a clear conflict and a strong word like Mocked, Ignored, Forgotten, Abandoned, Laughed At, Left Alone or Shocked, so people need to know what happened, for example: Old Man Ignored By His Children, Then This Happens / Waiter Mocked For Being Poor, Gets The Last Laugh / Grandmother Forgotten At Care Home Until One Visit>\n`
             : `Title: <a catchy YouTube title>\n`) +
           `1. <section heading>\n2. <section heading>\n... up to ${want}.\n\n` +
@@ -184,12 +192,16 @@ export async function writeSection(p: {
           `Write ONLY section ${p.index + 1}: "${heading}". About ${WORDS_PER_SECTION} words of narration.` +
           (first ? " The very first sentence must drop the listener into the most shocking or emotional moment of the story (the hook), then go back and explain how it happened. No greeting, no slow introduction, no scene-setting before the hook." : " Continue smoothly from the previous section; do not greet or re-introduce the video.") +
           (last
-            ? p.tone === "emotional"
+            ? p.tone === "scary"
+              ? " End with a chilling twist, then ask the viewers one spooky question they can answer in the comments (for example: Would you have opened the door? What would you have done?), and finally ask them to subscribe for a new scary story every day."
+              : p.tone === "emotional"
               ? " End with a touching conclusion, then ask the viewers one gentle personal question they can answer in the comments (for example: Would you have forgiven him? What would you have done in her place? Have you ever been betrayed by someone you loved?), and finally ask them to subscribe for a new story every day."
               : " End with a memorable conclusion and ask viewers to subscribe."
             : " Do not conclude the video.") +
           `\n\nThen on a new last line write: VISUALS: followed by 8 short ${p.style === "cartoon" ? "animation or cartoon" : "stock video"} search terms (2-3 words each, concrete things that can be filmed, separated by semicolons).` +
-          (p.tone === "emotional"
+          (p.tone === "scary"
+            ? " For visuals use eerie things that can be pictured, for example: dark cellar door; glowing yellow eyes; rusty key; foggy hallway; creepy shadows."
+            : p.tone === "emotional"
             ? " For visuals use people doing the action of the story, for example: couple arguing; woman crying; man reading phone; wedding ring; hugging at airport; woman walking away; man waiting at door; couple dinner; wedding; rain on window."
             : ""),
       },
@@ -219,7 +231,7 @@ export async function writePolicyCheck(p: {
           "You check a YouTube video's text against YouTube policies before upload. Look for: advertiser-unfriendly content " +
           "(sexual content, graphic violence, hate, harassment, self-harm, dangerous acts), child-safety problems, " +
           "misleading or clickbait titles that the story does not deliver, real people named in defamatory ways, " +
-          "copyright problems, and spam-like text. The video is a fictional emotional story, so normal relationship drama is fine. " +
+          "copyright problems, and spam-like text. The video is a fictional emotional story or a spooky cartoon horror story for teens and adults, so normal drama and mild scares are fine (but extreme gore, real violence, sexual or hateful content is not). " +
           "Reply in exactly this format and nothing else: first line 'RISK: low' or 'RISK: medium' or 'RISK: high'. " +
           "Then up to 4 lines, each starting with '- ', each one short plain problem. If there is no problem write '- none'.",
       },

@@ -8,7 +8,7 @@ import { recordUsage } from "./ai";
 export const IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell";
 export const TTS_MODEL = "@cf/myshell-ai/melotts";
 /** ~43 neurons per image => 60 images is ~2,600 of the 10,000 free daily neurons. */
-export const DAILY_IMAGE_CAP = 60;
+export const DAILY_IMAGE_CAP = 150;
 export const DAILY_TTS_CHAR_CAP = 160_000;
 export const MAX_TTS_CHARS = 2000;
 export const MAX_IMAGE_PROMPT = 600;
