@@ -70,7 +70,7 @@ const CLIP_OFFSET = Math.floor(Math.random() * 20);
 
 async function notify(text) {
   try {
-    await studio("/api/automation/notify", { text: CHANNEL === 2 ? `[Channel 2] ${text}` : text });
+    await studio("/api/automation/notify", { text: CHANNEL === 2 ? `[Little Hope Tales - ninsiimamusigo@gmail.com]\n${text}` : `[Tony Ninsiima - ninsiimatony@gmail.com]\n${text}` });
   } catch (e) {
     log("notify failed:", e.message);
   }
@@ -497,7 +497,7 @@ async function main() {
     // Also send the Short file to Telegram, ready to post on TikTok.
     try {
       const caption =
-        `${outline.title} 💔\nFull story on YouTube: @TonyNinsiima\n\n` +
+        `${outline.title} 💔\nFull story on YouTube: ${CHANNEL === 2 ? "Little Hope Tales" : "@TonyNinsiima"}\n\n` +
         `${hashtags.join(" ")} #fyp #storytime #emotional`;
       const res = await fetch(`${STUDIO}/api/automation/notify-video?caption=${encodeURIComponent(caption)}`, {
         method: "POST",
