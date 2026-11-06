@@ -46,6 +46,38 @@ async function speak(text, file) {
   }
   await writeFile(file, await studio("/api/media/tts", { text, lang: "en" }, { raw: true }));
 }
+// Hand-made goblin picture library (scripts/video-bot/scenes/<theme>-<n>.jpg), matched to the story by keywords.
+const SCENE_THEMES = {
+  door: /door|knock|cellar|locked|open/i, hallway: /hall|corridor|footstep|walked|creak/i, bedroom: /bed|sleep|pillow|blanket|room|night/i,
+  attic: /attic|mirror|reflection|dust/i, forest: /forest|tree|woods|path|fog/i, key: /\bkey|keys/i,
+  goblin: /goblin|grin|laugh|giggle|smile|teeth|whisper|creature/i, kitchen: /kitchen|trapdoor|floor|table|basement/i,
+  stairs: /stair|step|shadow|candle/i, child: /scream|afraid|scared|fear|cry|tremb|heart|panic|ran/i, graveyard: /grave|moon|bat|gate|cemetery|lantern|dark/i,
+};
+let SCENE_FILES = null;
+const usedScenes = new Set();
+async function pickLibraryScene(text, isEnd) {
+  if (SCENE_FILES === null) {
+    try {
+      const dir = path.join(path.dirname(new URL(import.meta.url).pathname), "scenes");
+      SCENE_FILES = (await readdir(dir)).filter((f) => /\.(jpe?g|png)$/i.test(f)).map((f) => ({ f, dir, theme: f.split("-")[0] }));
+    } catch {
+      SCENE_FILES = [];
+    }
+  }
+  if (!SCENE_FILES.length) return null;
+  const pick = (a) => a[Math.floor(Math.random() * a.length)];
+  let pool = [];
+  if (isEnd) pool = SCENE_FILES.filter((x) => x.theme === "sunrise");
+  if (!pool.length) {
+    const themes = Object.keys(SCENE_THEMES).filter((t) => SCENE_THEMES[t].test(text));
+    pool = SCENE_FILES.filter((x) => themes.includes(x.theme));
+  }
+  if (!pool.length) pool = SCENE_FILES.filter((x) => x.theme !== "sunrise");
+  const fresh = pool.filter((x) => !usedScenes.has(x.f));
+  const chosen = pick(fresh.length ? fresh : pool);
+  usedScenes.add(chosen.f);
+  return path.join(chosen.dir, chosen.f);
+}
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 
 async function studio(pathname, body, { raw = false } = {}) {
@@ -361,7 +393,7 @@ async function main() {
 
   // 2. One scene at a time: voice, clip, encode.
   const segs = [];
-  let curImg = null, imgN = 0, imgT = 0;
+  let curImg = null, curWide = false, imgN = 0, imgT = 0;
   for (let i = 0; i < scenes.length; i++) {
     const sc = scenes[i];
     const id = String(i).padStart(4, "0");
@@ -373,9 +405,16 @@ async function main() {
       if (i % 4 === 0) {
         const chunk = scenes.slice(i, i + 4).map((x) => x.narration).join(" ").replace(/\s+/g, " ").slice(0, 230);
         try {
-          const img = await studio("/api/media/image", { prompt: GOBLIN_STYLE + chunk }, { raw: true });
-          curImg = path.join(WORK, `img${i}.` + (img[0] === 0x89 ? "png" : "jpg"));
-          await writeFile(curImg, img);
+          const lib = Math.random() < 0.8 ? await pickLibraryScene(chunk, i >= scenes.length - 4) : null;
+          if (lib) {
+            curImg = lib;
+            curWide = true;
+          } else {
+            const img = await studio("/api/media/image", { prompt: GOBLIN_STYLE + chunk }, { raw: true });
+            curImg = path.join(WORK, `img${i}.` + (img[0] === 0x89 ? "png" : "jpg"));
+            await writeFile(curImg, img);
+            curWide = false;
+          }
           imgN++;
           imgT = 0;
         } catch (e) {
@@ -388,7 +427,7 @@ async function main() {
       const zoom = imgN % 2 === 0 ? `min(1.0+0.00025*(${off}+on),1.4)` : `max(1.4-0.00025*(${off}+on),1.0)`;
       const sub = `subtitles=seg.srt:force_style='FontName=DejaVu Sans,FontSize=20,Bold=1,Outline=2,Shadow=0,MarginV=36'`;
       const vfs = curImg
-        ? `scale=2240:2240,crop=2240:1260,zoompan=z='${zoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${W}x${H}:fps=30,vignette=PI/4,format=yuv420p,${sub}`
+        ? `${curWide ? "scale=2240:1260" : "scale=2240:2240,crop=2240:1260"},zoompan=z='${zoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${W}x${H}:fps=30,vignette=PI/4,format=yuv420p,${sub}`
         : `fps=30,format=yuv420p,${sub}`;
       const segS = path.join(WORK, `seg${id}.mp4`);
       await ffmpeg(
@@ -484,10 +523,24 @@ async function main() {
     ? "aevalsrc=0.07*sin(2*PI*55*t)+0.06*sin(2*PI*58.3*t)+0.04*sin(2*PI*82.4*t)*(0.5+0.5*sin(2*PI*0.05*t))+0.02*sin(2*PI*220*t)*(0.5+0.5*sin(2*PI*0.11*t)):s=48000:d=" + Math.ceil(total)
     : "aevalsrc=0.05*sin(2*PI*110*t)+0.04*sin(2*PI*164.8*t)+0.03*sin(2*PI*220*t)*(0.6+0.4*sin(2*PI*0.07*t)):s=48000:d=" +
     Math.ceil(total);
+  // Real music tracks (scripts/video-bot/music/ch1 or ch2) when available; otherwise the simple drone.
+  let musicIn = ["-f", "lavfi", "-i", music];
+  let musicVol = 0.5;
+  try {
+    const mdir = path.join(path.dirname(new URL(import.meta.url).pathname), "music", CHANNEL === 2 ? "ch2" : "ch1");
+    const tracks = (await readdir(mdir)).filter((f) => /\.(mp3|m4a|wav)$/i.test(f));
+    if (tracks.length) {
+      musicIn = ["-stream_loop", "-1", "-i", path.join(mdir, tracks[Math.floor(Math.random() * tracks.length)])];
+      musicVol = 0.22;
+      log("Music: real track");
+    }
+  } catch {
+    /* use the drone */
+  }
   await ffmpeg([
-    "-i", body, "-f", "lavfi", "-i", music,
+    "-i", body, ...musicIn,
     "-filter_complex",
-    `[1:a]volume=0.5,afade=t=in:d=3,afade=t=out:st=${Math.max(0, total - 4).toFixed(1)}:d=4[m];[0:a][m]amix=inputs=2:duration=first:normalize=0[a]`,
+    `[1:a]volume=${musicVol},afade=t=in:d=3,afade=t=out:st=${Math.max(0, total - 4).toFixed(1)}:d=4[m];[0:a][m]amix=inputs=2:duration=first:normalize=0[a]`,
     "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", final,
   ]);
 
