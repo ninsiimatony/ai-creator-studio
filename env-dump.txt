@@ -1,0 +1,6 @@
+Environment variable NODE  not defined
+Environment variable npm_config  not defined
+C:\Program Files\nodejs\node.exe
+node: invalid value for --use-largepages
+C:\Program Files\nodejs\\node.exe: invalid value for --use-largepages
+C:\Program Files\nodejs\\node.exe: invalid value for --use-largepages
