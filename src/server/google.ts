@@ -7,6 +7,7 @@ import { decryptSecret, encryptSecret } from "./secretbox";
 
 export const SCOPES = [
   "https://www.googleapis.com/auth/youtube.upload",
+  "https://www.googleapis.com/auth/youtube",
   "https://www.googleapis.com/auth/youtube.readonly",
   "https://www.googleapis.com/auth/yt-analytics.readonly",
 ];
@@ -157,7 +158,8 @@ export async function completeOAuth(
     );
   }
   const granted = String(tok.json["scope"] ?? "");
-  const missing = SCOPES.filter((s) => !granted.includes(s));
+  const grantedSet = new Set(granted.split(/\s+/));
+  const missing = SCOPES.filter((s) => !grantedSet.has(s));
   if (missing.length) {
     throw new AppError(
       "Some requested YouTube permissions were not granted. Please connect again and allow all of them.",

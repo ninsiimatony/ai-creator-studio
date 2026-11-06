@@ -89,7 +89,7 @@ export async function completeOAuth2(
   if (!tok.ok || typeof refresh !== "string" || typeof access !== "string")
     throw new AppError("Google did not accept the sign-in for the second channel. Please try again.");
   const granted = String(tok.json["scope"] ?? "");
-  if (SCOPES.some((s) => !granted.includes(s)))
+  if (SCOPES.some((s) => !new Set(granted.split(/\s+/)).has(s)))
     throw new AppError("Some YouTube permissions were not granted. Connect again and allow all of them.");
   const res = await f("https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true", {
     headers: { authorization: `Bearer ${access}` },
