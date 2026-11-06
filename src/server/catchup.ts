@@ -10,7 +10,7 @@ import type { D1Database, WorkerEnv } from "./db";
 
 const REPO = "ninsiimatony/ai-creator-studio";
 const REF = "main";
-const SLOT_MINUTES_UTC = [3 * 60 + 17, 9 * 60 + 17, 15 * 60 + 17, 17 * 60 + 17]; // slot 3 = second channel (21:17 Oman)
+const SLOT_MINUTES_UTC = [3 * 60 + 17, 9 * 60 + 17, 15 * 60 + 17, 23 * 60 + 17]; // slot 3 = second channel: starts 03:17 Oman (6:17 PM New York), live about 7:20 PM New York
 const MAX_ATTEMPTS = 4;
 const LOST_AFTER_MS = 12 * 60 * 1000; // dispatched but GitHub never showed a run
 const STUCK_AFTER_MS = 100 * 60 * 1000; // run still going far too long
