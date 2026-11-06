@@ -27,10 +27,12 @@ export const Route = createFileRoute("/api/media/stock-clip")({
           const { env, db } = await requireUserOrBot(request);
           const body = Body.parse(await request.json().catch(() => ({})));
           // Strict (cartoon-only) requests remember every animation clip used, so no clip is ever reused.
+          // Normal clips are remembered too (last 800), so a new video prefers clips no earlier video used.
+          const noteKey = body.strict ? "used_anim_clips" : "used_stock_clips";
           let used: number[] = [];
-          if (body.strict) {
+          {
             try {
-              used = JSON.parse((await getNote(db, "used_anim_clips")) || "[]");
+              used = JSON.parse((await getNote(db, noteKey)) || "[]");
             } catch {
               used = [];
             }
@@ -42,11 +44,11 @@ export const Route = createFileRoute("/api/media/stock-clip")({
             ...(body.query ? { query: body.query } : {}),
             ...(body.style ? { style: body.style } : {}),
             ...(body.small ? { small: true } : {}),
-            ...(body.strict ? { strict: true, exclude: used } : {}),
+            ...(body.strict ? { strict: true, exclude: used } : { exclude: used }),
           });
-          if (body.strict && id !== undefined) {
+          if (id !== undefined) {
             try {
-              await setNote(db, "used_anim_clips", JSON.stringify([...used, id].slice(-3000)));
+              await setNote(db, noteKey, JSON.stringify([...used, id].slice(body.strict ? -3000 : -800)));
             } catch {
               /* remembering is best-effort */
             }
