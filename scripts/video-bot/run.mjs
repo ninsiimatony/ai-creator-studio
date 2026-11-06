@@ -208,6 +208,20 @@ async function setThumbnail(videoId, file) {
   if (!res.ok) throw new Error(`thumbnail ${res.status}: ${(await res.text()).slice(0, 200)}`);
 }
 
+async function publishVideo(videoId) {
+  // Auto-publish: make the uploaded video public right away (set AUTO_PUBLISH=0 to turn off).
+  const { accessToken } = await studio("/api/automation/youtube-token", { channel: CHANNEL });
+  const h = { authorization: `Bearer ${accessToken}`, "content-type": "application/json" };
+  const cur = await (await fetch(`https://www.googleapis.com/youtube/v3/videos?part=status&id=${videoId}`, { headers: h })).json();
+  const st = cur.items?.[0]?.status;
+  if (!st) throw new Error("video not found for publishing");
+  const res = await fetch("https://www.googleapis.com/youtube/v3/videos?part=status", {
+    method: "PUT", headers: h,
+    body: JSON.stringify({ id: videoId, status: { privacyStatus: "public", selfDeclaredMadeForKids: st.selfDeclaredMadeForKids ?? false, embeddable: st.embeddable ?? true, license: st.license ?? "youtube", publicStatsViewable: st.publicStatsViewable ?? true } }),
+  });
+  if (!res.ok) throw new Error(`publish ${res.status}: ${(await res.text()).slice(0, 200)}`);
+}
+
 async function uploadToYouTube(file, title, description) {
   const { accessToken } = await studio("/api/automation/youtube-token", { channel: CHANNEL });
   const size = (await stat(file)).size;
@@ -474,6 +488,12 @@ async function main() {
   }
   log("Uploading to YouTube (private)...");
   const id = await uploadToYouTube(final, outline.title, description);
+  let pubNote = "";
+  const AUTO = process.env.AUTO_PUBLISH !== "0";
+  if (AUTO) {
+    try { await publishVideo(id); log("Published (public)"); pubNote = "PUBLIC"; }
+    catch (e) { log("auto-publish failed:", e.message); pubNote = "FAILED"; }
+  }
   let thumbNote = "";
   try {
     log("Making thumbnail...");
@@ -512,6 +532,7 @@ async function main() {
     );
     shortNote = `\n\nShort (1 min): https://www.youtube.com/watch?v=${shortId}&${AUTH}\nPublish it: https://studio.youtube.com/video/${shortId}/edit?${AUTH}`;
     log("Short uploaded:", shortId);
+    if (AUTO) { try { await publishVideo(shortId); log("Short published"); } catch (e) { log("short publish failed:", e.message); } }
     // Also send the Short file to Telegram, ready to post on TikTok.
     try {
       const caption =
@@ -530,7 +551,7 @@ async function main() {
     log("short skipped:", e.message);
   }
   await notify(
-    `✅ Your video is ready (PRIVATE)\n"${outline.title}" · ${Math.round(total / 60)} min\n\nWatch: https://www.youtube.com/watch?v=${id}&${AUTH}\nPublish it: https://studio.youtube.com/video/${id}/edit?${AUTH}\n\nOne-tap publish page: ${STUDIO}/go-public\n\nIt is private until you press Publish.${thumbNote}${shortNote}${policyNote}`,
+    `✅ Your video is ${pubNote === "PUBLIC" ? "LIVE (public)" : "ready (PRIVATE)"}\n"${outline.title}" · ${Math.round(total / 60)} min\n\nWatch: https://www.youtube.com/watch?v=${id}&${AUTH}\nPublish it: https://studio.youtube.com/video/${id}/edit?${AUTH}\n\nOne-tap publish page: ${STUDIO}/go-public\n\n${pubNote === "PUBLIC" ? "It was published automatically." : pubNote === "FAILED" ? "Auto-publish failed, so it is still private. Use the publish page." : "It is private until you press Publish."}${thumbNote}${shortNote}${policyNote}`,
   );
   log("All done:", id);
 }
