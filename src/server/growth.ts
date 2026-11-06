@@ -3,6 +3,7 @@ import { askAi } from "./autoscript";
 import { sendTelegram } from "./bot";
 import type { WorkerEnv } from "./db";
 import { getAccessToken } from "./google";
+import { channel2Connected, getAccessToken2 } from "./google2";
 import { setNote } from "./topicgen";
 
 const day = (d: Date) => d.toISOString().slice(0, 10);
@@ -121,7 +122,34 @@ export async function runWeeklyReport(env: WorkerEnv, force = false): Promise<st
         /* skip */
       }
     }
-    await send(`📈 Weekly report\n\n${facts}\n\n${tips ? `💡 Tips\n${tips}` : ""}${themeLine}`.slice(0, 3900));
+    // Simple decision rule: many uploads but very few views per video -> suggest fewer, better videos.
+    let paceLine = "";
+    try {
+      const up = (await db.prepare("SELECT COUNT(*) AS n FROM video_slots WHERE slot < 3 AND status = 'done' AND day >= ?").bind(day(start)).first<{ n: number }>())?.n ?? 0;
+      if (up >= 5) {
+        const per = Math.round(cur.views / up);
+        paceLine =
+          per < 20
+            ? `\n\n🧭 Pace check: ${up} videos made this week, about ${per} views per video. That is low. My advice: after 2 weeks of this, change to 2 videos a day and make each one better. Reply here if you want me to do that.`
+            : `\n\n🧭 Pace check: ${up} videos this week, about ${per} views per video. Keep going.`;
+      }
+    } catch {
+      /* optional */
+    }
+    // Second channel (Little Hope Tales): same numbers, shorter.
+    let ch2Line = "";
+    try {
+      if (await channel2Connected(db)) {
+        const t2 = (await getAccessToken2(db, env as any, fetch)).accessToken;
+        const c2 = await totals(t2, start, end);
+        const top2 = await report(t2, { startDate: day(start), endDate: day(end), dimensions: "video", metrics: "views,averageViewPercentage", sort: "-views", maxResults: "3" });
+        ch2Line = `\n\n👻 Little Hope Tales (last 7 days): ${c2.views} views, ${Math.round(c2.minutes)} watch minutes, ${c2.subs} new subscribers.` +
+          ((top2.rows ?? []).length ? `\nBest videos watched: ${(top2.rows ?? []).map((r) => `${r[1]} views (${Math.round(Number(r[2]))}% watched)`).join(", ")}` : "");
+      }
+    } catch (e) {
+      ch2Line = `\n\n👻 Little Hope Tales numbers could not be read (${String(e instanceof Error ? e.message : e).slice(0, 80)}).`;
+    }
+    await send(`📈 Weekly report (Tony Ninsiima)\n\n${facts}\n\n${tips ? `💡 Tips\n${tips}` : ""}${themeLine}${paceLine}${ch2Line}`.slice(0, 3900));
     if (!force) await db.prepare("INSERT OR IGNORE INTO weekly_reports (week, sent_at) VALUES (?, ?)").bind(week, now.toISOString()).run();
     return "sent";
   } catch (e) {
