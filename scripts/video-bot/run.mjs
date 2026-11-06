@@ -65,6 +65,8 @@ async function studio(pathname, body, { raw = false } = {}) {
 }
 
 const CHANNEL = process.env.CHANNEL === "2" ? 2 : 1;
+// Links in Telegram ask Google to open the right account for each channel.
+const AUTH = "authuser=" + encodeURIComponent(CHANNEL === 2 ? "ninsiimamusigo@gmail.com" : "ninsiimatony@gmail.com");
 // Random start so different videos pick different clips from the same search.
 const CLIP_OFFSET = Math.floor(Math.random() * 20);
 
@@ -508,7 +510,7 @@ async function main() {
       `${outline.title.slice(0, 85)} #shorts`,
       `Watch the full story: https://youtu.be/${id}\n\n${hashtags.join(" ")} #shorts`,
     );
-    shortNote = `\n\nShort (1 min): https://youtu.be/${shortId}\nPublish it: https://studio.youtube.com/video/${shortId}/edit`;
+    shortNote = `\n\nShort (1 min): https://www.youtube.com/watch?v=${shortId}&${AUTH}\nPublish it: https://studio.youtube.com/video/${shortId}/edit?${AUTH}`;
     log("Short uploaded:", shortId);
     // Also send the Short file to Telegram, ready to post on TikTok.
     try {
@@ -528,7 +530,7 @@ async function main() {
     log("short skipped:", e.message);
   }
   await notify(
-    `✅ Your video is ready (PRIVATE)\n"${outline.title}" · ${Math.round(total / 60)} min\n\nWatch: https://youtu.be/${id}\nPublish it: https://studio.youtube.com/video/${id}/edit\n\nIt is private until you press Publish.${thumbNote}${shortNote}${policyNote}`,
+    `✅ Your video is ready (PRIVATE)\n"${outline.title}" · ${Math.round(total / 60)} min\n\nWatch: https://www.youtube.com/watch?v=${id}&${AUTH}\nPublish it: https://studio.youtube.com/video/${id}/edit?${AUTH}\n\nIt is private until you press Publish.${thumbNote}${shortNote}${policyNote}`,
   );
   log("All done:", id);
 }
