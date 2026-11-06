@@ -530,7 +530,7 @@ async function main() {
     log("short skipped:", e.message);
   }
   await notify(
-    `✅ Your video is ready (PRIVATE)\n"${outline.title}" · ${Math.round(total / 60)} min\n\nWatch: https://www.youtube.com/watch?v=${id}&${AUTH}\nPublish it: https://studio.youtube.com/video/${id}/edit?${AUTH}\n\nIt is private until you press Publish.${thumbNote}${shortNote}${policyNote}`,
+    `✅ Your video is ready (PRIVATE)\n"${outline.title}" · ${Math.round(total / 60)} min\n\nWatch: https://www.youtube.com/watch?v=${id}&${AUTH}\nPublish it: https://studio.youtube.com/video/${id}/edit?${AUTH}\n\nOne-tap publish page: ${STUDIO}/go-public\n\nIt is private until you press Publish.${thumbNote}${shortNote}${policyNote}`,
   );
   log("All done:", id);
 }

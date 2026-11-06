@@ -15,6 +15,7 @@ import { Route as ApprovalsRouteImport } from './routes/approvals'
 import { Route as AutomationRouteImport } from './routes/automation'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as ChannelRouteImport } from './routes/channel'
+import { Route as GoPublicRouteImport } from './routes/go-public'
 import { Route as IdeasRouteImport } from './routes/ideas'
 import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as PublishRouteImport } from './routes/publish'
@@ -34,6 +35,8 @@ import { Route as ApiMediaAutoScriptRouteImport } from './routes/api/media/auto-
 import { Route as ApiMediaImageRouteImport } from './routes/api/media/image'
 import { Route as ApiMediaStockClipRouteImport } from './routes/api/media/stock-clip'
 import { Route as ApiMediaTtsRouteImport } from './routes/api/media/tts'
+import { Route as ApiPublishGoRouteImport } from './routes/api/publish/go'
+import { Route as ApiPublishListRouteImport } from './routes/api/publish/list'
 import { Route as ApiYoutubeThumbnailRouteImport } from './routes/api/youtube/thumbnail'
 import { Route as ApiAuthGoogleCallbackRouteImport } from './routes/api/auth/google/callback'
 import { Route as ApiAuthGoogle2StartRouteImport } from './routes/api/auth/google2/start'
@@ -66,6 +69,11 @@ const CalendarRoute = CalendarRouteImport.update({
 const ChannelRoute = ChannelRouteImport.update({
   id: '/channel',
   path: '/channel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GoPublicRoute = GoPublicRouteImport.update({
+  id: '/go-public',
+  path: '/go-public',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IdeasRoute = IdeasRouteImport.update({
@@ -166,6 +174,16 @@ const ApiMediaTtsRoute = ApiMediaTtsRouteImport.update({
   path: '/api/media/tts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublishGoRoute = ApiPublishGoRouteImport.update({
+  id: '/api/publish/go',
+  path: '/api/publish/go',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublishListRoute = ApiPublishListRouteImport.update({
+  id: '/api/publish/list',
+  path: '/api/publish/list',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiYoutubeThumbnailRoute = ApiYoutubeThumbnailRouteImport.update({
   id: '/api/youtube/thumbnail',
   path: '/api/youtube/thumbnail',
@@ -189,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/automation': typeof AutomationRoute
   '/calendar': typeof CalendarRoute
   '/channel': typeof ChannelRoute
+  '/go-public': typeof GoPublicRoute
   '/ideas': typeof IdeasRoute
   '/pipeline': typeof PipelineRoute
   '/publish': typeof PublishRoute
@@ -208,6 +227,8 @@ export interface FileRoutesByFullPath {
   '/api/media/image': typeof ApiMediaImageRoute
   '/api/media/stock-clip': typeof ApiMediaStockClipRoute
   '/api/media/tts': typeof ApiMediaTtsRoute
+  '/api/publish/go': typeof ApiPublishGoRoute
+  '/api/publish/list': typeof ApiPublishListRoute
   '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
   '/api/auth/google2/start': typeof ApiAuthGoogle2StartRoute
@@ -219,6 +240,7 @@ export interface FileRoutesByTo {
   '/automation': typeof AutomationRoute
   '/calendar': typeof CalendarRoute
   '/channel': typeof ChannelRoute
+  '/go-public': typeof GoPublicRoute
   '/ideas': typeof IdeasRoute
   '/pipeline': typeof PipelineRoute
   '/publish': typeof PublishRoute
@@ -238,6 +260,8 @@ export interface FileRoutesByTo {
   '/api/media/image': typeof ApiMediaImageRoute
   '/api/media/stock-clip': typeof ApiMediaStockClipRoute
   '/api/media/tts': typeof ApiMediaTtsRoute
+  '/api/publish/go': typeof ApiPublishGoRoute
+  '/api/publish/list': typeof ApiPublishListRoute
   '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
   '/api/auth/google2/start': typeof ApiAuthGoogle2StartRoute
@@ -250,6 +274,7 @@ export interface FileRoutesById {
   '/automation': typeof AutomationRoute
   '/calendar': typeof CalendarRoute
   '/channel': typeof ChannelRoute
+  '/go-public': typeof GoPublicRoute
   '/ideas': typeof IdeasRoute
   '/pipeline': typeof PipelineRoute
   '/publish': typeof PublishRoute
@@ -269,6 +294,8 @@ export interface FileRoutesById {
   '/api/media/image': typeof ApiMediaImageRoute
   '/api/media/stock-clip': typeof ApiMediaStockClipRoute
   '/api/media/tts': typeof ApiMediaTtsRoute
+  '/api/publish/go': typeof ApiPublishGoRoute
+  '/api/publish/list': typeof ApiPublishListRoute
   '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
   '/api/auth/google2/start': typeof ApiAuthGoogle2StartRoute
@@ -282,6 +309,7 @@ export interface FileRouteTypes {
     | '/automation'
     | '/calendar'
     | '/channel'
+    | '/go-public'
     | '/ideas'
     | '/pipeline'
     | '/publish'
@@ -301,6 +329,8 @@ export interface FileRouteTypes {
     | '/api/media/image'
     | '/api/media/stock-clip'
     | '/api/media/tts'
+    | '/api/publish/go'
+    | '/api/publish/list'
     | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
     | '/api/auth/google2/start'
@@ -312,6 +342,7 @@ export interface FileRouteTypes {
     | '/automation'
     | '/calendar'
     | '/channel'
+    | '/go-public'
     | '/ideas'
     | '/pipeline'
     | '/publish'
@@ -331,6 +362,8 @@ export interface FileRouteTypes {
     | '/api/media/image'
     | '/api/media/stock-clip'
     | '/api/media/tts'
+    | '/api/publish/go'
+    | '/api/publish/list'
     | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
     | '/api/auth/google2/start'
@@ -342,6 +375,7 @@ export interface FileRouteTypes {
     | '/automation'
     | '/calendar'
     | '/channel'
+    | '/go-public'
     | '/ideas'
     | '/pipeline'
     | '/publish'
@@ -361,6 +395,8 @@ export interface FileRouteTypes {
     | '/api/media/image'
     | '/api/media/stock-clip'
     | '/api/media/tts'
+    | '/api/publish/go'
+    | '/api/publish/list'
     | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
     | '/api/auth/google2/start'
@@ -373,6 +409,7 @@ export interface RootRouteChildren {
   AutomationRoute: typeof AutomationRoute
   CalendarRoute: typeof CalendarRoute
   ChannelRoute: typeof ChannelRoute
+  GoPublicRoute: typeof GoPublicRoute
   IdeasRoute: typeof IdeasRoute
   PipelineRoute: typeof PipelineRoute
   PublishRoute: typeof PublishRoute
@@ -392,6 +429,8 @@ export interface RootRouteChildren {
   ApiMediaImageRoute: typeof ApiMediaImageRoute
   ApiMediaStockClipRoute: typeof ApiMediaStockClipRoute
   ApiMediaTtsRoute: typeof ApiMediaTtsRoute
+  ApiPublishGoRoute: typeof ApiPublishGoRoute
+  ApiPublishListRoute: typeof ApiPublishListRoute
   ApiYoutubeThumbnailRoute: typeof ApiYoutubeThumbnailRoute
   ApiAuthGoogleCallbackRoute: typeof ApiAuthGoogleCallbackRoute
   ApiAuthGoogle2StartRoute: typeof ApiAuthGoogle2StartRoute
@@ -439,6 +478,13 @@ declare module '@tanstack/react-router' {
       path: '/channel'
       fullPath: '/channel'
       preLoaderRoute: typeof ChannelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/go-public': {
+      id: '/go-public'
+      path: '/go-public'
+      fullPath: '/go-public'
+      preLoaderRoute: typeof GoPublicRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ideas': {
@@ -574,6 +620,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMediaTtsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/publish/go': {
+      id: '/api/publish/go'
+      path: '/api/publish/go'
+      fullPath: '/api/publish/go'
+      preLoaderRoute: typeof ApiPublishGoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/publish/list': {
+      id: '/api/publish/list'
+      path: '/api/publish/list'
+      fullPath: '/api/publish/list'
+      preLoaderRoute: typeof ApiPublishListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/youtube/thumbnail': {
       id: '/api/youtube/thumbnail'
       path: '/api/youtube/thumbnail'
@@ -605,6 +665,7 @@ const rootRouteChildren: RootRouteChildren = {
   AutomationRoute: AutomationRoute,
   CalendarRoute: CalendarRoute,
   ChannelRoute: ChannelRoute,
+  GoPublicRoute: GoPublicRoute,
   IdeasRoute: IdeasRoute,
   PipelineRoute: PipelineRoute,
   PublishRoute: PublishRoute,
@@ -624,6 +685,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMediaImageRoute: ApiMediaImageRoute,
   ApiMediaStockClipRoute: ApiMediaStockClipRoute,
   ApiMediaTtsRoute: ApiMediaTtsRoute,
+  ApiPublishGoRoute: ApiPublishGoRoute,
+  ApiPublishListRoute: ApiPublishListRoute,
   ApiYoutubeThumbnailRoute: ApiYoutubeThumbnailRoute,
   ApiAuthGoogleCallbackRoute: ApiAuthGoogleCallbackRoute,
   ApiAuthGoogle2StartRoute: ApiAuthGoogle2StartRoute,
