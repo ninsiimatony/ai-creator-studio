@@ -201,7 +201,7 @@ async function makeThumbnail(title) {
   const pickOne = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const r = Math.random();
   // ch1: 40% Tony's face, 35% AI-made person, 25% scene only. ch2 (no real faces): 50% cartoon character, 50% scene.
-  const mode = SCARY ? "scene" : CHANNEL === 2 ? (r < 0.5 ? "person" : "scene") : r < 0.4 ? "tony" : r < 0.75 ? "person" : "scene";
+  const mode = SCARY ? "scene" : CHANNEL === 2 ? (r < 0.5 ? "person" : "scene") : r < 0.5 ? "tony" : r < 0.75 ? "person" : "scene";
   const sceneLook = pickOne(["warm golden light", "cool blue night light", "soft sunrise glow", "moody dramatic shadows", "rainy window light", "candle light"]);
   let prompt;
   if (SCARY) {
@@ -228,7 +228,7 @@ async function makeThumbnail(title) {
   try {
     const dir = path.join(path.dirname(new URL(import.meta.url).pathname), "thumbs", CHANNEL === 2 ? "ch2" : "ch1");
     const files = (await readdir(dir)).filter((f) => /\.(jpe?g|png)$/i.test(f));
-    if (files.length && Math.random() < 0.85) {
+    if (files.length && mode !== "tony" && Math.random() < 0.85) {
       img = await readFile(path.join(dir, pickOne(files)));
       libUsed = true;
     }

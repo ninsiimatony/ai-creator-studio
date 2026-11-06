@@ -66,21 +66,34 @@ export async function refillTopics(env: WorkerEnv): Promise<string> {
   if (left >= 12) return "enough topics";
   const titles = await redditTitles();
   const winning = await getNote(db, "winning_themes");
+  let recent: string[] = [];
+  try {
+    recent = ((await db.prepare("SELECT topic FROM video_slots ORDER BY day DESC, slot DESC LIMIT 30").all()) as { results?: { topic: string }[] }).results?.map((r) => r.topic.slice(0, 110)) ?? [];
+  } catch {
+    recent = [];
+  }
   const text = await askAi(
     env.AI,
     [
       {
         role: "system",
         content:
-          "You invent story topics for a YouTube channel of emotional fictional relationship dramas (love, heartbreak, cheating, betrayal, " +
-          "secrets, second chances). Write 15 ORIGINAL topics, one per line, each 12 to 25 words, a clear situation with a conflict and a twist " +
-          "to come. Never copy a real post, never use real names or places of real people, no explicit content. Plain English. " +
-          "Reply with only the 15 lines, no numbers.",
+          "You invent story topics for a YouTube channel of emotional fictional LOVE and RELATIONSHIP stories: first love, heartbreak, marriage, " +
+          "long-distance love, forbidden love, lost love found again, a wedding gone wrong, a letter that arrives too late, an immigrant couple, " +
+          "a widow, step-family, a best friend who secretly loves, a love triangle, a promise kept after many years. Be CREATIVE and make every topic " +
+          "feel very different from the others: different people, ages, countries and places (Africa, the Gulf, Asia, Europe, America), different " +
+          "settings (a farm, a hospital, an airport, a fishing village, a coffee shop, a train, a school reunion), different endings (bittersweet, " +
+          "happy, tragic, a shocking twist). Borrow the emotional shape of classic storytelling and old movies (a love that crosses class lines, a " +
+          "soldier who comes home, a letter in a bottle, a stranger on a train) but make everything ORIGINAL, never copy a film, book or real post. " +
+          "Do NOT keep using the same plots (do not make most stories about cheating, abandonment, weddings or an ex returning). " +
+          "Write 15 topics, one per line, each 12 to 25 words, a clear situation with a conflict and a twist to come. No real people, no explicit " +
+          "content. Plain English. Reply with only the 15 lines, no numbers.",
       },
       {
         role: "user",
         content:
           (titles.length ? `What people are talking about this week (for inspiration only):\n${titles.join("\n")}\n\n` : "") +
+          (recent.length ? `Stories already made (do NOT repeat these plots or ideas):\n${recent.join("\n")}\n\n` : "") +
           (winning ? `Themes that did best on this channel (lean toward these): ${winning}\n` : ""),
       },
     ],

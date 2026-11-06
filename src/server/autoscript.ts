@@ -92,7 +92,7 @@ export async function writeOutline(p: {
           (p.tone === "scary"
             ? `Title: <a creepy, curiosity-driven title under 60 characters, Title Case, that promises a scary secret, for example: The Goblin Who Guards The Cellar Door / Do Not Open The Door At Midnight / The Key That Whispers Your Name>\n`
             : p.tone === "emotional"
-            ? `Title: <a dramatic emotional title under 60 characters, Title Case, built on a clear conflict and a strong word like Mocked, Ignored, Forgotten, Abandoned, Laughed At, Left Alone or Shocked, so people need to know what happened, for example: Old Man Ignored By His Children, Then This Happens / Waiter Mocked For Being Poor, Gets The Last Laugh / Grandmother Forgotten At Care Home Until One Visit>\n`
+            ? `Title: <a creative, emotional title under 60 characters, Title Case, about love, a relationship or heartbreak and the people in it, that makes people need to know what happens. Vary the style every time and do NOT start with the same words as other videos (avoid overusing Abandoned, Shocked, Mocked, Ignored). Examples: She Waited 30 Years For His Letter / The Night My Husband Cried In The Kitchen / He Married Her Best Friend, Then Found The Diary / A Soldier's Last Promise To His Wife>\n`
             : `Title: <a catchy YouTube title>\n`) +
           `1. <section heading>\n2. <section heading>\n... up to ${want}.\n\n` +
           `Write exactly ${want} sections that flow as one story: a strong hook first, a satisfying ending last.`,
