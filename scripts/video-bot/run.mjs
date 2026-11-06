@@ -157,24 +157,40 @@ function pickFace(title, topic) {
   return TONE === "emotional" ? pick(["crying", "sad", "pointing", "thinking"]) : pick(["pointing", "thinking", "shocked"]);
 }
 
-/** Thumbnail: AI background + Tony's face + big title text, 1280x720 JPEG. */
+/** Thumbnail: a different look every time. Mixes Tony's face, AI-made people / characters, and plain scenes. */
 async function makeThumbnail(title) {
-  const prompt =
-    CHANNEL === 2
-      ? `Colorful 3D animated cartoon movie scene for a story titled "${title}", Pixar style, expressive characters, warm cinematic lighting, ultra detailed, no text`
-      : TONE === "emotional"
-      ? `Cinematic emotional background scene for a story titled "${title}", soft dramatic light, warm and blue tones, shallow depth of field, ultra detailed, 8k, no people in foreground, no text`
-      : `Eye-catching cinematic background for a YouTube video titled "${title}", vivid colors, dramatic lighting, ultra detailed, 8k, no text`;
+  const pickOne = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const r = Math.random();
+  // ch1: 40% Tony's face, 35% AI-made person, 25% scene only. ch2 (no real faces): 50% cartoon character, 50% scene.
+  const mode = CHANNEL === 2 ? (r < 0.5 ? "person" : "scene") : r < 0.4 ? "tony" : r < 0.75 ? "person" : "scene";
+  const sceneLook = pickOne(["warm golden light", "cool blue night light", "soft sunrise glow", "moody dramatic shadows", "rainy window light", "candle light"]);
+  let prompt;
+  if (mode === "person") {
+    const feel = pickOne(["shocked", "heartbroken, eyes full of tears", "worried", "hopeful and smiling softly", "angry and hurt", "surprised"]);
+    if (CHANNEL === 2) {
+      const who = pickOne(["a cute cartoon mother", "a cute cartoon father", "a cartoon little girl", "a cartoon little boy", "a kind cartoon grandmother", "a cartoon grandfather"]);
+      prompt = `Pixar style 3D cartoon close-up of ${who} with a ${feel} expression, placed on the right side of the frame, ${sceneLook}, empty calm space on the left, ultra detailed, no text`;
+    } else {
+      const who = pickOne(["a middle-aged woman", "a young woman", "a worried father", "an elderly man", "a young man", "an elderly woman", "a mother holding her child"]);
+      prompt = `Cinematic close-up photo of ${who} with a ${feel} expression, placed on the right side of the frame, ${sceneLook}, dark empty space on the left, shallow depth of field, ultra detailed, 8k, no text`;
+    }
+  } else if (CHANNEL === 2) {
+    prompt = `Colorful 3D animated cartoon movie scene for a story titled "${title}", Pixar style, expressive characters, ${sceneLook}, ultra detailed, no text`;
+  } else if (TONE === "emotional") {
+    prompt = `Cinematic emotional background scene for a story titled "${title}", ${sceneLook}, shallow depth of field, ultra detailed, 8k, no people in foreground, no text`;
+  } else {
+    prompt = `Eye-catching cinematic background for a YouTube video titled "${title}", vivid colors, dramatic lighting, ultra detailed, 8k, no text`;
+  }
   const img = await studio("/api/media/image", { prompt: prompt.slice(0, 900) }, { raw: true });
   const src = path.join(WORK, "thumb-src.jpg");
   await writeFile(src, img);
-  const face = CHANNEL === 2 ? "none" : pickFace(title, TOPIC); // channel 2 is faceless
+  const face = mode === "tony" ? pickFace(title, TOPIC) : "none";
   const here = path.dirname(new URL(import.meta.url).pathname);
   const out = path.join(WORK, "thumb.jpg");
-  log("Thumbnail face:", face);
+  log("Thumbnail mode:", mode, "face:", face);
   await run("python3", [
     path.join(here, "thumb.py"), src, face === "none" ? "none" : path.join(here, "faces", `${face}.png`),
-    face === "pointing" ? "left" : "right", title, out,
+    face === "pointing" ? "left" : "right", title, out, mode === "person" ? "half" : "full",
   ]);
   return out;
 }
