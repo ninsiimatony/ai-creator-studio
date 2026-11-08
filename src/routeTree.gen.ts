@@ -28,6 +28,7 @@ import { Route as ApiTelegramRouteImport } from './routes/api/telegram'
 import { Route as ApiVoiceoverRouteImport } from './routes/api/voiceover'
 import { Route as ApiAutomationCatchupRouteImport } from './routes/api/automation/catchup'
 import { Route as ApiAutomationGrowthReportRouteImport } from './routes/api/automation/growth-report'
+import { Route as ApiAutomationKaggleBudgetRouteImport } from './routes/api/automation/kaggle-budget'
 import { Route as ApiAutomationNotifyRouteImport } from './routes/api/automation/notify'
 import { Route as ApiAutomationNotifyVideoRouteImport } from './routes/api/automation/notify-video'
 import { Route as ApiAutomationYoutubeTokenRouteImport } from './routes/api/automation/youtube-token'
@@ -137,6 +138,12 @@ const ApiAutomationGrowthReportRoute =
     path: '/api/automation/growth-report',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAutomationKaggleBudgetRoute =
+  ApiAutomationKaggleBudgetRouteImport.update({
+    id: '/api/automation/kaggle-budget',
+    path: '/api/automation/kaggle-budget',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAutomationNotifyRoute = ApiAutomationNotifyRouteImport.update({
   id: '/api/automation/notify',
   path: '/api/automation/notify',
@@ -220,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/api/voiceover': typeof ApiVoiceoverRoute
   '/api/automation/catchup': typeof ApiAutomationCatchupRoute
   '/api/automation/growth-report': typeof ApiAutomationGrowthReportRoute
+  '/api/automation/kaggle-budget': typeof ApiAutomationKaggleBudgetRoute
   '/api/automation/notify': typeof ApiAutomationNotifyRoute
   '/api/automation/notify-video': typeof ApiAutomationNotifyVideoRoute
   '/api/automation/youtube-token': typeof ApiAutomationYoutubeTokenRoute
@@ -253,6 +261,7 @@ export interface FileRoutesByTo {
   '/api/voiceover': typeof ApiVoiceoverRoute
   '/api/automation/catchup': typeof ApiAutomationCatchupRoute
   '/api/automation/growth-report': typeof ApiAutomationGrowthReportRoute
+  '/api/automation/kaggle-budget': typeof ApiAutomationKaggleBudgetRoute
   '/api/automation/notify': typeof ApiAutomationNotifyRoute
   '/api/automation/notify-video': typeof ApiAutomationNotifyVideoRoute
   '/api/automation/youtube-token': typeof ApiAutomationYoutubeTokenRoute
@@ -287,6 +296,7 @@ export interface FileRoutesById {
   '/api/voiceover': typeof ApiVoiceoverRoute
   '/api/automation/catchup': typeof ApiAutomationCatchupRoute
   '/api/automation/growth-report': typeof ApiAutomationGrowthReportRoute
+  '/api/automation/kaggle-budget': typeof ApiAutomationKaggleBudgetRoute
   '/api/automation/notify': typeof ApiAutomationNotifyRoute
   '/api/automation/notify-video': typeof ApiAutomationNotifyVideoRoute
   '/api/automation/youtube-token': typeof ApiAutomationYoutubeTokenRoute
@@ -322,6 +332,7 @@ export interface FileRouteTypes {
     | '/api/voiceover'
     | '/api/automation/catchup'
     | '/api/automation/growth-report'
+    | '/api/automation/kaggle-budget'
     | '/api/automation/notify'
     | '/api/automation/notify-video'
     | '/api/automation/youtube-token'
@@ -355,6 +366,7 @@ export interface FileRouteTypes {
     | '/api/voiceover'
     | '/api/automation/catchup'
     | '/api/automation/growth-report'
+    | '/api/automation/kaggle-budget'
     | '/api/automation/notify'
     | '/api/automation/notify-video'
     | '/api/automation/youtube-token'
@@ -388,6 +400,7 @@ export interface FileRouteTypes {
     | '/api/voiceover'
     | '/api/automation/catchup'
     | '/api/automation/growth-report'
+    | '/api/automation/kaggle-budget'
     | '/api/automation/notify'
     | '/api/automation/notify-video'
     | '/api/automation/youtube-token'
@@ -422,6 +435,7 @@ export interface RootRouteChildren {
   ApiVoiceoverRoute: typeof ApiVoiceoverRoute
   ApiAutomationCatchupRoute: typeof ApiAutomationCatchupRoute
   ApiAutomationGrowthReportRoute: typeof ApiAutomationGrowthReportRoute
+  ApiAutomationKaggleBudgetRoute: typeof ApiAutomationKaggleBudgetRoute
   ApiAutomationNotifyRoute: typeof ApiAutomationNotifyRoute
   ApiAutomationNotifyVideoRoute: typeof ApiAutomationNotifyVideoRoute
   ApiAutomationYoutubeTokenRoute: typeof ApiAutomationYoutubeTokenRoute
@@ -571,6 +585,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAutomationGrowthReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/automation/kaggle-budget': {
+      id: '/api/automation/kaggle-budget'
+      path: '/api/automation/kaggle-budget'
+      fullPath: '/api/automation/kaggle-budget'
+      preLoaderRoute: typeof ApiAutomationKaggleBudgetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/automation/notify': {
       id: '/api/automation/notify'
       path: '/api/automation/notify'
@@ -678,6 +699,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVoiceoverRoute: ApiVoiceoverRoute,
   ApiAutomationCatchupRoute: ApiAutomationCatchupRoute,
   ApiAutomationGrowthReportRoute: ApiAutomationGrowthReportRoute,
+  ApiAutomationKaggleBudgetRoute: ApiAutomationKaggleBudgetRoute,
   ApiAutomationNotifyRoute: ApiAutomationNotifyRoute,
   ApiAutomationNotifyVideoRoute: ApiAutomationNotifyVideoRoute,
   ApiAutomationYoutubeTokenRoute: ApiAutomationYoutubeTokenRoute,

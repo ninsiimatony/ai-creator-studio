@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import { mkdir, readFile, writeFile, rm, stat, open, readdir } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import * as ltx from "./kaggle-ltx.mjs";
 
 const STUDIO = (process.env.STUDIO_URL ?? "").replace(/\/$/, "");
 const SECRET = process.env.AUTOMATION_SECRET ?? "";
@@ -391,9 +392,25 @@ async function main() {
     log(`Script part ${i + 1}/${outline.sections.length} done`);
   }
 
+  // 1.5 Optional upgrade: moving clips from LTX-Video on free Kaggle GPU, instead of the usual
+  // still pictures (channel 2) / Pixabay stock clips (channel 1). OFF unless USE_LTX_VIDEO=1 and
+  // Kaggle credentials are set; on any failure this just returns null and nothing else changes.
+  let kaggleClips = null;
+  if (ltx.KAGGLE_ENABLED) {
+    try {
+      kaggleClips = await ltx.generateClipsOnKaggle({
+        studio, scenes, channel: CHANNEL, workDir: WORK,
+        characterStyle: SCARY ? GOBLIN_STYLE : "",
+      });
+    } catch (e) {
+      log("Kaggle LTX-Video skipped, using normal pictures/clips:", String(e.message).slice(0, 160));
+      kaggleClips = null;
+    }
+  }
+
   // 2. One scene at a time: voice, clip, encode.
   const segs = [];
-  let curImg = null, curWide = false, imgN = 0, imgT = 0;
+  let curImg = null, curClip = null, curWide = false, imgN = 0, imgT = 0;
   for (let i = 0; i < scenes.length; i++) {
     const sc = scenes[i];
     const id = String(i).padStart(4, "0");
@@ -405,15 +422,21 @@ async function main() {
       if (i % 4 === 0) {
         const chunk = scenes.slice(i, i + 4).map((x) => x.narration).join(" ").replace(/\s+/g, " ").slice(0, 230);
         try {
-          const lib = Math.random() < 0.8 ? await pickLibraryScene(chunk, i >= scenes.length - 4) : null;
-          if (lib) {
-            curImg = lib;
-            curWide = true;
+          if (kaggleClips && kaggleClips[i]) {
+            curClip = kaggleClips[i];
+            curImg = null;
           } else {
-            const img = await studio("/api/media/image", { prompt: GOBLIN_STYLE + chunk }, { raw: true });
-            curImg = path.join(WORK, `img${i}.` + (img[0] === 0x89 ? "png" : "jpg"));
-            await writeFile(curImg, img);
-            curWide = false;
+            const lib = Math.random() < 0.8 ? await pickLibraryScene(chunk, i >= scenes.length - 4) : null;
+            if (lib) {
+              curImg = lib;
+              curWide = true;
+            } else {
+              const img = await studio("/api/media/image", { prompt: GOBLIN_STYLE + chunk }, { raw: true });
+              curImg = path.join(WORK, `img${i}.` + (img[0] === 0x89 ? "png" : "jpg"));
+              await writeFile(curImg, img);
+              curWide = false;
+            }
+            curClip = null;
           }
           imgN++;
           imgT = 0;
@@ -426,13 +449,19 @@ async function main() {
       const off = Math.round(imgT * 30);
       const zoom = imgN % 2 === 0 ? `min(1.0+0.00025*(${off}+on),1.4)` : `max(1.4-0.00025*(${off}+on),1.0)`;
       const sub = `subtitles=seg.srt:force_style='FontName=DejaVu Sans,FontSize=20,Bold=1,Outline=2,Shadow=0,MarginV=36'`;
-      const vfs = curImg
+      const vfs = curClip
+        ? `scale=2240:1260:force_original_aspect_ratio=increase,crop=2240:1260,fps=30,vignette=PI/4,format=yuv420p,${sub}`
+        : curImg
         ? `${curWide ? "scale=2240:1260" : "scale=2240:2240,crop=2240:1260"},zoompan=z='${zoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${W}x${H}:fps=30,vignette=PI/4,format=yuv420p,${sub}`
         : `fps=30,format=yuv420p,${sub}`;
       const segS = path.join(WORK, `seg${id}.mp4`);
       await ffmpeg(
         [
-          ...(curImg ? ["-loop", "1", "-framerate", "30", "-i", curImg] : ["-f", "lavfi", "-i", `color=c=0x05080f:s=${W}x${H}:r=30`]),
+          ...(curClip
+            ? ["-stream_loop", "-1", "-i", curClip]
+            : curImg
+            ? ["-loop", "1", "-framerate", "30", "-i", curImg]
+            : ["-f", "lavfi", "-i", `color=c=0x05080f:s=${W}x${H}:r=30`]),
           "-i", voice,
           "-t", dur.toFixed(3),
           "-vf", vfs,
@@ -452,7 +481,18 @@ async function main() {
     }
     let clip = null;
     let animated = false;
+    let clipIsShared = false; // Kaggle clips are reused across a group of scenes; don't delete after one use
+    if (kaggleClips) {
+      const groupStart = i - (i % ltx.GROUP_SIZE);
+      if (kaggleClips[groupStart]) {
+        clip = kaggleClips[groupStart];
+        animated = true;
+        clipIsShared = true;
+      }
+    }
     try {
+      if (clip) { /* already set from Kaggle above */ }
+      else {
       await wait(500);
       clip = path.join(WORK, `c${id}.mp4`);
       let bytes = null;
@@ -477,6 +517,7 @@ async function main() {
         );
       }
       await writeFile(clip, bytes);
+      }
     } catch (e) {
       log(`Scene ${i + 1}: no clip (${e.message}); using a plain background`);
       clip = null;
@@ -508,7 +549,7 @@ async function main() {
     );
     segs.push(`file '${path.basename(seg)}'`);
     await rm(voice, { force: true });
-    if (clip) await rm(clip, { force: true });
+    if (clip && !clipIsShared) await rm(clip, { force: true });
     if ((i + 1) % 20 === 0 || i === scenes.length - 1) log(`Scene ${i + 1}/${scenes.length} done`);
   }
 
