@@ -20,12 +20,13 @@ skipped and the video is made the normal way — nothing fails or looks broken.
 
 ## Turning it on
 
-1. Get a Kaggle API token: kaggle.com → profile picture → Settings → API → **Create New Token**.
-   This downloads `kaggle.json` with a `username` and a `key`.
+1. Get a Kaggle API token: kaggle.com → profile picture → Settings → API Tokens → **Generate New
+   Token**. It shows a token starting `KGAT_...` — copy it (Kaggle only shows it once).
 2. In the GitHub repo: Settings → Secrets and variables → Actions:
-   - Add secret `KAGGLE_USERNAME` = the username from that file.
-   - Add secret `KAGGLE_KEY` = the key from that file.
-   - Add **variable** `USE_LTX_VIDEO` = `1`.
+   - **Secrets** tab → New repository secret → name `KAGGLE_API_TOKEN` → paste the `KGAT_...` token.
+   - **Variables** tab → New repository variable → name `KAGGLE_USERNAME` → the Kaggle account
+     name (not secret — e.g. `tonyninsiima`).
+   - **Variables** tab → New repository variable → name `USE_LTX_VIDEO` → value `1`.
 3. That's it — the next video (either channel) will use Kaggle clips if the weekly GPU-hour
    budget allows it.
 

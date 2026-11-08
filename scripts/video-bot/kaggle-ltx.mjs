@@ -1,10 +1,11 @@
 // Optional upgrade: generate short MOVING clips with LTX-Video on a free Kaggle GPU,
 // instead of the usual still pictures (channel 2) / Pixabay stock clips (channel 1).
 //
-// OFF BY DEFAULT. Turns on only when USE_LTX_VIDEO=1 AND KAGGLE_USERNAME/KAGGLE_KEY are set
-// as GitHub Actions secrets. If anything here fails for any reason (no credentials, Kaggle
-// down, weekly GPU-hour budget used up, timeout), it returns null and run.mjs falls straight
-// back to its normal behaviour — nothing about the existing pipeline changes when this fails.
+// OFF BY DEFAULT. Turns on only when USE_LTX_VIDEO=1 AND KAGGLE_API_TOKEN is set as a GitHub
+// Actions secret (Kaggle's newer single-token auth — Settings > API Tokens > Generate New Token).
+// If anything here fails for any reason (no credentials, Kaggle down, weekly GPU-hour budget
+// used up, timeout), it returns null and run.mjs falls straight back to its normal behaviour —
+// nothing about the existing pipeline changes when this fails.
 //
 // How it works: one Kaggle "kernel" (script) is pushed per video. It loads LTX-Video ONCE,
 // then renders one short (~3s) clip per group of narration scenes (same grouping channel 2
@@ -18,8 +19,9 @@ import path from "node:path";
 import os from "node:os";
 
 export const KAGGLE_ENABLED = process.env.USE_LTX_VIDEO === "1";
-const KAGGLE_USER = process.env.KAGGLE_USERNAME ?? "";
-const KAGGLE_KEY = process.env.KAGGLE_KEY ?? "";
+const KAGGLE_API_TOKEN = process.env.KAGGLE_API_TOKEN ?? "";
+// Public (not secret) — just the account name, needed to address the kernel as "<username>/<slug>".
+const KAGGLE_USERNAME = process.env.KAGGLE_USERNAME ?? "";
 
 export const GROUP_SIZE = 4; // narration scenes per clip (matches ch2's existing picture-refresh cadence)
 export const FPS = 16;
@@ -50,13 +52,12 @@ function run(cmd, args, opts = {}) {
 }
 
 async function kaggleAuth() {
+  // Newer Kaggle auth: a single bearer token saved to ~/.kaggle/access_token, read automatically
+  // by the kaggle CLI (>= 1.8.0). No username/key pair needed.
   const dir = path.join(os.homedir(), ".kaggle");
   await mkdir(dir, { recursive: true });
-  await writeFile(
-    path.join(dir, "kaggle.json"),
-    JSON.stringify({ username: KAGGLE_USER, key: KAGGLE_KEY }),
-  );
-  await run("chmod", ["600", path.join(dir, "kaggle.json")]);
+  await writeFile(path.join(dir, "access_token"), KAGGLE_API_TOKEN);
+  await run("chmod", ["600", path.join(dir, "access_token")]);
 }
 
 function buildScript(prompts, seed, characterStyle) {
@@ -113,8 +114,8 @@ export async function generateClipsOnKaggle({
   seed = 42,
 }) {
   if (!KAGGLE_ENABLED) return null;
-  if (!KAGGLE_USER || !KAGGLE_KEY) {
-    log("skipped: USE_LTX_VIDEO=1 but KAGGLE_USERNAME/KAGGLE_KEY are not set");
+  if (!KAGGLE_API_TOKEN || !KAGGLE_USERNAME) {
+    log("skipped: USE_LTX_VIDEO=1 but KAGGLE_API_TOKEN/KAGGLE_USERNAME are not set");
     return null;
   }
   const groups = [];
@@ -147,7 +148,7 @@ export async function generateClipsOnKaggle({
   const dir = path.join(workDir, "kaggle-job");
   await mkdir(dir, { recursive: true });
   const slug = `tony-ltx-ch${channel}-${Date.now()}`;
-  const kernelId = `${KAGGLE_USER}/${slug}`;
+  const kernelId = `${KAGGLE_USERNAME}/${slug}`;
   await writeFile(
     path.join(dir, "kernel-metadata.json"),
     JSON.stringify({
