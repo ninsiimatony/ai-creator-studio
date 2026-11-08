@@ -20,6 +20,10 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Local debug dumps — must never be committed (may contain secrets)
+env-dump.txt
+push-log.txt
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
