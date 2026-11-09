@@ -400,7 +400,8 @@ async function main() {
   // still pictures (channel 2) / Pixabay stock clips (channel 1). OFF unless USE_LTX_VIDEO=1 and
   // Kaggle credentials are set; on any failure this just returns null and nothing else changes.
   let kaggleClips = null;
-  if (ltx.KAGGLE_ENABLED) {
+  // Moving clips are opt-in per channel: set repo variable LTX_CHANNELS to e.g. "2" or "1,2". Empty = old style everywhere.
+  if (ltx.KAGGLE_ENABLED && (process.env.LTX_CHANNELS || "").split(",").map((x) => x.trim()).includes(String(CHANNEL))) {
     try {
       kaggleClips = await ltx.generateClipsOnKaggle({
         studio, scenes, channel: CHANNEL, workDir: WORK,

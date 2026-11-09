@@ -59,6 +59,7 @@ jobs:
           # Optional LTX-Video upgrade (moving clips instead of still pictures/stock clips), off
           # unless USE_LTX_VIDEO=1 is set as a repo variable AND both Kaggle secrets are set.
           USE_LTX_VIDEO: ${{ vars.USE_LTX_VIDEO }}
+          LTX_CHANNELS: ${{ vars.LTX_CHANNELS }}
           KAGGLE_USERNAME: ${{ vars.KAGGLE_USERNAME }}
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
         run: node scripts/video-bot/run.mjs
