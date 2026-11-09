@@ -716,14 +716,18 @@ async function main() {
       if (last !== undefined && (last + " " + w).length <= 20) tl[tl.length - 1] = last + " " + w;
       else tl.push(w);
     }
-    await writeFile(path.join(WORK, "short-title.txt"), tl.slice(0, 3).join("\n"));
+    // One text file and one drawtext per line: a newline inside a single text file draws as a box character.
+    const lines = tl.slice(0, 3).map((x) => x.replace(/[^\x20-\x7E]/g, ""));
+    for (let li = 0; li < lines.length; li++) await writeFile(path.join(WORK, `short-title${li}.txt`), lines[li]);
+    const titleDraw = lines
+      .map((_, li) => `drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:textfile=short-title${li}.txt:fontsize=58:fontcolor=white:borderw=4:bordercolor=black:x=(w-text_w)/2:y=${200 + li * 76}`)
+      .join(",");
     await run("ffmpeg", [
       "-y", "-ss", part === 1 ? "0" : String(Math.round(total * 0.45)), "-t", "55", "-i", final,
       "-filter_complex",
       "[0:v]split[a][b];[a]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=20:2[bg];" +
         "[b]scale=1080:-2[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2," +
-        "drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:textfile=short-title.txt:" +
-        "fontsize=58:fontcolor=white:borderw=4:bordercolor=black:line_spacing=12:x=(w-text_w)/2:y=200,format=yuv420p[v]",
+        titleDraw + ",format=yuv420p[v]",
       "-map", "[v]", "-map", "0:a", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
       "-c:a", "aac", "-b:a", "128k", "-shortest", shortFile,
     ], { cwd: WORK });

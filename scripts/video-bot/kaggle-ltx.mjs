@@ -28,7 +28,7 @@ export const FPS = 16;
 export const CLIP_FRAMES = 49; // 8k+1 (LTX-Video requirement); 49/16 = 3.0625s, looped by ffmpeg to fit
 export const WEEKLY_CAP_HOURS = 30; // Kaggle's free quota
 export const MODEL_LOAD_MINUTES = 5; // once per kernel run
-export const MINUTES_PER_CLIP = 2.5; // measured on a free Kaggle T4 at 384x384, ~49 frames
+export const MINUTES_PER_CLIP = 4; // measured on a free Kaggle T4 at 384x384, ~49 frames
 
 export function estimateHours(nClips) {
   return (MODEL_LOAD_MINUTES + nClips * MINUTES_PER_CLIP) / 60;
@@ -61,9 +61,9 @@ async function kaggleAuth() {
 }
 
 function buildScript(prompts, seed, characterStyle) {
-  const promptList = JSON.stringify(prompts.map((p) => (characterStyle + p).slice(0, 900)));
+  const promptList = JSON.stringify(prompts.map((p) => (characterStyle + p + " The camera slowly pushes in. One single clear character, sharp focus, smooth natural motion.").slice(0, 900)));
   const neg = JSON.stringify(
-    "worst quality, inconsistent motion, blurry, jittery, distorted, deformed",
+    "worst quality, blurry, low resolution, jittery, distorted, deformed, melted, extra limbs, extra heads, two characters, text, watermark",
   );
   return `import os, subprocess
 subprocess.run(["pip", "install", "-q", "diffusers", "accelerate", "transformers", "sentencepiece", "imageio", "imageio-ffmpeg"], check=True)
@@ -88,8 +88,8 @@ for idx, prompt in enumerate(PROMPTS):
     if os.path.exists(f):
         continue
     gen = torch.Generator(device="cuda").manual_seed(SEED)
-    video = pipe(prompt=prompt, negative_prompt=NEG, width=384, height=384, num_frames=FRAMES,
-        num_inference_steps=20, guidance_scale=3.0, generator=gen).frames[0]
+    video = pipe(prompt=prompt, negative_prompt=NEG, width=640, height=384, num_frames=FRAMES,
+        num_inference_steps=30, guidance_scale=3.0, generator=gen).frames[0]
     export_to_video(video, f, fps=FPS)
     print(f"clip {idx+1}/{len(PROMPTS)} done", flush=True)
 print("ALL_DONE")`;
