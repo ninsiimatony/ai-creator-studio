@@ -17,7 +17,7 @@ async function yt(f: F, url: string, accessToken: string, init: RequestInit = {}
   if (!res.ok) {
     if (res.status === 403 && /insufficient|scope/i.test(JSON.stringify(json)))
       throw new AppError("This channel needs the new permission. Reconnect it (the Reconnect button above) and allow everything.");
-    throw new AppError(`YouTube said no (${res.status}). ${String(json?.error?.message ?? "").slice(0, 120)}`);
+    throw new AppError(`YouTube said no (${res.status}). ${String(json?.["error"]?.message ?? "").slice(0, 120)}`);
   }
   return json;
 }
@@ -32,14 +32,14 @@ function minutesOf(iso: string): number {
 export async function listPrivate(db: D1Database, env: WorkerEnv, userId: string, channel: number, f: F = fetch) {
   const { accessToken } = await token(db, env, userId, channel, f);
   const ch = await yt(f, `${API}/channels?part=contentDetails,snippet&mine=true`, accessToken);
-  const uploads = ch.items?.[0]?.contentDetails?.relatedPlaylists?.uploads as string | undefined;
-  const title = String(ch.items?.[0]?.snippet?.title ?? "");
+  const uploads = ch["items"]?.[0]?.contentDetails?.relatedPlaylists?.uploads as string | undefined;
+  const title = String(ch["items"]?.[0]?.snippet?.title ?? "");
   if (!uploads) return { channelTitle: title, videos: [] as PrivateVideo[] };
   const pl = await yt(f, `${API}/playlistItems?part=contentDetails&maxResults=30&playlistId=${uploads}`, accessToken);
-  const ids = ((pl.items ?? []) as any[]).map((i) => i.contentDetails?.videoId).filter(Boolean) as string[];
+  const ids = ((pl["items"] ?? []) as any[]).map((i) => i.contentDetails?.videoId).filter(Boolean) as string[];
   if (!ids.length) return { channelTitle: title, videos: [] as PrivateVideo[] };
   const vs = await yt(f, `${API}/videos?part=snippet,status,contentDetails&id=${ids.join(",")}`, accessToken);
-  const videos: PrivateVideo[] = ((vs.items ?? []) as any[])
+  const videos: PrivateVideo[] = ((vs["items"] ?? []) as any[])
     .filter((v) => v.status?.privacyStatus === "private" && v.status?.uploadStatus !== "rejected" && v.status?.uploadStatus !== "failed")
     .map((v) => ({
       id: v.id,
@@ -55,7 +55,7 @@ export async function makePublic(db: D1Database, env: WorkerEnv, userId: string,
   if (!/^[A-Za-z0-9_-]{6,20}$/.test(videoId)) throw new AppError("Bad video id.");
   const { accessToken } = await token(db, env, userId, channel, f);
   const cur = await yt(f, `${API}/videos?part=status&id=${videoId}`, accessToken);
-  const st = cur.items?.[0]?.status;
+  const st = cur["items"]?.[0]?.status;
   if (!st) throw new AppError("That video is not on this channel.");
   await yt(f, `${API}/videos?part=status`, accessToken, {
     method: "PUT",

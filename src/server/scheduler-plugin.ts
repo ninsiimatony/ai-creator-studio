@@ -2,9 +2,10 @@ import { runCatchup } from "./catchup";
 import { runWeeklyReport } from "./growth";
 import { refillTopics, refillTopics2 } from "./topicgen";
 import { channel2Connected } from "./google2";
+import type { WorkerEnv } from "./db";
 
 // Nitro plugin: Cloudflare cron ticks run the catch-up check.
-export default (nitroApp: { hooks: { hook: (name: string, fn: (ctx: { env: never }) => Promise<void>) => void } }) => {
+export default (nitroApp: { hooks: { hook: (name: string, fn: (ctx: { env: WorkerEnv }) => Promise<void>) => void } }) => {
   nitroApp.hooks.hook("cloudflare:scheduled", async ({ env }) => {
     try {
       console.log("catch-up:", await runCatchup(env));

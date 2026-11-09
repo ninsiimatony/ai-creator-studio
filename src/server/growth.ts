@@ -27,7 +27,7 @@ async function totals(token: string, start: Date, end: Date) {
     metrics: "views,estimatedMinutesWatched,averageViewDuration,subscribersGained,likes,comments",
   });
   const r = (t.rows?.[0] ?? [0, 0, 0, 0, 0, 0]).map(Number);
-  return { views: r[0], minutes: r[1], avgSeconds: r[2], subs: r[3], likes: r[4], comments: r[5] };
+  return { views: r[0] ?? 0, minutes: r[1] ?? 0, avgSeconds: r[2] ?? 0, subs: r[3] ?? 0, likes: r[4] ?? 0, comments: r[5] ?? 0 };
 }
 
 const change = (now: number, before: number) =>
@@ -115,7 +115,7 @@ export async function runWeeklyReport(env: WorkerEnv, force = false): Promise<st
           ],
           80,
         );
-        const line = th.split("\n")[0].slice(0, 220);
+        const line = (th.split("\n")[0] ?? "").slice(0, 220);
         await setNote(db, "winning_themes", line);
         themeLine = `\n\n🎯 Best themes (next stories will lean toward these): ${line}`;
       } catch {

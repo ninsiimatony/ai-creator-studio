@@ -71,12 +71,12 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
 
   const slotCount = (await channel2Connected(db)) ? 4 : 3;
   for (let slot = 0; slot < slotCount; slot++) {
-    if (minuteOfDay < SLOT_MINUTES_UTC[slot]) continue; // slot not due yet
+    if (minuteOfDay < SLOT_MINUTES_UTC[slot]!) continue; // slot not due yet
     const isCh2 = slot === 3;
     const label = isCh2 ? "the second channel" : `video ${slot + 1} of 3`;
     let topic = isCh2
-      ? (topics2 as string[])[dayOfYear(now) % (topics2 as string[]).length]
-      : list[(dayOfYear(now) * 3 + slot) % list.length];
+      ? (topics2 as string[])[dayOfYear(now) % (topics2 as string[]).length]!
+      : list[(dayOfYear(now) * 3 + slot) % list.length]!;
     const existing = await db.prepare("SELECT 1 AS x FROM video_slots WHERE day = ? AND slot = ?").bind(day, slot).first();
     if (!existing) topic = await pickTopic(db, topic, isCh2 ? 2 : 1); // fresh topic first, built-in list as backup
     await db
@@ -124,7 +124,13 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
         token: env.GITHUB_TOKEN,
         repo: REPO,
         ref: REF,
-        req: { topic: row.topic, minutes: 10, style: isCh2 ? "cartoon" : "real", tone: isCh2 ? "scary" : "emotional", channel: isCh2 ? 2 : undefined },
+        req: {
+          topic: row.topic,
+          minutes: 10,
+          style: isCh2 ? "cartoon" : "real",
+          tone: isCh2 ? "scary" : "emotional",
+          ...(isCh2 ? { channel: 2 } : {}),
+        },
       });
       await db.prepare("UPDATE video_slots SET status='dispatched' WHERE day=? AND slot=?").bind(day, slot).run();
       await notify(

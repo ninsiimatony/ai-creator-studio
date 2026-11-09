@@ -243,7 +243,7 @@ export async function writePolicyCheck(p: {
     260,
   );
   const m = /RISK:\s*(low|medium|high)/i.exec(text);
-  const risk = (m ? m[1].toLowerCase() : "low") as "low" | "medium" | "high";
+  const risk = (m?.[1] ? m[1].toLowerCase() : "low") as "low" | "medium" | "high";
   const issues = text
     .split("\n")
     .map((l) => l.trim())
