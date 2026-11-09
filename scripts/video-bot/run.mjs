@@ -363,6 +363,10 @@ async function main() {
 
   // 1. Script
   const outline = await studio("/api/media/auto-script", { step: "outline", topic: TOPIC, minutes: MINUTES, tone: TONE });
+  // Keep the outline inside the studio's size limits so the next step never rejects it.
+  outline.title = String(outline.title || TOPIC).slice(0, 200);
+  outline.sections = (outline.sections || []).map((x) => String(x).trim().slice(0, 200)).filter(Boolean).slice(0, 50);
+  if (!outline.sections.length) outline.sections = [outline.title];
   log("Outline:", outline.title, `(${outline.sections.length} parts)`);
   const scenes = [];
   for (let i = 0; i < outline.sections.length; i++) {
