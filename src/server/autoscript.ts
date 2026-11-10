@@ -3,6 +3,7 @@
 import { AppError } from "./errors";
 import type { AiBinding, D1Database } from "./db";
 import { recordUsage } from "./ai";
+import { TITLE_SIMILAR, bannedRules, embed, nearest, recentVecs, saveVec, trigramJaccard } from "./variety";
 
 export const SCRIPT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 export const WORDS_PER_SECTION = 350;
@@ -10,10 +11,19 @@ export const MAX_SECTIONS = 45;
 
 type Msg = { role: "system" | "user"; content: string };
 
-async function ask(ai: AiBinding, messages: Msg[], maxTokens: number): Promise<string> {
+type AskOpts = { temperature?: number; top_p?: number; presence_penalty?: number; frequency_penalty?: number; repetition_penalty?: number };
+
+async function ask(ai: AiBinding, messages: Msg[], maxTokens: number, opts: AskOpts = {}): Promise<string> {
   let res: unknown;
   try {
-    res = await ai.run(SCRIPT_MODEL, { messages, max_tokens: maxTokens, temperature: 0.7 });
+    // A fresh random seed every call, so the same prompt never gives the same story twice.
+    res = await ai.run(SCRIPT_MODEL, {
+      messages,
+      max_tokens: maxTokens,
+      temperature: 0.7,
+      ...opts,
+      seed: 1 + Math.floor(Math.random() * 999_999_999),
+    });
   } catch (e) {
     console.error("workers ai script failed", e);
     throw new AppError(
@@ -36,13 +46,17 @@ const SYSTEM_EMOTIONAL =
   "You write narration for faceless YouTube videos that tell gripping, dramatic human stories about love, heartbreak, betrayal, cheating, family and fresh love (fiction). " +
   "Tell it like a gripping story told to a friend: plain spoken English, short sentences, strong emotion, real dialogue (use phrases like she said, he whispered), named characters, small vivid details, secrets, tension and at least one big twist or shock. " +
   "Every section must move the story forward and end on a hook that makes people need to hear what happens next. Never be slow, vague or preachy. " +
-  "End with a satisfying payoff: the truth comes out, someone gets what they deserve, or love wins, with real emotion. " +
+  "Use concrete local details of the story's setting (food, streets, customs, jobs) so each story feels like its own world. Every character wants something understandable; no cartoon villains. " +
+  "Follow the ending the plan asks for (it is not always justice or a happy ending), with real emotion and a cohesive story, never shock for its own sake. " +
+  bannedRules() + " " +
   "No explicit sexual content, no graphic violence, no medical or self-harm detail, no stage directions, no markdown, no emojis, no headings, never mention scenes or the camera.";
 
 const SYSTEM_SCARY =
   "You write narration for a faceless YouTube channel of original scary cartoon stories for teens and adults, starring a small pale gray-green goblin keeper with huge yellow eyes who guards cursed doors, keys, cellars and haunted houses. " +
   "Tell it like a spooky campfire story: plain spoken English, short sentences, creeping dread, named characters, real dialogue (she whispered, it giggled), small creepy details, rising tension, and a big twist or shock. " +
-  "Every section must move the story forward and end on a cliffhanger line. Never be slow, vague or preachy. Finish with a chilling or satisfying twist ending. " +
+  "Every section must move the story forward and end on a cliffhanger line. Never be slow, vague or preachy. Each section has one shiver moment and one moment of relief or humor. " +
+  "Each episode is a new, different adventure in a new place; the goblin (his name is Grub) is the only character who returns. Follow the twist and ending the plan asks for. " +
+  bannedRules() + " " +
   "Fully original: never copy or imitate any existing story, show or creator. No gore, no graphic violence, no sexual content, no self-harm, no real people, no stage directions, no markdown, no emojis, no headings, never mention scenes or the camera.";
 
 export type Tone = "emotional" | "scary" | undefined;
@@ -80,7 +94,13 @@ export async function writeOutline(p: {
 }): Promise<{ title: string; sections: string[] }> {
   if (!p.ai) throw new AppError("The free AI writer is not available on this deployment.");
   const want = sectionCount(p.minutes);
-  const text = await ask(
+  // Channel memory: scary stories are channel 2, the rest channel 1.
+  const channel = p.tone === "scary" ? 2 : 1;
+  let avoid = "";
+  let out = { title: "", sections: [] as string[] };
+  let titleVec: string | null = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const text = await ask(
     p.ai,
     [
       { role: "system", content: systemFor(p.tone) },
@@ -90,19 +110,32 @@ export async function writeOutline(p: {
           `Plan a ${p.minutes}-minute YouTube video ${p.tone === "emotional" ? "that tells one emotional, human story" : p.tone === "scary" ? "that tells one original scary cartoon story" : "about"}: ${p.topic}\n\n` +
           `Reply with exactly this format and nothing else:\n` +
           (p.tone === "scary"
-            ? `Title: <a creepy, curiosity-driven title under 60 characters, Title Case, that promises a scary secret, for example: The Goblin Who Guards The Cellar Door / Do Not Open The Door At Midnight / The Key That Whispers Your Name>\n`
+            ? `Title: <a creepy, curiosity-driven title under 60 characters, Title Case, built from THIS story's own place and scary thing (not doors, keys or cellars unless the story is about them). Do not start with "The Goblin" or "Do Not">\n`
             : p.tone === "emotional"
-            ? `Title: <a creative, emotional title under 60 characters, Title Case, about love, a relationship or heartbreak and the people in it, that makes people need to know what happens. Vary the style every time and do NOT start with the same words as other videos (avoid overusing Abandoned, Shocked, Mocked, Ignored). Examples: She Waited 30 Years For His Letter / The Night My Husband Cried In The Kitchen / He Married Her Best Friend, Then Found The Diary / A Soldier's Last Promise To His Wife>\n`
+            ? `Title: <a creative, emotional title under 60 characters, Title Case, about love, a relationship or heartbreak and the people in it, that makes people need to know what happens. Build it from THIS story's own people, place and secret. No clickbait words (Shocking, You Won't Believe, Abandoned, Mocked, Ignored) and never claim it is a true story>\n`
             : `Title: <a catchy YouTube title>\n`) +
           `1. <section heading>\n2. <section heading>\n... up to ${want}.\n\n` +
-          `Write exactly ${want} sections that flow as one story: a strong hook first, a satisfying ending last.`,
+          `Write exactly ${want} sections that flow as one story: a strong hook first, a satisfying ending last. Each heading names a concrete event, and the story moves through different places.` + avoid,
       },
     ],
     Math.min(2000, 80 + want * 40),
-  );
-  const out = parseOutline(text, want);
+      { temperature: 0.85, top_p: 0.92 },
+    );
+    out = parseOutline(text, want);
+    if (out.sections.length < 2) continue;
+    // Similarity gate on the title: never publish a title that looks like an earlier one.
+    const vecs = await embed(p.ai, [out.title || p.topic]);
+    titleVec = vecs?.[0] ?? null;
+    if (!titleVec) break;
+    const pool = await recentVecs(p.db, channel, "title", 300).catch(() => []);
+    const near = nearest(titleVec, pool);
+    const words = pool.some((x) => trigramJaccard(x.text, out.title) >= 0.4);
+    if (near.score < TITLE_SIMILAR && !words) break;
+    avoid = `\n\nThe title must NOT look like this earlier video: "${near.text || out.title}". Use different words and a different angle.`;
+  }
   if (out.sections.length < 2) throw new AppError("The AI plan came back empty. Please try again.");
-  await recordUsage(p.db, p.userId, "script", SCRIPT_MODEL, p.topic.length, text.length, 0);
+  if (titleVec) await saveVec(p.db, channel, "title", out.title || p.topic, titleVec).catch(() => {});
+  await recordUsage(p.db, p.userId, "script", SCRIPT_MODEL, p.topic.length, 0, 0);
   return { title: out.title || p.topic, sections: out.sections };
 }
 
@@ -124,8 +157,9 @@ export async function writeSceneTerms(p: {
         content:
           "You are a film editor choosing stock footage. For each numbered scene of a narrated story, write ONE search phrase " +
           "of 2 to 4 words for a ${KIND} clip that shows what the narration describes: the people, what they are doing, and where. " +
-          "Use only things a camera can film (for example: woman crying kitchen, man waiting bus stop, couple arguing living room, " +
-          "old man walking alone, wedding ring close up, rain window night). Never use abstract words like betrayal, trust or love. " +
+          "Use only things a camera can film, and vary them: close-ups of hands and objects, wide shots of the place, people doing the action, calm metaphor shots " +
+          "(for example: hands holding phone, market street evening, old man walking alone, ring box close up, rain window night, empty chair). Never use abstract words like betrayal, trust or love, " +
+          "never repeat a phrase, and avoid the overused 'woman crying' and 'couple arguing'. " +
           "Reply with exactly one line per scene in the form '1: phrase' and nothing else.".replace(
             "${KIND}",
             p.style === "cartoon" ? "cartoon or animation" : "real stock video",
@@ -200,13 +234,14 @@ export async function writeSection(p: {
             : " Do not conclude the video.") +
           `\n\nThen on a new last line write: VISUALS: followed by 8 short ${p.style === "cartoon" ? "animation or cartoon" : "stock video"} search terms (2-3 words each, concrete things that can be filmed, separated by semicolons).` +
           (p.tone === "scary"
-            ? " For visuals use eerie things that can be pictured, for example: dark cellar door; glowing yellow eyes; rusty key; foggy hallway; creepy shadows."
+            ? " For visuals use eerie things from THIS section's own place and events that can be pictured (objects, rooms, weather, the guests' actions), each one different."
             : p.tone === "emotional"
-            ? " For visuals use people doing the action of the story, for example: couple arguing; woman crying; man reading phone; wedding ring; hugging at airport; woman walking away; man waiting at door; couple dinner; wedding; rain on window."
+            ? " For visuals write a shot list from THIS section's own setting and actions: mix close-ups of hands and objects, wide shots of the place (its streets, rooms, landscape, local food), people doing the action, and calm metaphor shots (empty chair, closing door, city traffic, rain). Avoid generic 'woman crying' or 'couple arguing'; every term must be different."
             : ""),
       },
     ],
     900,
+    { temperature: 0.8, top_p: 0.9, frequency_penalty: 0.3 },
   );
   const out = parseSection(text);
   if (out.narration.length < 80) throw new AppError("The AI section came back too short. Please try again.");

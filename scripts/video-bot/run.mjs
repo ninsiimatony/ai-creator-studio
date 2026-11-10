@@ -16,6 +16,23 @@ const SCARY = TONE === "scary";
 const GOBLIN_STYLE =
   "Stylized 3D animated horror-cartoon film still, wide cinematic shot, dark moody lighting, blue and green fog, no text. " +
   "A small pale gray-green goblin keeper with huge bloodshot yellow eyes, long drooping pointed ears, tiny sharp teeth and a ragged green-and-black striped sweater appears in the scene. Scene: ";
+// Picture variety for the goblin channel: same goblin look every time, but new camera, light and framing for every picture.
+const CAMERAS = ["wide establishing shot", "medium shot", "extreme close-up", "low angle looking up", "high angle looking down",
+  "over-the-shoulder shot", "silhouette against a window", "detail insert shot of an object", "dutch tilt angle", "shot through a half-open doorway"];
+const LIGHTS = ["candlelight", "cold blue moonlight", "a swinging lantern", "dawn fog", "a lightning flash", "eerie green glow from below",
+  "a flickering bulb", "warm firelight", "torchlight beam", "stormy grey daylight"];
+const PIC_OFFSET = Math.floor(Math.random() * 10);
+function goblinPrompt(chunk, n) {
+  const cam = CAMERAS[(n + PIC_OFFSET) % CAMERAS.length];
+  const light = LIGHTS[(n * 3 + PIC_OFFSET) % LIGHTS.length];
+  // The goblin is in about 2 of every 3 pictures; the others show the place, the guests and the strange things.
+  const withGoblin = n % 3 !== 2;
+  const base = "Stylized 3D animated horror-cartoon film still, moody, rich detail, no text, no words. ";
+  const who = withGoblin
+    ? "Grub, a small goblin keeper: pale gray-green skin, very large round bloodshot yellow eyes, long drooping pointed ears, tiny sharp teeth, ragged green-and-black striped sweater. "
+    : "No goblin in this picture; show the place, the people and the strange thing. ";
+  return `${base}${who}Camera: ${cam}. Lighting: ${light}. Scene: ${chunk}`;
+}
 const STYLE = process.env.STYLE === "cartoon" ? "cartoon" : "real";
 const W = MINUTES > 30 ? 1280 : 1920;
 const H = MINUTES > 30 ? 720 : 1080;
@@ -431,15 +448,18 @@ async function main() {
             curClip = kaggleClips[i];
             curImg = null;
           } else {
-            const lib = Math.random() < 0.8 ? await pickLibraryScene(chunk, i >= scenes.length - 4) : null;
-            if (lib) {
-              curImg = lib;
-              curWide = true;
-            } else {
-              const img = await studio("/api/media/image", { prompt: GOBLIN_STYLE + chunk }, { raw: true });
+            // Every picture is new: made for this exact part of the story, with a different camera angle and light each time.
+            // The saved library pictures are only a backup if the picture maker fails.
+            try {
+              const img = await studio("/api/media/image", { prompt: goblinPrompt(chunk, imgN).slice(0, 1900) }, { raw: true });
               curImg = path.join(WORK, `img${i}.` + (img[0] === 0x89 ? "png" : "jpg"));
               await writeFile(curImg, img);
               curWide = false;
+            } catch (e) {
+              const lib = await pickLibraryScene(chunk, i >= scenes.length - 4);
+              if (!lib) throw e;
+              curImg = lib;
+              curWide = true;
             }
             curClip = null;
           }
