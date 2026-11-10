@@ -22,6 +22,9 @@ const CAMERAS = ["wide establishing shot", "medium shot", "extreme close-up", "l
 const LIGHTS = ["candlelight", "cold blue moonlight", "a swinging lantern", "dawn fog", "a lightning flash", "eerie green glow from below",
   "a flickering bulb", "warm firelight", "torchlight beam", "stormy grey daylight"];
 const PIC_OFFSET = Math.floor(Math.random() * 10);
+// Chapter start time (seconds) of each story part, for YouTube chapters in the description.
+const CHAPTER_AT = {};
+let CHAPTER_T = 0;
 function goblinPrompt(chunk, n) {
   const cam = CAMERAS[(n + PIC_OFFSET) % CAMERAS.length];
   const light = LIGHTS[(n * 3 + PIC_OFFSET) % LIGHTS.length];
@@ -407,6 +410,7 @@ async function main() {
     parts.forEach((narration, k) =>
       scenes.push({
         narration,
+        section: i,
         term: terms[k] || sec.visuals[k % Math.max(1, sec.visuals.length)] || outline.sections[i],
       }),
     );
@@ -439,6 +443,8 @@ async function main() {
     const voice = path.join(WORK, `v${id}.bin`);
     await speak(sc.narration, voice);
     const dur = (await duration(voice)) + 0.5;
+    if (CHAPTER_AT[sc.section] === undefined) CHAPTER_AT[sc.section] = CHAPTER_T;
+    CHAPTER_T += dur;
     await writeFile(path.join(WORK, "seg.srt"), srtFor(sc.narration, dur));
     if (SCARY) {
       if (i % 4 === 0) {
@@ -606,8 +612,8 @@ async function main() {
   await ffmpeg([
     "-i", body, ...musicIn,
     "-filter_complex",
-    `[1:a]volume=${musicVol},afade=t=in:d=3,afade=t=out:st=${Math.max(0, total - 4).toFixed(1)}:d=4[m];[0:a][m]amix=inputs=2:duration=first:normalize=0[a]`,
-    "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", final,
+    `[1:a]volume=${musicVol},afade=t=in:d=3,afade=t=out:st=${Math.max(0, total - 4).toFixed(1)}:d=4[m];[0:a][m]amix=inputs=2:duration=first:normalize=0,loudnorm=I=-14:TP=-1:LRA=11[a]`,
+    "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", "-ar", "48000", final,
   ]);
 
   const topicTags = TOPIC.toLowerCase().replace(/[^a-z ]/g, " ").split(/\s+/)
@@ -621,14 +627,27 @@ async function main() {
     ? ["#emotionalstory", "#sadstory", "#lifelessons", "#storytime", "#touchingstory"]
     : ["#explained", "#documentary", "#facts"];
   const hashtags = [...new Set([...baseTags, ...topicTags])].slice(0, 8);
+  // YouTube chapters: must start at 0:00, at least 3, each 10+ seconds apart.
+  const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+  const chapters = [];
+  for (let k = 0; k < outline.sections.length; k++) {
+    const t = k === 0 ? 0 : CHAPTER_AT[k];
+    if (t === undefined) continue;
+    if (chapters.length && t - chapters[chapters.length - 1].t < 12) continue;
+    chapters.push({ t, name: outline.sections[k].replace(/[\r\n]+/g, " ").slice(0, 80) });
+  }
+  const chapterText = chapters.length >= 3
+    ? chapters.map((c) => `${mmss(c.t)} ${c.name}`).join("\n")
+    : outline.sections.map((s, i) => `${i + 1}. ${s}`).join("\n");
   const description =
-    `${outline.title}\n\n` +
+    `${outline.title}\n` +
+    (SCARY || TONE === "emotional" ? `Original fiction.\n\n` : `\n`) +
     (SCARY
       ? `If you love scary stories, please like, share and subscribe for a new scary story every day. Would you have opened the door? Tell us in the comments.\n\n`
       : TONE === "emotional"
       ? `If this story touched your heart, please like, share and subscribe for a new emotional story every day.\n\n`
       : `Like and subscribe for more.\n\n`) +
-    `${outline.sections.map((s, i) => `${i + 1}. ${s}`).join("\n")}\n\n` +
+    `${chapterText}\n\n` +
     (SCARY ? `This is an original fictional story.\n` : TONE === "emotional" ? `This is a fictional story, written for reflection and inspiration.\n` : "") +
     (SCARY ? `Made with AI narration and AI-generated artwork.\n\n` : `Made with AI narration and stock video clips from Pixabay (https://pixabay.com).\n\n`) +
     hashtags.join(" ");
