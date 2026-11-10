@@ -107,6 +107,7 @@ export async function writeOutline(p: {
       {
         role: "user",
         content:
+          `If the topic below gives character names, use exactly those names for the main people and never swap them for other names.\n` +
           `Plan a ${p.minutes}-minute YouTube video ${p.tone === "emotional" ? "that tells one emotional, human story" : p.tone === "scary" ? "that tells one original scary cartoon story" : "about"}: ${p.topic}\n\n` +
           `Reply with exactly this format and nothing else:\n` +
           (p.tone === "scary"
@@ -222,6 +223,7 @@ export async function writeSection(p: {
         role: "user",
         content:
           `Video title: ${p.title}\nTopic: ${p.topic}\n` +
+          `Keep the same character names as the topic and the earlier sections; never introduce a new name for an existing person.\n` +
           `Full plan: ${p.sections.map((s, i) => `${i + 1}. ${s}`).join(" | ")}\n\n` +
           `Write ONLY section ${p.index + 1}: "${heading}". About ${WORDS_PER_SECTION} words of narration.` +
           (first ? " The very first sentence must drop the listener into the most shocking or emotional moment of the story (the hook), then go back and explain how it happened. No greeting, no slow introduction, no scene-setting before the hook." : " Continue smoothly from the previous section; do not greet or re-introduce the video.") +
