@@ -62,6 +62,7 @@ jobs:
           LTX_CHANNELS: ${{ vars.LTX_CHANNELS }}
           # Channel 3's Google address (only used to open the right account in Telegram links). Optional repo variable.
           CH3_EMAIL: ${{ vars.CH3_EMAIL }}
+          GOOGLE_TTS_API_KEY: ${{ secrets.GOOGLE_TTS_API_KEY }}
           KAGGLE_USERNAME: ${{ vars.KAGGLE_USERNAME }}
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
         run: node scripts/video-bot/run.mjs

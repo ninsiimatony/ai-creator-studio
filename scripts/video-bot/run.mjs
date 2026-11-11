@@ -75,10 +75,48 @@ async function speak(text, file) {
       throw new Error("empty audio");
     } catch (e) {
       edgeFails++;
-      if (edgeFails === 1 || edgeFails === 3) log("natural voice failed, using fallback:", String(e.message).slice(0, 160));
+      if (edgeFails === 1 || edgeFails === 3) log("natural voice failed, using fallback:", String(e.message).slice(-320));
+    }
+  }
+  // Second choice: Google Cloud text-to-speech (works from cloud servers). Only used if a key is set.
+  const gKey = process.env.GOOGLE_TTS_API_KEY;
+  if (gKey && googleFails < 3) {
+    try {
+      await googleSpeak(text, file, gKey);
+      googleFails = 0;
+      return;
+    } catch (e) {
+      googleFails++;
+      if (googleFails === 1 || googleFails === 3) log("google voice failed, using studio voice:", String(e.message).slice(-200));
     }
   }
   await writeFile(file, await studio("/api/media/tts", { text, lang: "en" }, { raw: true }));
+}
+let googleFails = 0;
+const GOOGLE_VOICE = SCARY ? { languageCode: "en-US", name: "en-US-Neural2-J" } : WONDER ? { languageCode: "en-GB", name: "en-GB-Neural2-B" } : { languageCode: "en-US", name: "en-US-Neural2-D" };
+async function googleSpeak(text, file, key) {
+  // The service accepts up to 5000 characters per call, so long text is cut at sentence ends.
+  const parts = [];
+  let cur = "";
+  for (const sent of text.replace(/\s+/g, " ").split(/(?<=[.!?])\s+/)) {
+    if ((cur + " " + sent).length > 4000 && cur) { parts.push(cur); cur = sent; } else cur = cur ? cur + " " + sent : sent;
+  }
+  if (cur) parts.push(cur);
+  const bufs = [];
+  for (const t of parts) {
+    const r = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${encodeURIComponent(key)}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ input: { text: t.slice(0, 4900) }, voice: GOOGLE_VOICE, audioConfig: { audioEncoding: "MP3", speakingRate: WONDER ? 0.94 : SCARY ? 0.88 : 0.97 } }),
+    });
+    if (!r.ok) throw new Error(`google tts ${r.status}: ${(await r.text()).slice(0, 200)}`);
+    const j = await r.json();
+    if (!j.audioContent) throw new Error("google tts: no audio");
+    bufs.push(Buffer.from(j.audioContent, "base64"));
+  }
+  const all = Buffer.concat(bufs);
+  if (all.length < 2000) throw new Error("google tts: empty audio");
+  await writeFile(file, all);
 }
 // Hand-made goblin picture library (scripts/video-bot/scenes/<theme>-<n>.jpg), matched to the story by keywords.
 const SCENE_THEMES = {
