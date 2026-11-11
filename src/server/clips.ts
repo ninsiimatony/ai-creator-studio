@@ -170,9 +170,10 @@ export function sourceOrder(text: string, index: number): DocSource[] {
   if (OLD.test(text)) return ["archive", "wikimedia", "pexels", "pixabay", "nasa"];
   const base: DocSource[] = index % 2 === 0 ? ["pexels", "pixabay"] : ["pixabay", "pexels"];
   // Now and then start with a public-domain source so the video has a different look.
-  if (index % 7 === 3) return ["wikimedia", ...base, "nasa", "archive"];
-  if (index % 11 === 5) return ["archive", ...base, "wikimedia", "nasa"];
-  return [...base, "wikimedia", "nasa", "archive"];
+  // Old public-domain films (Internet Archive) are only used for history topics:
+  // for nature topics they pulled in unrelated people, so they are left out here.
+  if (index % 7 === 3) return ["wikimedia", ...base, "nasa"];
+  return [...base, "wikimedia", "nasa"];
 }
 
 async function download(urls: string[], f: F): Promise<{ bytes: Uint8Array; url: string } | null> {
