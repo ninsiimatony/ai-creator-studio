@@ -93,7 +93,7 @@ async function makeTopics(env: WorkerEnv, channel: number, count: number): Promi
   } catch {
     recent = [];
   }
-  const winning = channel === 1 ? await getNote(db, "winning_themes") : "";
+  const winning = channel === 1 ? await getNote(db, "winning_themes") : channel === 3 ? await getNote(db, "winning_themes_3") : "";
   const titles = channel === 1 ? await redditTitles() : [];
   const system =
     channel === 3

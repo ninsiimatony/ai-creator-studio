@@ -3,7 +3,7 @@ import { askAi } from "./autoscript";
 import { sendTelegram } from "./bot";
 import type { WorkerEnv } from "./db";
 import { getAccessToken } from "./google";
-import { channel2Connected, getAccessToken2 } from "./google2";
+import { channel2Connected, channelConnected, getAccessToken2 } from "./google2";
 import { setNote } from "./topicgen";
 
 const day = (d: Date) => d.toISOString().slice(0, 10);
@@ -130,7 +130,7 @@ export async function runWeeklyReport(env: WorkerEnv, force = false): Promise<st
         const per = Math.round(cur.views / up);
         paceLine =
           per < 20
-            ? `\n\n🧭 Pace check: ${up} videos made this week, about ${per} views per video. That is low. My advice: after 2 weeks of this, change to 2 videos a day and make each one better. Reply here if you want me to do that.`
+            ? `\n\n🧭 Pace check: ${up} videos made this week, about ${per} views per video. That is low. The main channel already makes 2 videos a day, so the next step is to make each one better. Reply here if you want me to lower it further.`
             : `\n\n🧭 Pace check: ${up} videos this week, about ${per} views per video. Keep going.`;
       }
     } catch {
@@ -149,7 +149,42 @@ export async function runWeeklyReport(env: WorkerEnv, force = false): Promise<st
     } catch (e) {
       ch2Line = `\n\n👻 Little Hope Tales numbers could not be read (${String(e instanceof Error ? e.message : e).slice(0, 80)}).`;
     }
-    await send(`📈 Weekly report (Tony Ninsiima)\n\n${facts}\n\n${tips ? `💡 Tips\n${tips}` : ""}${themeLine}${paceLine}${ch2Line}`.slice(0, 3900));
+    // Third channel (Wild Wonders World): same numbers, plus a "what worked" line that the topic writer reads next time.
+    let ch3Line = "";
+    try {
+      if (await channelConnected(db, 3)) {
+        const t3 = (await getAccessToken2(db, env as any, fetch, 3)).accessToken;
+        const c3 = await totals(t3, start, end);
+        const top3 = await report(t3, { startDate: day(start), endDate: day(end), dimensions: "video", metrics: "views,averageViewPercentage", sort: "-views", maxResults: "5" });
+        const rows3 = top3.rows ?? [];
+        const ids3 = rows3.map((r) => String(r[0])).join(",");
+        const titles3: Record<string, string> = {};
+        if (ids3) {
+          const vr = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${encodeURIComponent(ids3)}`, { headers: { authorization: `Bearer ${t3}` } });
+          if (vr.ok) for (const it of ((await vr.json()) as { items?: { id: string; snippet?: { title?: string } }[] }).items ?? []) titles3[it.id] = it.snippet?.title ?? "";
+        }
+        const lines3 = rows3.map((r) => `${titles3[String(r[0])] || "video"}: ${r[1]} views, ${Math.round(Number(r[2]))}% watched`);
+        ch3Line = `\n\n🌍 Wild Wonders World (last 7 days): ${c3.views} views, ${Math.round(c3.minutes)} watch minutes, ${c3.subs} new subscribers.` + (lines3.length ? `\nBest videos:\n${lines3.slice(0, 3).join("\n")}` : "");
+        if (lines3.length && c3.views > 0) {
+          const th = await askAi(
+            env.AI!,
+            [
+              { role: "system", content: "Below are the best videos of a nature, space and old-world documentary channel with their numbers. In ONE line of at most 25 words, name the kinds of topics that did best (example: ocean giants, space missions, ancient ruins). Reply with only that line." },
+              { role: "user", content: lines3.join("\n") },
+            ],
+            80,
+          );
+          const line = (th.split("\n")[0] ?? "").slice(0, 220);
+          if (line) {
+            await setNote(db, "winning_themes_3", line);
+            ch3Line += `\n🎯 Best topics (next episodes will lean toward these): ${line}`;
+          }
+        }
+      }
+    } catch (e) {
+      ch3Line = `\n\n🌍 Wild Wonders World numbers could not be read (${String(e instanceof Error ? e.message : e).slice(0, 80)}).`;
+    }
+    await send(`📈 Weekly report (Tony Ninsiima)\n\n${facts}\n\n${tips ? `💡 Tips\n${tips}` : ""}${themeLine}${paceLine}${ch2Line}${ch3Line}`.slice(0, 3900));
     if (!force) await db.prepare("INSERT OR IGNORE INTO weekly_reports (week, sent_at) VALUES (?, ?)").bind(week, now.toISOString()).run();
     return "sent";
   } catch (e) {
