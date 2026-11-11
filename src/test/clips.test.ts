@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fetchDocClip, isFreeLicence, sourceOrder, sourcesLine } from "@/server/clips";
+import { fetchDocClip, isFreeLicence, isPublicDomainUrl, sourceOrder, sourcesLine } from "@/server/clips";
 import { parseVideoRequest } from "@/server/bot";
 import { dnaLine } from "@/server/variety";
 
@@ -44,6 +44,12 @@ describe("channel 3 clip finder", () => {
     expect(clip.source).toBe("pexels");
     expect(clip.bytes.length).toBe(5000);
     expect(calls.some((u) => u.includes("one.mp4"))).toBe(false);
+  });
+  it("uses Internet Archive films only when they carry a public-domain mark", () => {
+    expect(isPublicDomainUrl("https://creativecommons.org/publicdomain/mark/1.0/")).toBe(true);
+    expect(isPublicDomainUrl("https://creativecommons.org/publicdomain/zero/1.0/")).toBe(true);
+    expect(isPublicDomainUrl("https://creativecommons.org/licenses/by/4.0/")).toBe(false);
+    expect(isPublicDomainUrl("")).toBe(false);
   });
   it("throws a clear error when no source has a clip", async () => {
     const fetcher = (async () => new Response("{}", { status: 404 })) as unknown as typeof fetch;

@@ -1,7 +1,7 @@
 // Channel 3 ("wonder" documentary channel): free, licence-safe video clips from several public sources.
 //   Pexels, Pixabay   - free stock footage with an API key (commercial use allowed, no credit needed)
 //   NASA              - NASA Image and Video Library (NASA media is generally not copyrighted)
-//   Internet Archive  - only the Prelinger collection of old public-domain films
+//   Internet Archive  - only Prelinger films whose licence mark says public domain / CC0
 //   Wikimedia Commons - only files marked CC0 / public domain (no credit needed)
 // The scene's search words decide which source is tried first (space -> NASA, old/history -> Internet Archive),
 // otherwise sources rotate so videos do not all look alike. Used clips are remembered by the caller (exclude list).
@@ -23,7 +23,7 @@ export const SOURCE_NAMES: Record<DocSource, string> = {
   pexels: "Pexels (https://www.pexels.com)",
   pixabay: "Pixabay (https://pixabay.com)",
   nasa: "NASA Image and Video Library (https://images.nasa.gov)",
-  archive: "Internet Archive, Prelinger public-domain films (https://archive.org)",
+  archive: "Internet Archive, public-domain films (https://archive.org)",
   wikimedia: "Wikimedia Commons, public-domain files (https://commons.wikimedia.org)",
 };
 
@@ -103,7 +103,8 @@ async function searchNasa(q: string, f: F): Promise<Cand[]> {
   return out;
 }
 
-// ---------- Internet Archive (Prelinger public-domain films only) ----------
+// ---------- Internet Archive (Prelinger films that carry a public-domain mark only) ----------
+export const isPublicDomainUrl = (u: string) => /creativecommons\.org\/(publicdomain|licenses\/publicdomain)|publicdomain/i.test(u);
 async function searchArchive(q: string, f: F): Promise<Cand[]> {
   const params = new URLSearchParams({ q: `(${q}) AND mediatype:movies AND collection:prelinger`, rows: "12", output: "json" });
   params.append("fl[]", "identifier");
@@ -117,12 +118,14 @@ async function searchArchive(q: string, f: F): Promise<Cand[]> {
     out.push({
       key: `archive:${id}`,
       source: "archive",
-      credit: "Internet Archive (Prelinger Archives, public domain)",
+      credit: "Internet Archive (public domain)",
       mime: "video/mp4",
       urls: async () => {
         const r = await f(`https://archive.org/metadata/${encodeURIComponent(id)}`, { headers: { "user-agent": UA } });
         if (!r.ok) return [];
-        const meta = await j<{ files?: { name?: string; format?: string; size?: string }[] }>(r);
+        const meta = await j<{ metadata?: { licenseurl?: string }; files?: { name?: string; format?: string; size?: string }[] }>(r);
+        // Not every Prelinger film is public domain: only items carrying a public-domain / CC0 mark are used.
+        if (!isPublicDomainUrl(meta?.metadata?.licenseurl ?? "")) return [];
         const mp4 = (meta?.files ?? [])
           .filter((x) => x.name && /MPEG4|h\.264/i.test(x.format ?? "") && /\.mp4$/i.test(x.name) && Number(x.size ?? 0) > 0 && Number(x.size) <= MAX_BYTES)
           .sort((a, b) => Number(b.size) - Number(a.size)); // biggest that still fits = best quality

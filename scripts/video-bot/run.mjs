@@ -19,7 +19,7 @@ const SOURCE_NAMES = {
   pexels: "Pexels (https://www.pexels.com)",
   pixabay: "Pixabay (https://pixabay.com)",
   nasa: "NASA Image and Video Library (https://images.nasa.gov)",
-  archive: "Internet Archive, Prelinger public-domain films (https://archive.org)",
+  archive: "Internet Archive, public-domain films (https://archive.org)",
   wikimedia: "Wikimedia Commons, public-domain files (https://commons.wikimedia.org)",
 };
 let USED_AI_PICTURES = false;
