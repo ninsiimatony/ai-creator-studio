@@ -309,7 +309,7 @@ async function publishVideo(videoId) {
   if (!st) throw new Error("video not found for publishing");
   const res = await fetch("https://www.googleapis.com/youtube/v3/videos?part=status", {
     method: "PUT", headers: h,
-    body: JSON.stringify({ id: videoId, status: { privacyStatus: "public", selfDeclaredMadeForKids: st.selfDeclaredMadeForKids ?? false, embeddable: st.embeddable ?? true, license: st.license ?? "youtube", publicStatsViewable: st.publicStatsViewable ?? true } }),
+    body: JSON.stringify({ id: videoId, status: { privacyStatus: "public", selfDeclaredMadeForKids: st.selfDeclaredMadeForKids ?? false, embeddable: st.embeddable ?? true, license: st.license ?? "youtube", publicStatsViewable: st.publicStatsViewable ?? true, containsSyntheticMedia: (CHANNEL === 3 && USED_AI_PICTURES) ? true : (st.containsSyntheticMedia ?? false) } }),
   });
   if (!res.ok) throw new Error(`publish ${res.status}: ${(await res.text()).slice(0, 200)}`);
 }
