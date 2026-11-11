@@ -141,13 +141,13 @@ async function studio(pathname, body, { raw = false, meta = false } = {}) {
 const CHANNEL = process.env.CHANNEL === "3" ? 3 : process.env.CHANNEL === "2" ? 2 : 1;
 // Links in Telegram ask Google to open the right account for each channel (channel 3: set the repo variable CH3_EMAIL to its Google address).
 const AUTH =
-  "authuser=" + encodeURIComponent(CHANNEL === 3 ? process.env.CH3_EMAIL || "0" : CHANNEL === 2 ? "ninsiimamusigo@gmail.com" : "ninsiimatony@gmail.com");
+  "authuser=" + encodeURIComponent(CHANNEL === 3 ? process.env.CH3_EMAIL || "atwookininsiima@gmail.com" : CHANNEL === 2 ? "ninsiimamusigo@gmail.com" : "ninsiimatony@gmail.com");
 // Random start so different videos pick different clips from the same search.
 const CLIP_OFFSET = Math.floor(Math.random() * 20);
 
 async function notify(text) {
   try {
-    await studio("/api/automation/notify", { text: CHANNEL === 3 ? `[Channel 3 - Wonders of nature and space]\n${text}` : CHANNEL === 2 ? `[Little Hope Tales - ninsiimamusigo@gmail.com]\n${text}` : `[Tony Ninsiima - ninsiimatony@gmail.com]\n${text}` });
+    await studio("/api/automation/notify", { text: CHANNEL === 3 ? `[Ninsiima Atwooki (channel 3) - atwookininsiima@gmail.com]\n${text}` : CHANNEL === 2 ? `[Little Hope Tales - ninsiimamusigo@gmail.com]\n${text}` : `[Tony Ninsiima - ninsiimatony@gmail.com]\n${text}` });
   } catch (e) {
     log("notify failed:", e.message);
   }
