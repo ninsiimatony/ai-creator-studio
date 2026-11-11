@@ -71,7 +71,8 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
   const runs = await fetchRuns(env.GITHUB_TOKEN);
 
   // Slots 0-2 = main channel, 3 = second channel, 4 = third channel (the last two only once they are connected).
-  const slots = [0, 1, 2];
+  // Main channel makes 2 videos a day (slots 0 and 2). Slot 1 (16:17 UTC) is switched off to look less like mass production.
+  const slots = [0, 2];
   if (await channelConnected(db, 2)) slots.push(3);
   if (await channelConnected(db, 3)) slots.push(4);
   for (const slot of slots) {
