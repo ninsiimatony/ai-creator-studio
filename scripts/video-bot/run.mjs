@@ -714,6 +714,8 @@ async function main() {
       : WONDER
       ? `Made with AI narration${USED_AI_PICTURES ? " and a few AI-generated pictures" : ""}. ` +
         (USED_SOURCES.size ? `Footage: ${[...USED_SOURCES].filter((x) => x in SOURCE_NAMES).map((x) => SOURCE_NAMES[x]).join("; ")}.` : "Footage from free licensed sources.") +
+        (USED_SOURCES.has("nasa") ? ` This channel is not affiliated with or endorsed by NASA.` : "") +
+        ` Script written with AI help; facts are checked against public sources, but mistakes can happen. Tell us in the comments if you spot one.` +
         `\n\n`
       : `Made with AI narration and stock video clips from Pixabay (https://pixabay.com).\n\n`) +
     hashtags.join(" ");
