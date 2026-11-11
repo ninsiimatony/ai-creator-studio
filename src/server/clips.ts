@@ -162,12 +162,15 @@ async function searchWikimedia(q: string, f: F): Promise<Cand[]> {
 
 // ---------- choosing and downloading ----------
 const SPACE = /\b(space|planet|moon|lunar|star|stars|galaxy|rocket|astronaut|orbit|mars|jupiter|saturn|sun|solar|nebula|satellite|telescope|cosmos|comet|eclipse)\b/i;
-const OLD = /\b(old|vintage|history|historic|ancient|retro|century|1[0-9]{3}|war|past|classic)\b/i;
+const OLD = /\b(old|vintage|history|historic|ancient|retro|century|medieval|1[0-9]{3}|archive|archival)\b/i;
 
 /** Which sources to try, in order, for this scene. */
-export function sourceOrder(text: string, index: number): DocSource[] {
+export function sourceOrder(text: string, index: number, visual?: string): DocSource[] {
+  // Old films are chosen from the scene's own picture idea only, not from the narration,
+  // so a word like "past" in a sentence about owls cannot pull in unrelated old films.
+  const oldText = visual === undefined ? text : visual;
   if (SPACE.test(text)) return ["nasa", "pexels", "pixabay", "wikimedia", "archive"];
-  if (OLD.test(text)) return ["archive", "wikimedia", "pexels", "pixabay", "nasa"];
+  if (OLD.test(oldText)) return ["archive", "wikimedia", "pexels", "pixabay", "nasa"];
   const base: DocSource[] = index % 2 === 0 ? ["pexels", "pixabay"] : ["pixabay", "pexels"];
   // Now and then start with a public-domain source so the video has a different look.
   // Old public-domain films (Internet Archive) are only used for history topics:
@@ -218,7 +221,7 @@ export async function fetchDocClip(p: {
   const queries = [...new Set([own, own.split(" ").slice(0, 2).join(" "), kw.join(" "), kw[0] ?? ""].filter(Boolean))];
   const index = Math.max(0, Math.floor(p.index ?? 0));
   const skip = new Set(p.exclude ?? []);
-  const order = sourceOrder(`${own} ${text}`, index);
+  const order = sourceOrder(`${own} ${text}`, index, own);
 
   const search = (s: DocSource, q: string): Promise<Cand[]> =>
     s === "pexels" ? searchPexels(p.pexelsKey, q, f)

@@ -869,7 +869,7 @@ async function main() {
       .map((_, li) => `drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:textfile=short-title${li}.txt:fontsize=58:fontcolor=white:borderw=4:bordercolor=black:x=(w-text_w)/2:y=${200 + li * 76}`)
       .join(",");
     await run("ffmpeg", [
-      "-y", "-ss", part === 1 ? "0" : String(Math.round(total * 0.45)), "-t", "55", "-i", final,
+      "-y", "-ss", WONDER ? String(Math.round(total * (part === 1 ? 0.3 : 0.6))) : part === 1 ? "0" : String(Math.round(total * 0.45)), "-t", "55", "-i", final,
       "-filter_complex",
       "[0:v]split[a][b];[a]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=20:2[bg];" +
         "[b]scale=1080:-2[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2," +

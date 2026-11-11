@@ -68,4 +68,10 @@ describe("channel 3 requests", () => {
   it("writes a readable DNA line for channel 3", () => {
     expect(dnaLine(3, { subject: "sea turtles", angle: "how it sleeps", hook: "start with a question" })).toContain("sea turtles");
   });
+
+  it("old films are chosen only from the scene's own visual idea, not the narration", () => {
+    const order = sourceOrder("owls hunted in the past, a classic silent hunter", 2, "owl flying at night");
+    expect(order[0]).not.toBe("archive");
+    expect(sourceOrder("old farm", 2, "vintage farm film")[0]).toBe("archive");
+  });
 });
