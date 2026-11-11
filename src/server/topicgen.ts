@@ -96,7 +96,11 @@ async function makeTopics(env: WorkerEnv, channel: number, count: number): Promi
   const winning = channel === 1 ? await getNote(db, "winning_themes") : "";
   const titles = channel === 1 ? await redditTitles() : [];
   const system =
-    channel === 2
+    channel === 3
+      ? "You invent episode ideas for a YouTube documentary channel about the wonders of nature, wildlife, the oceans, space, planet Earth and the old world. " +
+        "Every idea is a TRUE, specific topic that can be explained in about 10 minutes and shown with free stock footage, NASA footage or old public-domain films. " +
+        "Pick one specific animal, place, object or phenomenon (not a whole category), and do not promise facts you are not sure are real. No made-up statistics, no conspiracy theories, no real private people. "
+      : channel === 2
       ? "You invent episode ideas for an ORIGINAL spooky cartoon story channel starring Grub, a small pale gray-green goblin keeper with huge yellow eyes. " +
         "Stories are scary but safe: fear comes from mystery, darkness, sounds and misunderstandings, and is beaten with courage, kindness or cleverness. " +
         "No gore, no death of children or pets, no weapons, no kidnapping, no real people, never copy an existing story. "
@@ -110,7 +114,9 @@ async function makeTopics(env: WorkerEnv, channel: number, count: number): Promi
         content:
           system +
           "You get numbered story DNA lines. For EACH DNA write 2 different premises that use every part of that DNA, and give each a probability (0 to 1) of how typical or predictable it is for this kind of story. " +
-          "Each premise is one sentence of 18 to 35 words: who, where, the conflict, and a hint of the twist (do not give the twist away). Use the names given. " +
+          (channel === 3
+            ? "Each premise is one sentence of 14 to 30 words: the specific subject and the one question or surprising fact the episode will explain. Do not use any names that are not real. "
+            : "Each premise is one sentence of 18 to 35 words: who, where, the conflict, and a hint of the twist (do not give the twist away). Use the names given. ") +
           bannedRules() +
           " Reply with exactly 2 lines per DNA in the form 'N | probability | premise' and nothing else.",
       },
@@ -134,7 +140,7 @@ async function makeTopics(env: WorkerEnv, channel: number, count: number): Promi
     const n = Number(m[1]) - 1;
     const p = Number(m[2]);
     const t = m[3]!.replace(/^["']|["']$/g, "").trim();
-    if (n < 0 || n >= dnas.length || t.length < 40 || t.length > 260) continue;
+    if (n < 0 || n >= dnas.length || t.length < (channel === 3 ? 25 : 40) || t.length > 260) continue;
     if (BANNED_NAMES.some((b) => new RegExp(`\\b${b}\\b`).test(t))) continue;
     const cur = best.get(n);
     if (!cur || p < cur.p) best.set(n, { p, t });
@@ -190,4 +196,17 @@ export async function refillTopics2(env: WorkerEnv): Promise<string> {
   await setNote(db, "topics2_refill_day", today);
   if (left >= 5) return "enough topics";
   return makeTopics(env, 2, 6);
+}
+
+/** Third channel (wonder documentaries): own topic pool, same variety rules. */
+export async function refillTopics3(env: WorkerEnv): Promise<string> {
+  const db = env.DB;
+  if (!db || !env.AI) return "not configured";
+  await ensure(db);
+  const today = new Date().toISOString().slice(0, 10);
+  if ((await getNote(db, "topics3_refill_day")) === today) return "already checked";
+  const left = (await db.prepare("SELECT COUNT(*) AS n FROM extra_topics WHERE used=0 AND channel=3").first<{ n: number }>())?.n ?? 0;
+  await setNote(db, "topics3_refill_day", today);
+  if (left >= 5) return "enough topics";
+  return makeTopics(env, 3, 6);
 }

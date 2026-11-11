@@ -107,11 +107,31 @@ const AXES_2 = {
     "a chilling final line", "a new friendship", "the door closes forever... or does it?"],
 };
 
+// Channel 3: wildlife, oceans, space, planet Earth and the old world (true topics shown with free licensed footage).
+const AXES_3 = {
+  subject: [
+    "whales and dolphins", "sharks", "octopuses and squid", "coral reefs", "the deep ocean floor", "sea turtles", "penguins and the polar south",
+    "polar bears and the Arctic", "elephants", "lions and big cats", "wolves", "bears", "primates and apes", "birds of prey", "migrating birds",
+    "owls and night hunters", "hummingbirds", "bees and pollinators", "ants and termite cities", "butterflies and moths", "snakes and reptiles",
+    "crocodiles and alligators", "frogs and amphibians", "rain forests", "deserts", "mountains and glaciers", "volcanoes", "caves", "rivers and waterfalls",
+    "thunderstorms and lightning", "the Northern Lights", "the Moon", "Mars", "the Sun", "Jupiter and Saturn", "comets and asteroids", "black holes and galaxies",
+    "astronauts and life on the space station", "stars and the night sky", "tides and the seasons", "trees and forests", "mushrooms and fungi", "flowers and plants that hunt",
+    "farm animals and horses", "cats and dogs", "island wildlife", "grasslands and the savanna", "wetlands and swamps", "ancient ruins and lost cities",
+    "old-time machines and inventions", "life long ago: farms, towns and trades",
+  ],
+  angle: ["a surprising fact most people do not know", "how it survives", "how it sleeps, rests or hides", "how it talks or communicates", "a record it holds",
+    "how it raises its young", "a myth versus the truth", "a day in its life", "how it has changed over time", "what scientists are still trying to learn",
+    "how it finds food", "how it deals with extreme weather", "how humans and it live side by side"],
+  hook: ["start with a question", "start with a surprising number you are sure about", "start with a quiet, vivid image", "start with a common belief that is wrong",
+    "start with 'imagine'", "start with a sound or a smell", "start in the middle of the action"],
+};
+
 const GUEST_NAMES = ["Tobi", "Imani", "Rafi", "Zuri", "Nico", "Asha", "Kai", "Leni", "Omar", "Pita", "Juno", "Dara", "Femi", "Ines", "Bo", "Selim", "Wren", "Ayo", "Kiri", "Tess"];
 
 // Cooldown windows in days (how long before a value may come back).
 const COOLDOWN_1: Record<string, number> = { setting: 25, theme: 4, protagonist: 18, relationship: 6, inciting: 14, twist: 8, ending: 3, pov: 2, era: 1 };
 const COOLDOWN_2: Record<string, number> = { location: 21, season: 5, fear: 14, guest: 7, goblinRole: 4, twist: 12, ending: 3 };
+const COOLDOWN_3: Record<string, number> = { subject: 20, angle: 4, hook: 2 };
 
 export type Dna = Record<string, string>;
 
@@ -146,7 +166,7 @@ export async function sampleDna(db: D1Database, channel: number, taken: Dna[] = 
     }
   }).filter(Boolean) as { at: number; dna: Dna }[];
   const now = Date.now();
-  const cooldown = channel === 2 ? COOLDOWN_2 : COOLDOWN_1;
+  const cooldown = channel === 3 ? COOLDOWN_3 : channel === 2 ? COOLDOWN_2 : COOLDOWN_1;
   const blocked = (axis: string): Set<string> => {
     const days = cooldown[axis] ?? 0;
     const s = new Set<string>();
@@ -163,6 +183,11 @@ export async function sampleDna(db: D1Database, channel: number, taken: Dna[] = 
   for (const p of past) if (now - p.at < 60 * 86400000) for (const n of (p.dna["names"] ?? "").split(", ")) usedNames.add(n);
   for (const t of taken) for (const n of (t["names"] ?? "").split(", ")) usedNames.add(n);
 
+  if (channel === 3) {
+    const dna: Dna = {};
+    for (const [axis, pool] of Object.entries(AXES_3)) dna[axis] = choose(axis, pool);
+    return dna;
+  }
   if (channel === 2) {
     const dna: Dna = {};
     for (const [axis, pool] of Object.entries(AXES_2)) dna[axis] = choose(axis, pool);
@@ -196,6 +221,7 @@ export async function saveDna(db: D1Database, channel: number, dna: Dna) {
 }
 
 export function dnaLine(channel: number, d: Dna): string {
+  if (channel === 3) return `Subject area: ${d["subject"]}; angle: ${d["angle"]}; how the narration opens: ${d["hook"]}`;
   return channel === 2
     ? `Place: ${d["location"]}; time: ${d["season"]}; scary thing: ${d["fear"]}; guests: ${d["guest"]} named ${d["names"]}; ${d["goblinRole"]}; twist: ${d["twist"]}; ending: ${d["ending"]}`
     : `Setting: ${d["setting"]} in ${d["era"]}; main character: a ${d["protagonist"]}; relationship: ${d["relationship"]}; heart of the story: ${d["theme"]}; ` +

@@ -34,11 +34,16 @@ export type WorkerEnv = {
   GOOGLE_CLIENT_SECRET?: string;
   GOOGLE_CLIENT_ID_2?: string;
   GOOGLE_CLIENT_SECRET_2?: string;
+  /** Optional own Google project for the third channel; when unset it shares the second channel's. */
+  GOOGLE_CLIENT_ID_3?: string;
+  GOOGLE_CLIENT_SECRET_3?: string;
   /** Base64 of 32 random bytes; encrypts stored Google refresh tokens. */
   TOKEN_ENC_KEY?: string;
   ELEVENLABS_API_KEY?: string;
   /** Free Pixabay API key for automatic stock video clips. */
   PIXABAY_API_KEY?: string;
+  /** Free Pexels API key (channel 3 clips). */
+  PEXELS_API_KEY?: string;
   /** Telegram bot (chat-to-video). Token from @BotFather; chat id = the owner's chat; webhook secret is random. */
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHAT_ID?: string;

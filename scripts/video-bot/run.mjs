@@ -10,8 +10,19 @@ const STUDIO = (process.env.STUDIO_URL ?? "").replace(/\/$/, "");
 const SECRET = process.env.AUTOMATION_SECRET ?? "";
 const TOPIC = (process.env.TOPIC ?? "").trim();
 const MINUTES = Math.min(90, Math.max(3, Number(process.env.MINUTES) || 10));
-const TONE = process.env.TONE === "emotional" ? "emotional" : process.env.TONE === "scary" ? "scary" : undefined;
+const TONE = process.env.TONE === "emotional" ? "emotional" : process.env.TONE === "scary" ? "scary" : process.env.TONE === "wonder" ? "wonder" : undefined;
 const SCARY = TONE === "scary";
+// Channel 3: nature, space and old-world documentaries made from free licensed clips (Pexels, Pixabay, NASA, Internet Archive, Wikimedia) plus a few AI pictures.
+const WONDER = TONE === "wonder";
+const USED_SOURCES = new Set(); // where this video's clips came from (named in the description)
+const SOURCE_NAMES = {
+  pexels: "Pexels (https://www.pexels.com)",
+  pixabay: "Pixabay (https://pixabay.com)",
+  nasa: "NASA Image and Video Library (https://images.nasa.gov)",
+  archive: "Internet Archive, Prelinger public-domain films (https://archive.org)",
+  wikimedia: "Wikimedia Commons, public-domain files (https://commons.wikimedia.org)",
+};
+let USED_AI_PICTURES = false;
 // Look of every picture in the scary channel (one recurring goblin keeper, original character design).
 const GOBLIN_STYLE =
   "Stylized 3D animated horror-cartoon film still, wide cinematic shot, dark moody lighting, blue and green fog, no text. " +
@@ -45,7 +56,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Natural human-sounding voices (free Microsoft neural voices). One voice per video, picked from the topic.
 // If they are not reachable, we fall back to the studio's built-in voice, so a video is never lost.
-const EDGE_VOICES = ["en-US-AndrewNeural", "en-US-AvaNeural", "en-US-GuyNeural", "en-US-JennyNeural"];
+const EDGE_VOICES = WONDER
+  ? ["en-GB-RyanNeural", "en-US-AndrewNeural", "en-GB-ThomasNeural", "en-US-BrianNeural"] // calm documentary-style narrators
+  : ["en-US-AndrewNeural", "en-US-AvaNeural", "en-US-GuyNeural", "en-US-JennyNeural"];
 const EDGE_VOICE = SCARY ? "en-US-ChristopherNeural" : EDGE_VOICES[[...TOPIC].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % EDGE_VOICES.length];
 let edgeFails = 0;
 async function speak(text, file) {
@@ -53,7 +66,7 @@ async function speak(text, file) {
     try {
       const txt = file + ".txt";
       await writeFile(txt, text);
-      await run("python3", ["-m", "edge_tts", "--voice", EDGE_VOICE, SCARY ? "--rate=-12%" : "--rate=-4%", ...(SCARY ? ["--pitch=-6Hz"] : []), "--file", txt, "--write-media", file]);
+      await run("python3", ["-m", "edge_tts", "--voice", EDGE_VOICE, SCARY ? "--rate=-12%" : WONDER ? "--rate=-6%" : "--rate=-4%", ...(SCARY ? ["--pitch=-6Hz"] : []), "--file", txt, "--write-media", file]);
       const st = await stat(file);
       if (st.size > 2000) {
         edgeFails = 0;
@@ -101,7 +114,7 @@ async function pickLibraryScene(text, isEnd) {
 }
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 
-async function studio(pathname, body, { raw = false } = {}) {
+async function studio(pathname, body, { raw = false, meta = false } = {}) {
   let last = "";
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
@@ -110,10 +123,13 @@ async function studio(pathname, body, { raw = false } = {}) {
         headers: { authorization: `Bearer ${SECRET}`, "content-type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (res.ok) return raw ? Buffer.from(await res.arrayBuffer()) : await res.json();
+      if (res.ok) {
+        if (meta) return { bytes: Buffer.from(await res.arrayBuffer()), source: res.headers.get("x-clip-source") ?? "" };
+        return raw ? Buffer.from(await res.arrayBuffer()) : await res.json();
+      }
       const j = await res.json().catch(() => ({}));
       last = j.error ?? `HTTP ${res.status}`;
-      if (res.status === 400 && /Daily|limit|not connected|not available|No stock clip/i.test(last)) break;
+      if (res.status === 400 && /Daily|limit|not connected|not available|No stock clip|No free clip/i.test(last)) break;
     } catch (e) {
       last = String(e?.message ?? e);
     }
@@ -122,15 +138,16 @@ async function studio(pathname, body, { raw = false } = {}) {
   throw new Error(last || "The studio did not answer.");
 }
 
-const CHANNEL = process.env.CHANNEL === "2" ? 2 : 1;
-// Links in Telegram ask Google to open the right account for each channel.
-const AUTH = "authuser=" + encodeURIComponent(CHANNEL === 2 ? "ninsiimamusigo@gmail.com" : "ninsiimatony@gmail.com");
+const CHANNEL = process.env.CHANNEL === "3" ? 3 : process.env.CHANNEL === "2" ? 2 : 1;
+// Links in Telegram ask Google to open the right account for each channel (channel 3: set the repo variable CH3_EMAIL to its Google address).
+const AUTH =
+  "authuser=" + encodeURIComponent(CHANNEL === 3 ? process.env.CH3_EMAIL || "0" : CHANNEL === 2 ? "ninsiimamusigo@gmail.com" : "ninsiimatony@gmail.com");
 // Random start so different videos pick different clips from the same search.
 const CLIP_OFFSET = Math.floor(Math.random() * 20);
 
 async function notify(text) {
   try {
-    await studio("/api/automation/notify", { text: CHANNEL === 2 ? `[Little Hope Tales - ninsiimamusigo@gmail.com]\n${text}` : `[Tony Ninsiima - ninsiimatony@gmail.com]\n${text}` });
+    await studio("/api/automation/notify", { text: CHANNEL === 3 ? `[Channel 3 - Wonders of nature and space]\n${text}` : CHANNEL === 2 ? `[Little Hope Tales - ninsiimamusigo@gmail.com]\n${text}` : `[Tony Ninsiima - ninsiimatony@gmail.com]\n${text}` });
   } catch (e) {
     log("notify failed:", e.message);
   }
@@ -222,7 +239,7 @@ async function makeThumbnail(title) {
   const pickOne = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const r = Math.random();
   // ch1: 40% Tony's face, 35% AI-made person, 25% scene only. ch2 (no real faces): 50% cartoon character, 50% scene.
-  const mode = SCARY ? "scene" : CHANNEL === 2 ? (r < 0.5 ? "person" : "scene") : r < 0.5 ? "tony" : r < 0.75 ? "person" : "scene";
+  const mode = SCARY || CHANNEL === 3 ? "scene" : CHANNEL === 2 ? (r < 0.5 ? "person" : "scene") : r < 0.5 ? "tony" : r < 0.75 ? "person" : "scene";
   const sceneLook = pickOne(["warm golden light", "cool blue night light", "soft sunrise glow", "moody dramatic shadows", "rainy window light", "candle light"]);
   let prompt;
   if (SCARY) {
@@ -236,6 +253,8 @@ async function makeThumbnail(title) {
       const who = pickOne(["a middle-aged woman", "a young woman", "a worried father", "an elderly man", "a young man", "an elderly woman", "a mother holding her child"]);
       prompt = `Cinematic close-up photo of ${who} with a ${feel} expression, placed on the right side of the frame, ${sceneLook}, dark empty space on the left, shallow depth of field, ultra detailed, 8k, no text`;
     }
+  } else if (CHANNEL === 3) {
+    prompt = `Stunning cinematic nature documentary photograph for a video titled "${title}", dramatic natural light, rich colors, ultra detailed, 8k, no text, no logos`;
   } else if (CHANNEL === 2) {
     prompt = `Colorful 3D animated cartoon movie scene for a story titled "${title}", Pixar style, expressive characters, ${sceneLook}, ultra detailed, no text`;
   } else if (TONE === "emotional") {
@@ -247,7 +266,7 @@ async function makeThumbnail(title) {
   let img = null;
   let libUsed = false;
   try {
-    const dir = path.join(path.dirname(new URL(import.meta.url).pathname), "thumbs", CHANNEL === 2 ? "ch2" : "ch1");
+    const dir = path.join(path.dirname(new URL(import.meta.url).pathname), "thumbs", CHANNEL === 3 ? "ch3" : CHANNEL === 2 ? "ch2" : "ch1");
     const files = (await readdir(dir)).filter((f) => /\.(jpe?g|png)$/i.test(f));
     if (files.length && mode !== "tony" && Math.random() < 0.85) {
       img = await readFile(path.join(dir, pickOne(files)));
@@ -511,6 +530,7 @@ async function main() {
       continue;
     }
     let clip = null;
+    let pic = null; // channel 3: an AI picture used instead of a clip for this scene
     let animated = false;
     let clipIsShared = false; // Kaggle clips are reused across a group of scenes; don't delete after one use
     if (kaggleClips) {
@@ -527,7 +547,36 @@ async function main() {
       await wait(500);
       clip = path.join(WORK, `c${id}.mp4`);
       let bytes = null;
-      if (CHANNEL === 2) {
+      // Channel 3 is a hybrid: about one scene in nine is a new AI picture (slow zoom) between the real footage clips.
+      if (WONDER && i % 9 === 4) {
+        try {
+          const img = await studio(
+            "/api/media/image",
+            { prompt: `Photorealistic documentary photograph: ${sc.term}. Cinematic natural light, rich detail, shot on a professional camera, no text, no logos`.slice(0, 900) },
+            { raw: true },
+          );
+          pic = path.join(WORK, `p${id}.` + (img[0] === 0x89 ? "png" : "jpg"));
+          await writeFile(pic, img);
+          USED_AI_PICTURES = true;
+        } catch (e) {
+          log(`Scene ${i + 1}: AI picture failed (${String(e.message).slice(0, 60)}); using footage`);
+          pic = null;
+        }
+      }
+      if (pic) { /* picture ready; no clip needed for this scene */ }
+      else if (WONDER) {
+        try {
+          const got = await studio("/api/media/doc-clip", { text: sc.narration.slice(0, 400), query: sc.term, index: i + CLIP_OFFSET }, { meta: true });
+          bytes = got.bytes;
+          if (got.source) USED_SOURCES.add(got.source);
+        } catch (e) {
+          // Backup: the plain Pixabay search, so a scene is never left empty.
+          log(`Scene ${i + 1}: multi-source search found nothing (${String(e.message).slice(0, 60)}); trying Pixabay`);
+          bytes = await studio("/api/media/stock-clip", { text: sc.narration.slice(0, 400), query: sc.term, index: i + CLIP_OFFSET, style: "real" }, { raw: true });
+          USED_SOURCES.add("pixabay");
+        }
+      }
+      else if (CHANNEL === 2) {
         // First choice: a real cartoon clip that no video has used before. When none is left, use a normal clip with the cartoon filter.
         try {
           bytes = await studio(
@@ -540,28 +589,34 @@ async function main() {
           bytes = null;
         }
       }
-      if (!bytes) {
+      if (!bytes && !pic && !WONDER) {
         bytes = await studio(
           "/api/media/stock-clip",
           { text: sc.narration.slice(0, 400), query: sc.term, index: i + CLIP_OFFSET, style: CHANNEL === 2 ? "real" : STYLE },
           { raw: true },
         );
       }
-      await writeFile(clip, bytes);
+      if (bytes) await writeFile(clip, bytes);
+      else clip = null;
       }
     } catch (e) {
       log(`Scene ${i + 1}: no clip (${e.message}); using a plain background`);
       clip = null;
     }
     const seg = path.join(WORK, `seg${id}.mp4`);
-    const vf =
+    const picZoom = i % 2 === 0 ? `min(1.0+0.00025*on,1.35)` : `max(1.35-0.00025*on,1.0)`;
+    const vf = pic
+      ? `scale=2240:2240,crop=2240:1260,zoompan=z='${picZoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${W}x${H}:fps=30,format=yuv420p,subtitles=seg.srt:force_style='FontName=DejaVu Sans,FontSize=20,Bold=1,Outline=2,Shadow=0,MarginV=36'`
+      :
       (clip ? `scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},` : "") +
       // Channel 2: turn normal clips into a painted cartoon look (many more clips to choose from, so no repeats).
       (clip && CHANNEL === 2 && !animated
         ? `split[o][e];[e]edgedetect=mode=canny:low=0.10:high=0.30,negate[ed];[o]hqdn3d=8:6:10:8,eq=saturation=1.45:contrast=1.06:brightness=0.02,lutyuv=y='floor(val/16)*16+8'[c];[c][ed]blend=all_mode=multiply:all_opacity=0.75,`
         : "") +
       `fps=30,format=yuv420p,subtitles=seg.srt:force_style='FontName=DejaVu Sans,FontSize=20,Bold=1,Outline=2,Shadow=0,MarginV=36'`;
-    const input = clip
+    const input = pic
+      ? ["-loop", "1", "-framerate", "30", "-i", pic]
+      : clip
       ? ["-stream_loop", "-1", "-i", clip]
       : ["-f", "lavfi", "-i", `color=c=0x0f172a:s=${W}x${H}:r=30`];
     await ffmpeg(
@@ -581,6 +636,7 @@ async function main() {
     segs.push(`file '${path.basename(seg)}'`);
     await rm(voice, { force: true });
     if (clip && !clipIsShared) await rm(clip, { force: true });
+    if (pic) await rm(pic, { force: true });
     if ((i + 1) % 20 === 0 || i === scenes.length - 1) log(`Scene ${i + 1}/${scenes.length} done`);
   }
 
@@ -623,6 +679,8 @@ async function main() {
     ? ["#scarystories", "#horrorstory", "#goblin", "#animatedhorror", "#creepystories", "#storytime"]
     : CHANNEL === 2
     ? ["#animation", "#cartoonstory", "#animatedstory", "#familystory", "#faith", "#hope"]
+    : WONDER
+    ? ["#nature", "#wildlife", "#space", "#documentary", "#science", "#wonders"]
     : TONE === "emotional"
     ? ["#emotionalstory", "#sadstory", "#lifelessons", "#storytime", "#touchingstory"]
     : ["#explained", "#documentary", "#facts"];
@@ -644,12 +702,20 @@ async function main() {
     (SCARY || TONE === "emotional" ? `Original fiction.\n\n` : `\n`) +
     (SCARY
       ? `If you love scary stories, please like, share and subscribe for a new scary story every day. Would you have opened the door? Tell us in the comments.\n\n`
+      : WONDER
+      ? `If you love nature, wildlife and the wonders of space, please like, share and subscribe for a new documentary every day. Which fact surprised you most? Tell us in the comments.\n\n`
       : TONE === "emotional"
       ? `If this story touched your heart, please like, share and subscribe for a new emotional story every day.\n\n`
       : `Like and subscribe for more.\n\n`) +
     `${chapterText}\n\n` +
     (SCARY ? `This is an original fictional story.\n` : TONE === "emotional" ? `This is a fictional story, written for reflection and inspiration.\n` : "") +
-    (SCARY ? `Made with AI narration and AI-generated artwork.\n\n` : `Made with AI narration and stock video clips from Pixabay (https://pixabay.com).\n\n`) +
+    (SCARY
+      ? `Made with AI narration and AI-generated artwork.\n\n`
+      : WONDER
+      ? `Made with AI narration${USED_AI_PICTURES ? " and a few AI-generated pictures" : ""}. ` +
+        (USED_SOURCES.size ? `Footage: ${[...USED_SOURCES].filter((x) => x in SOURCE_NAMES).map((x) => SOURCE_NAMES[x]).join("; ")}.` : "Footage from free licensed sources.") +
+        `\n\n`
+      : `Made with AI narration and stock video clips from Pixabay (https://pixabay.com).\n\n`) +
     hashtags.join(" ");
   globalThis.__videoTags = hashtags.map((h) => h.slice(1));
   // Policy check (advice only; never blocks the upload).
@@ -774,7 +840,7 @@ async function main() {
     const shortId = await uploadToYouTube(
       shortFile,
       `${outline.title.slice(0, part === 1 ? 85 : 78)}${part === 1 ? "" : " Part 2"} #shorts`,
-      `Watch the full story: https://youtu.be/${id}\n\n${hashtags.join(" ")} #shorts`,
+      `Watch the full ${WONDER ? "video" : "story"}: https://youtu.be/${id}\n\n${hashtags.join(" ")} #shorts`,
     );
     shortNote += `\n\nShort ${part} (1 min): https://www.youtube.com/watch?v=${shortId}&${AUTH}\nPublish it: https://studio.youtube.com/video/${shortId}/edit?${AUTH}`;
     log("Short uploaded:", shortId);
@@ -782,8 +848,8 @@ async function main() {
     // Also send the Short file to Telegram, ready to post on TikTok.
     try {
       const caption =
-        `${outline.title} ${SCARY ? "👻" : "💔"}\nFull story on YouTube: ${CHANNEL === 2 ? "Little Hope Tales" : "@TonyNinsiima"}\n\n` +
-        `${hashtags.join(" ")} #fyp #storytime ${SCARY ? "#scary" : "#emotional"}`;
+        `${outline.title} ${SCARY ? "👻" : WONDER ? "🌍" : "💔"}\nFull video on YouTube: ${CHANNEL === 3 ? "our wonders channel" : CHANNEL === 2 ? "Little Hope Tales" : "@TonyNinsiima"}\n\n` +
+        `${hashtags.join(" ")} #fyp ${WONDER ? "#nature #learnsomethingnew" : "#storytime"} ${SCARY ? "#scary" : WONDER ? "#wow" : "#emotional"}`;
       const res = await fetch(`${STUDIO}/api/automation/notify-video?caption=${encodeURIComponent(caption)}`, {
         method: "POST",
         headers: { authorization: `Bearer ${SECRET}`, "content-type": "video/mp4" },

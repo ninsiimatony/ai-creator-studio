@@ -33,6 +33,7 @@ import { Route as ApiAutomationNotifyRouteImport } from './routes/api/automation
 import { Route as ApiAutomationNotifyVideoRouteImport } from './routes/api/automation/notify-video'
 import { Route as ApiAutomationYoutubeTokenRouteImport } from './routes/api/automation/youtube-token'
 import { Route as ApiMediaAutoScriptRouteImport } from './routes/api/media/auto-script'
+import { Route as ApiMediaDocClipRouteImport } from './routes/api/media/doc-clip'
 import { Route as ApiMediaImageRouteImport } from './routes/api/media/image'
 import { Route as ApiMediaStockClipRouteImport } from './routes/api/media/stock-clip'
 import { Route as ApiMediaTtsRouteImport } from './routes/api/media/tts'
@@ -41,6 +42,7 @@ import { Route as ApiPublishListRouteImport } from './routes/api/publish/list'
 import { Route as ApiYoutubeThumbnailRouteImport } from './routes/api/youtube/thumbnail'
 import { Route as ApiAuthGoogleCallbackRouteImport } from './routes/api/auth/google/callback'
 import { Route as ApiAuthGoogle2StartRouteImport } from './routes/api/auth/google2/start'
+import { Route as ApiAuthGoogle3StartRouteImport } from './routes/api/auth/google3/start'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -166,6 +168,11 @@ const ApiMediaAutoScriptRoute = ApiMediaAutoScriptRouteImport.update({
   path: '/api/media/auto-script',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMediaDocClipRoute = ApiMediaDocClipRouteImport.update({
+  id: '/api/media/doc-clip',
+  path: '/api/media/doc-clip',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMediaImageRoute = ApiMediaImageRouteImport.update({
   id: '/api/media/image',
   path: '/api/media/image',
@@ -206,6 +213,11 @@ const ApiAuthGoogle2StartRoute = ApiAuthGoogle2StartRouteImport.update({
   path: '/api/auth/google2/start',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthGoogle3StartRoute = ApiAuthGoogle3StartRouteImport.update({
+  id: '/api/auth/google3/start',
+  path: '/api/auth/google3/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -232,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/api/automation/notify-video': typeof ApiAutomationNotifyVideoRoute
   '/api/automation/youtube-token': typeof ApiAutomationYoutubeTokenRoute
   '/api/media/auto-script': typeof ApiMediaAutoScriptRoute
+  '/api/media/doc-clip': typeof ApiMediaDocClipRoute
   '/api/media/image': typeof ApiMediaImageRoute
   '/api/media/stock-clip': typeof ApiMediaStockClipRoute
   '/api/media/tts': typeof ApiMediaTtsRoute
@@ -240,6 +253,7 @@ export interface FileRoutesByFullPath {
   '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
   '/api/auth/google2/start': typeof ApiAuthGoogle2StartRoute
+  '/api/auth/google3/start': typeof ApiAuthGoogle3StartRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -266,6 +280,7 @@ export interface FileRoutesByTo {
   '/api/automation/notify-video': typeof ApiAutomationNotifyVideoRoute
   '/api/automation/youtube-token': typeof ApiAutomationYoutubeTokenRoute
   '/api/media/auto-script': typeof ApiMediaAutoScriptRoute
+  '/api/media/doc-clip': typeof ApiMediaDocClipRoute
   '/api/media/image': typeof ApiMediaImageRoute
   '/api/media/stock-clip': typeof ApiMediaStockClipRoute
   '/api/media/tts': typeof ApiMediaTtsRoute
@@ -274,6 +289,7 @@ export interface FileRoutesByTo {
   '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
   '/api/auth/google2/start': typeof ApiAuthGoogle2StartRoute
+  '/api/auth/google3/start': typeof ApiAuthGoogle3StartRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -301,6 +317,7 @@ export interface FileRoutesById {
   '/api/automation/notify-video': typeof ApiAutomationNotifyVideoRoute
   '/api/automation/youtube-token': typeof ApiAutomationYoutubeTokenRoute
   '/api/media/auto-script': typeof ApiMediaAutoScriptRoute
+  '/api/media/doc-clip': typeof ApiMediaDocClipRoute
   '/api/media/image': typeof ApiMediaImageRoute
   '/api/media/stock-clip': typeof ApiMediaStockClipRoute
   '/api/media/tts': typeof ApiMediaTtsRoute
@@ -309,6 +326,7 @@ export interface FileRoutesById {
   '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
   '/api/auth/google2/start': typeof ApiAuthGoogle2StartRoute
+  '/api/auth/google3/start': typeof ApiAuthGoogle3StartRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -337,6 +355,7 @@ export interface FileRouteTypes {
     | '/api/automation/notify-video'
     | '/api/automation/youtube-token'
     | '/api/media/auto-script'
+    | '/api/media/doc-clip'
     | '/api/media/image'
     | '/api/media/stock-clip'
     | '/api/media/tts'
@@ -345,6 +364,7 @@ export interface FileRouteTypes {
     | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
     | '/api/auth/google2/start'
+    | '/api/auth/google3/start'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -371,6 +391,7 @@ export interface FileRouteTypes {
     | '/api/automation/notify-video'
     | '/api/automation/youtube-token'
     | '/api/media/auto-script'
+    | '/api/media/doc-clip'
     | '/api/media/image'
     | '/api/media/stock-clip'
     | '/api/media/tts'
@@ -379,6 +400,7 @@ export interface FileRouteTypes {
     | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
     | '/api/auth/google2/start'
+    | '/api/auth/google3/start'
   id:
     | '__root__'
     | '/'
@@ -405,6 +427,7 @@ export interface FileRouteTypes {
     | '/api/automation/notify-video'
     | '/api/automation/youtube-token'
     | '/api/media/auto-script'
+    | '/api/media/doc-clip'
     | '/api/media/image'
     | '/api/media/stock-clip'
     | '/api/media/tts'
@@ -413,6 +436,7 @@ export interface FileRouteTypes {
     | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
     | '/api/auth/google2/start'
+    | '/api/auth/google3/start'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -440,6 +464,7 @@ export interface RootRouteChildren {
   ApiAutomationNotifyVideoRoute: typeof ApiAutomationNotifyVideoRoute
   ApiAutomationYoutubeTokenRoute: typeof ApiAutomationYoutubeTokenRoute
   ApiMediaAutoScriptRoute: typeof ApiMediaAutoScriptRoute
+  ApiMediaDocClipRoute: typeof ApiMediaDocClipRoute
   ApiMediaImageRoute: typeof ApiMediaImageRoute
   ApiMediaStockClipRoute: typeof ApiMediaStockClipRoute
   ApiMediaTtsRoute: typeof ApiMediaTtsRoute
@@ -448,6 +473,7 @@ export interface RootRouteChildren {
   ApiYoutubeThumbnailRoute: typeof ApiYoutubeThumbnailRoute
   ApiAuthGoogleCallbackRoute: typeof ApiAuthGoogleCallbackRoute
   ApiAuthGoogle2StartRoute: typeof ApiAuthGoogle2StartRoute
+  ApiAuthGoogle3StartRoute: typeof ApiAuthGoogle3StartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -620,6 +646,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMediaAutoScriptRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/media/doc-clip': {
+      id: '/api/media/doc-clip'
+      path: '/api/media/doc-clip'
+      fullPath: '/api/media/doc-clip'
+      preLoaderRoute: typeof ApiMediaDocClipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/media/image': {
       id: '/api/media/image'
       path: '/api/media/image'
@@ -676,6 +709,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthGoogle2StartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/google3/start': {
+      id: '/api/auth/google3/start'
+      path: '/api/auth/google3/start'
+      fullPath: '/api/auth/google3/start'
+      preLoaderRoute: typeof ApiAuthGoogle3StartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -704,6 +744,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAutomationNotifyVideoRoute: ApiAutomationNotifyVideoRoute,
   ApiAutomationYoutubeTokenRoute: ApiAutomationYoutubeTokenRoute,
   ApiMediaAutoScriptRoute: ApiMediaAutoScriptRoute,
+  ApiMediaDocClipRoute: ApiMediaDocClipRoute,
   ApiMediaImageRoute: ApiMediaImageRoute,
   ApiMediaStockClipRoute: ApiMediaStockClipRoute,
   ApiMediaTtsRoute: ApiMediaTtsRoute,
@@ -712,6 +753,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiYoutubeThumbnailRoute: ApiYoutubeThumbnailRoute,
   ApiAuthGoogleCallbackRoute: ApiAuthGoogleCallbackRoute,
   ApiAuthGoogle2StartRoute: ApiAuthGoogle2StartRoute,
+  ApiAuthGoogle3StartRoute: ApiAuthGoogle3StartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

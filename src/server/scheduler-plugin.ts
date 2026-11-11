@@ -1,7 +1,7 @@
 import { runCatchup } from "./catchup";
 import { runWeeklyReport } from "./growth";
-import { refillTopics, refillTopics2 } from "./topicgen";
-import { channel2Connected } from "./google2";
+import { refillTopics, refillTopics2, refillTopics3 } from "./topicgen";
+import { channelConnected } from "./google2";
 import type { WorkerEnv } from "./db";
 
 // Nitro plugin: Cloudflare cron ticks run the catch-up check.
@@ -19,12 +19,20 @@ export default (nitroApp: { hooks: { hook: (name: string, fn: (ctx: { env: Worke
       console.error("topic refill crashed", e);
     }
     try {
-      if (env.DB && (await channel2Connected(env.DB))) {
+      if (env.DB && (await channelConnected(env.DB, 2))) {
         const t2 = await refillTopics2(env);
         if (t2 !== "already checked" && t2 !== "enough topics") console.log("topics2:", t2);
       }
     } catch (e) {
       console.error("topic refill 2 crashed", e);
+    }
+    try {
+      if (env.DB && (await channelConnected(env.DB, 3))) {
+        const t3 = await refillTopics3(env);
+        if (t3 !== "already checked" && t3 !== "enough topics") console.log("topics3:", t3);
+      }
+    } catch (e) {
+      console.error("topic refill 3 crashed", e);
     }
     try {
       const r = await runWeeklyReport(env);

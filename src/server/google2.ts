@@ -6,14 +6,21 @@ import { decryptSecret, encryptSecret } from "./secretbox";
 import { SCOPES, buildAuthUrl, pkce, redirectUriFor } from "./google";
 
 export const STATE2 = "c2.";
+export const STATE3 = "c3."; // third channel: same code, its own stored slot (uses GOOGLE_CLIENT_ID_3 when set, else the second channel's Google project)
 const now = () => Math.floor(Date.now() / 1000);
 type F = typeof fetch;
-type Env2 = Pick<WorkerEnv, "GOOGLE_CLIENT_ID_2" | "GOOGLE_CLIENT_SECRET_2" | "TOKEN_ENC_KEY">;
+type Env2 = Pick<WorkerEnv, "GOOGLE_CLIENT_ID_2" | "GOOGLE_CLIENT_SECRET_2" | "GOOGLE_CLIENT_ID_3" | "GOOGLE_CLIENT_SECRET_3" | "TOKEN_ENC_KEY">;
+export type Slot = 2 | 3;
 
-function need(env: Env2) {
-  if (!env.GOOGLE_CLIENT_ID_2 || !env.GOOGLE_CLIENT_SECRET_2 || !env.TOKEN_ENC_KEY)
-    throw new AppError("The second channel is not set up yet (GOOGLE_CLIENT_ID_2 / GOOGLE_CLIENT_SECRET_2 missing).");
+/** Google client for a slot: the third channel may have its own project, otherwise it shares the second one's. */
+function creds(env: Env2, slot: Slot): { id: string; secret: string } {
+  const id = (slot === 3 ? env.GOOGLE_CLIENT_ID_3 : undefined) || env.GOOGLE_CLIENT_ID_2;
+  const secret = (slot === 3 ? env.GOOGLE_CLIENT_SECRET_3 : undefined) || env.GOOGLE_CLIENT_SECRET_2;
+  if (!id || !secret || !env.TOKEN_ENC_KEY)
+    throw new AppError(`The ${slot === 3 ? "third" : "second"} channel is not set up yet (GOOGLE_CLIENT_ID_2 / GOOGLE_CLIENT_SECRET_2 missing).`);
+  return { id, secret };
 }
+const ordinal = (slot: Slot) => (slot === 3 ? "third" : "second");
 
 async function ensure(db: D1Database) {
   await db
@@ -24,24 +31,28 @@ async function ensure(db: D1Database) {
 }
 
 export async function channel2Connected(db: D1Database): Promise<boolean> {
+  return channelConnected(db, 2);
+}
+
+export async function channelConnected(db: D1Database, slot: Slot): Promise<boolean> {
   try {
     await ensure(db);
-    return !!(await db.prepare("SELECT 1 AS x FROM extra_channels WHERE slot = 2").first());
+    return !!(await db.prepare("SELECT 1 AS x FROM extra_channels WHERE slot = ?").bind(slot).first());
   } catch {
     return false;
   }
 }
 
-export async function startOAuth2(db: D1Database, env: Env2, userId: string, origin: string): Promise<string> {
-  need(env);
-  const state = STATE2 + randomToken(32);
+export async function startOAuth2(db: D1Database, env: Env2, userId: string, origin: string, slot: Slot = 2): Promise<string> {
+  const c = creds(env, slot);
+  const state = (slot === 3 ? STATE3 : STATE2) + randomToken(32);
   const { verifier, challenge } = await pkce();
   await db.prepare("DELETE FROM oauth_states WHERE expires_at < ?").bind(now()).run();
   await db
     .prepare("INSERT INTO oauth_states (state_hash, user_id, code_verifier, expires_at) VALUES (?, ?, ?, ?)")
     .bind(await sha256Hex(state), userId, verifier, now() + 600)
     .run();
-  return buildAuthUrl({ clientId: env.GOOGLE_CLIENT_ID_2!, redirectUri: redirectUriFor(origin), state, challenge });
+  return buildAuthUrl({ clientId: c.id, redirectUri: redirectUriFor(origin), state, challenge });
 }
 
 async function tokenRequest(body: Record<string, string>, f: F) {
@@ -63,7 +74,8 @@ export async function completeOAuth2(
   state: string,
   f: F = fetch,
 ): Promise<{ channelTitle: string }> {
-  need(env);
+  const slot: Slot = state.startsWith(STATE3) ? 3 : 2;
+  const c = creds(env, slot);
   await ensure(db);
   const stateHash = await sha256Hex(state);
   const row = await db
@@ -75,8 +87,8 @@ export async function completeOAuth2(
     throw new AppError("This sign-in link expired or is invalid. Please start the connection again.");
   const tok = await tokenRequest(
     {
-      client_id: env.GOOGLE_CLIENT_ID_2!,
-      client_secret: env.GOOGLE_CLIENT_SECRET_2!,
+      client_id: c.id,
+      client_secret: c.secret,
       code,
       code_verifier: row.code_verifier,
       grant_type: "authorization_code",
@@ -87,7 +99,7 @@ export async function completeOAuth2(
   const refresh = tok.json["refresh_token"];
   const access = tok.json["access_token"];
   if (!tok.ok || typeof refresh !== "string" || typeof access !== "string")
-    throw new AppError("Google did not accept the sign-in for the second channel. Please try again.");
+    throw new AppError(`Google did not accept the sign-in for the ${ordinal(slot)} channel. Please try again.`);
   const granted = String(tok.json["scope"] ?? "");
   if (SCOPES.some((s) => !new Set(granted.split(/\s+/)).has(s)))
     throw new AppError("Some YouTube permissions were not granted. Connect again and allow all of them.");
@@ -99,31 +111,32 @@ export async function completeOAuth2(
   if (!ch) throw new AppError("That Google account has no YouTube channel.");
   await db
     .prepare(
-      `INSERT INTO extra_channels (slot, channel_id, channel_title, refresh_token_enc, connected_at) VALUES (2, ?, ?, ?, datetime('now'))
+      `INSERT INTO extra_channels (slot, channel_id, channel_title, refresh_token_enc, connected_at) VALUES (?, ?, ?, ?, datetime('now'))
        ON CONFLICT(slot) DO UPDATE SET channel_id=excluded.channel_id, channel_title=excluded.channel_title, refresh_token_enc=excluded.refresh_token_enc, connected_at=datetime('now')`,
     )
-    .bind(ch.id, ch.snippet.title, await encryptSecret(refresh, env.TOKEN_ENC_KEY))
+    .bind(slot, ch.id, ch.snippet.title, await encryptSecret(refresh, env.TOKEN_ENC_KEY!))
     .run();
   return { channelTitle: ch.snippet.title };
 }
 
-export async function getAccessToken2(db: D1Database, env: Env2, f: F = fetch): Promise<{ accessToken: string; channelId: string }> {
-  need(env);
+export async function getAccessToken2(db: D1Database, env: Env2, f: F = fetch, slot: Slot = 2): Promise<{ accessToken: string; channelId: string }> {
+  const c = creds(env, slot);
   await ensure(db);
   const acc = await db
-    .prepare("SELECT channel_id, refresh_token_enc FROM extra_channels WHERE slot = 2")
+    .prepare("SELECT channel_id, refresh_token_enc FROM extra_channels WHERE slot = ?")
+    .bind(slot)
     .first<{ channel_id: string; refresh_token_enc: string }>();
-  if (!acc) throw new AppError("The second channel is not connected yet.");
+  if (!acc) throw new AppError(`The ${ordinal(slot)} channel is not connected yet.`);
   const tok = await tokenRequest(
     {
-      client_id: env.GOOGLE_CLIENT_ID_2!,
-      client_secret: env.GOOGLE_CLIENT_SECRET_2!,
-      refresh_token: await decryptSecret(acc.refresh_token_enc, env.TOKEN_ENC_KEY),
+      client_id: c.id,
+      client_secret: c.secret,
+      refresh_token: await decryptSecret(acc.refresh_token_enc, env.TOKEN_ENC_KEY!),
       grant_type: "refresh_token",
     },
     f,
   );
   if (!tok.ok || typeof tok.json["access_token"] !== "string")
-    throw new AppError("Google access for the second channel expired. Connect it again (a Google project in Testing mode expires after 7 days).");
+    throw new AppError(`Google access for the ${ordinal(slot)} channel expired. Connect it again (a Google project in Testing mode expires after 7 days).`);
   return { accessToken: tok.json["access_token"], channelId: acc.channel_id };
 }

@@ -9,7 +9,7 @@ const Body = z.discriminatedUnion("step", [
     step: z.literal("outline"),
     topic: z.string().min(3).max(500),
     minutes: z.number().int().min(1).max(90),
-    tone: z.enum(["emotional", "scary"]).optional(),
+    tone: z.enum(["emotional", "scary", "wonder"]).optional(),
   }),
   z.object({
     step: z.literal("section"),
@@ -18,7 +18,7 @@ const Body = z.discriminatedUnion("step", [
     sections: z.array(z.string().min(1).max(200)).min(1).max(50),
     index: z.number().int().min(0).max(49),
     style: z.enum(["real", "cartoon"]),
-    tone: z.enum(["emotional", "scary"]).optional(),
+    tone: z.enum(["emotional", "scary", "wonder"]).optional(),
   }),
   z.object({
     step: z.literal("policy"),

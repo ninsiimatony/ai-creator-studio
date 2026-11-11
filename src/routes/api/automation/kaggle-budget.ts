@@ -8,7 +8,7 @@ const Body = z.union([
   z.object({ action: z.literal("check"), needHours: z.number().min(0).max(60) }),
   z.object({
     action: z.literal("record"),
-    channel: z.number().int().min(1).max(2),
+    channel: z.number().int().min(1).max(3),
     hours: z.number().min(0).max(60),
     note: z.string().max(300).default(""),
   }),

@@ -3,7 +3,8 @@
 // made. If a slot was skipped, failed, or GitHub/network was down, it starts it again on the next tick.
 import topics from "../../scripts/video-bot/topics.json";
 import topics2 from "../../scripts/video-bot/topics2.json";
-import { channel2Connected } from "./google2";
+import topics3 from "../../scripts/video-bot/topics3.json";
+import { channelConnected } from "./google2";
 import { dispatchVideoJob, sendTelegram } from "./bot";
 import { pickTopic } from "./topicgen";
 import { runWatchdog } from "./watchdog";
@@ -11,7 +12,7 @@ import type { D1Database, WorkerEnv } from "./db";
 
 const REPO = "ninsiimatony/ai-creator-studio";
 const REF = "main";
-const SLOT_MINUTES_UTC = [11 * 60 + 17, 16 * 60 + 17, 22 * 60 + 17, 23 * 60 + 17]; // main channel starts 15:17, 20:17, 02:17 Oman (live ~7 AM, 12 PM, 6 PM New York); slot 3 = second channel: starts 03:17 Oman (6:17 PM New York), live about 7:20 PM New York
+const SLOT_MINUTES_UTC = [11 * 60 + 17, 16 * 60 + 17, 22 * 60 + 17, 23 * 60 + 17, 19 * 60 + 17]; // slot 4 = third channel (wildlife, space and old-world documentaries): starts 23:17 Oman, live about 3:30 PM New York; // main channel starts 15:17, 20:17, 02:17 Oman (live ~7 AM, 12 PM, 6 PM New York); slot 3 = second channel: starts 03:17 Oman (6:17 PM New York), live about 7:20 PM New York
 const MAX_ATTEMPTS = 4;
 const LOST_AFTER_MS = 12 * 60 * 1000; // dispatched but GitHub never showed a run
 const STUCK_AFTER_MS = 100 * 60 * 1000; // run still going far too long
@@ -69,16 +70,23 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
   const list = topics as string[];
   const runs = await fetchRuns(env.GITHUB_TOKEN);
 
-  const slotCount = (await channel2Connected(db)) ? 4 : 3;
-  for (let slot = 0; slot < slotCount; slot++) {
+  // Slots 0-2 = main channel, 3 = second channel, 4 = third channel (the last two only once they are connected).
+  const slots = [0, 1, 2];
+  if (await channelConnected(db, 2)) slots.push(3);
+  if (await channelConnected(db, 3)) slots.push(4);
+  for (const slot of slots) {
     if (minuteOfDay < SLOT_MINUTES_UTC[slot]!) continue; // slot not due yet
     const isCh2 = slot === 3;
-    const label = isCh2 ? "the second channel" : `video ${slot + 1} of 3`;
-    let topic = isCh2
+    const isCh3 = slot === 4;
+    const chan = isCh3 ? 3 : isCh2 ? 2 : 1;
+    const label = isCh3 ? "the third channel" : isCh2 ? "the second channel" : `video ${slot + 1} of 3`;
+    let topic = isCh3
+      ? (topics3 as string[])[dayOfYear(now) % (topics3 as string[]).length]!
+      : isCh2
       ? (topics2 as string[])[dayOfYear(now) % (topics2 as string[]).length]!
       : list[(dayOfYear(now) * 3 + slot) % list.length]!;
     const existing = await db.prepare("SELECT 1 AS x FROM video_slots WHERE day = ? AND slot = ?").bind(day, slot).first();
-    if (!existing) topic = await pickTopic(db, topic, isCh2 ? 2 : 1); // fresh topic first, built-in list as backup
+    if (!existing) topic = await pickTopic(db, topic, chan); // fresh topic first, built-in list as backup
     await db
       .prepare("INSERT OR IGNORE INTO video_slots (day, slot, topic) VALUES (?, ?, ?)")
       .bind(day, slot, topic)
@@ -109,7 +117,7 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
 
     if (row.attempts >= MAX_ATTEMPTS) {
       await db.prepare("UPDATE video_slots SET status='gave_up' WHERE day=? AND slot=?").bind(day, slot).run();
-      await notify(`⚠️ ${isCh2 ? "The second channel video" : `Video ${slot + 1} of today`} failed ${MAX_ATTEMPTS} times. Send me a topic here to make it by hand.`);
+      await notify(`⚠️ ${isCh3 ? "The third channel video" : isCh2 ? "The second channel video" : `Video ${slot + 1} of today`} failed ${MAX_ATTEMPTS} times. Send me a topic here to make it by hand.`);
       continue;
     }
 
@@ -128,8 +136,8 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
           topic: row.topic,
           minutes: 10,
           style: isCh2 ? "cartoon" : "real",
-          tone: isCh2 ? "scary" : "emotional",
-          ...(isCh2 ? { channel: 2 } : {}),
+          tone: isCh3 ? "wonder" : isCh2 ? "scary" : "emotional",
+          ...(isCh3 ? { channel: 3 } : isCh2 ? { channel: 2 } : {}),
         },
       });
       await db.prepare("UPDATE video_slots SET status='dispatched' WHERE day=? AND slot=?").bind(day, slot).run();
