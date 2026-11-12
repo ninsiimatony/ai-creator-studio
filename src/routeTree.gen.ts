@@ -41,6 +41,7 @@ import { Route as ApiPublishGoRouteImport } from './routes/api/publish/go'
 import { Route as ApiPublishListRouteImport } from './routes/api/publish/list'
 import { Route as ApiYoutubeThumbnailRouteImport } from './routes/api/youtube/thumbnail'
 import { Route as ApiAuthGoogleCallbackRouteImport } from './routes/api/auth/google/callback'
+import { Route as ApiAuthGoogle1StartRouteImport } from './routes/api/auth/google1/start'
 import { Route as ApiAuthGoogle2StartRouteImport } from './routes/api/auth/google2/start'
 import { Route as ApiAuthGoogle3StartRouteImport } from './routes/api/auth/google3/start'
 
@@ -208,6 +209,11 @@ const ApiAuthGoogleCallbackRoute = ApiAuthGoogleCallbackRouteImport.update({
   path: '/api/auth/google/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthGoogle1StartRoute = ApiAuthGoogle1StartRouteImport.update({
+  id: '/api/auth/google1/start',
+  path: '/api/auth/google1/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthGoogle2StartRoute = ApiAuthGoogle2StartRouteImport.update({
   id: '/api/auth/google2/start',
   path: '/api/auth/google2/start',
@@ -252,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/api/publish/list': typeof ApiPublishListRoute
   '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
+  '/api/auth/google1/start': typeof ApiAuthGoogle1StartRoute
   '/api/auth/google2/start': typeof ApiAuthGoogle2StartRoute
   '/api/auth/google3/start': typeof ApiAuthGoogle3StartRoute
 }
@@ -288,6 +295,7 @@ export interface FileRoutesByTo {
   '/api/publish/list': typeof ApiPublishListRoute
   '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
+  '/api/auth/google1/start': typeof ApiAuthGoogle1StartRoute
   '/api/auth/google2/start': typeof ApiAuthGoogle2StartRoute
   '/api/auth/google3/start': typeof ApiAuthGoogle3StartRoute
 }
@@ -325,6 +333,7 @@ export interface FileRoutesById {
   '/api/publish/list': typeof ApiPublishListRoute
   '/api/youtube/thumbnail': typeof ApiYoutubeThumbnailRoute
   '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
+  '/api/auth/google1/start': typeof ApiAuthGoogle1StartRoute
   '/api/auth/google2/start': typeof ApiAuthGoogle2StartRoute
   '/api/auth/google3/start': typeof ApiAuthGoogle3StartRoute
 }
@@ -363,6 +372,7 @@ export interface FileRouteTypes {
     | '/api/publish/list'
     | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
+    | '/api/auth/google1/start'
     | '/api/auth/google2/start'
     | '/api/auth/google3/start'
   fileRoutesByTo: FileRoutesByTo
@@ -399,6 +409,7 @@ export interface FileRouteTypes {
     | '/api/publish/list'
     | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
+    | '/api/auth/google1/start'
     | '/api/auth/google2/start'
     | '/api/auth/google3/start'
   id:
@@ -435,6 +446,7 @@ export interface FileRouteTypes {
     | '/api/publish/list'
     | '/api/youtube/thumbnail'
     | '/api/auth/google/callback'
+    | '/api/auth/google1/start'
     | '/api/auth/google2/start'
     | '/api/auth/google3/start'
   fileRoutesById: FileRoutesById
@@ -472,6 +484,7 @@ export interface RootRouteChildren {
   ApiPublishListRoute: typeof ApiPublishListRoute
   ApiYoutubeThumbnailRoute: typeof ApiYoutubeThumbnailRoute
   ApiAuthGoogleCallbackRoute: typeof ApiAuthGoogleCallbackRoute
+  ApiAuthGoogle1StartRoute: typeof ApiAuthGoogle1StartRoute
   ApiAuthGoogle2StartRoute: typeof ApiAuthGoogle2StartRoute
   ApiAuthGoogle3StartRoute: typeof ApiAuthGoogle3StartRoute
 }
@@ -702,6 +715,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthGoogleCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/google1/start': {
+      id: '/api/auth/google1/start'
+      path: '/api/auth/google1/start'
+      fullPath: '/api/auth/google1/start'
+      preLoaderRoute: typeof ApiAuthGoogle1StartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/google2/start': {
       id: '/api/auth/google2/start'
       path: '/api/auth/google2/start'
@@ -752,6 +772,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublishListRoute: ApiPublishListRoute,
   ApiYoutubeThumbnailRoute: ApiYoutubeThumbnailRoute,
   ApiAuthGoogleCallbackRoute: ApiAuthGoogleCallbackRoute,
+  ApiAuthGoogle1StartRoute: ApiAuthGoogle1StartRoute,
   ApiAuthGoogle2StartRoute: ApiAuthGoogle2StartRoute,
   ApiAuthGoogle3StartRoute: ApiAuthGoogle3StartRoute,
 }
