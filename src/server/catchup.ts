@@ -70,6 +70,10 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
   if (!db || !env.GITHUB_TOKEN) return "not configured";
   await ensureTable(db);
   await runWatchdog(env).catch((e) => console.log("watchdog:", String(e).slice(0, 100)));
+  // Pause switch: app_notes 'pause_dispatch_until' = ISO time. Used when the free daily Workers AI allowance is
+  // used up (it resets at 00:00 UTC), so videos are not started just to fail. No new videos start before that time.
+  const pauseUntil = (await db.prepare("SELECT value FROM app_notes WHERE key='pause_dispatch_until'").first<{ value: string }>().catch(() => null))?.value;
+  if (pauseUntil && Date.now() < Date.parse(pauseUntil)) return `paused until ${pauseUntil}`;
   const notify = async (text: string) => {
     if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID)
       await sendTelegram(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, text).catch(() => {});

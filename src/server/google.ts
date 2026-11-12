@@ -10,6 +10,8 @@ export const SCOPES = [
   "https://www.googleapis.com/auth/youtube",
   "https://www.googleapis.com/auth/youtube.readonly",
   "https://www.googleapis.com/auth/yt-analytics.readonly",
+  // Needed for uploading subtitles (captions.insert) and posting the channel's link comment on Shorts (Nov 2026).
+  "https://www.googleapis.com/auth/youtube.force-ssl",
 ];
 const STATE_TTL_SECONDS = 10 * 60;
 const now = () => Math.floor(Date.now() / 1000);

@@ -43,3 +43,9 @@ Tony asked for Channel 2 to work like big scary-story channels (e.g. Mr. Nightma
 
 ## 2026-11-12 — Fix: Channel 3 on the "Make videos public" page
 - The one-tap publish page (`/go-public`) only showed Channels 1 and 2. It now lists **Wild Wonders World** too: its private videos, the Make public button, and a reconnect link. Its API also accepts channel 3, and publishing keeps the video's AI label.
+
+## 2026-11-12 — Fixes found by the Channel 2 test video
+A private test video ("3 Scary Night Shift Stories", 18 min) proved the new format works: right title, 3 stories, playlist created, 2 Shorts and the recipe backup. It also found:
+- **Free Workers AI allowance used up for the day** (it resets at 00:00 UTC): pictures, thumbnail, policy check and translations failed. Added a **pause switch** (`app_notes.pause_dispatch_until`). The catch-up starts no new videos until that time. It's set to 2026-11-13 00:10 UTC, so today's Channel 3 and Channel 1 videos are skipped cleanly instead of failing 3 times. The test video stayed private (not published) because the checks were not green.
+- **Subtitles and Short link comments returned 403:** YouTube needs the `youtube.force-ssl` permission for them. It was added to the scopes, and all 3 channels were reconnected.
+- Lesson: a 25-min Channel 2 video uses about 2.5× the AI of a 10-min video. Keep extra manual test runs away from posting days.
