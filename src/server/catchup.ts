@@ -149,7 +149,7 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
         req: {
           topic: row.topic,
           minutes: videoMinutes(slot, day),
-          style: isCh2 ? "cartoon" : "real",
+          style: "real", // channel 2 is realistic night photos since 2026-11-12 (was "cartoon")
           tone: isCh3 ? "wonder" : isCh2 ? "scary" : "emotional",
           ...(isCh3 ? { channel: 3 } : isCh2 ? { channel: 2 } : {}),
         },
