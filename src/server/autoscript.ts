@@ -260,7 +260,11 @@ export async function writeSection(p: {
               : p.tone === "wonder"
               ? " End with a memorable closing thought, then ask the viewers one curious question they can answer in the comments (for example: Which of these facts surprised you most? Have you ever seen this in real life?), and finally ask them to subscribe for a new wonder of nature or space every day."
               : " End with a memorable conclusion and ask viewers to subscribe."
-            : " Do not conclude the video.") +
+            : " Do not conclude the video." +
+              // Retention: about halfway, leave an open question so viewers stay for the second half.
+              (p.index === Math.floor(p.sections.length / 2) && p.sections.length >= 4
+                ? " End this section with a short open question or tease about what comes next (for example: But that was not the strangest part.), without giving the answer yet."
+                : "")) +
           `\n\nThen on a new last line write: VISUALS: followed by 8 short ${p.style === "cartoon" ? "animation or cartoon" : "stock video"} search terms (2-3 words each, concrete things that can be filmed, separated by semicolons).` +
           (p.tone === "scary"
             ? " For visuals use eerie things from THIS section's own place and events that can be pictured (objects, rooms, weather, the guests' actions), each one different."

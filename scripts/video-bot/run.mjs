@@ -61,7 +61,71 @@ const EDGE_VOICES = WONDER
   : ["en-US-AndrewNeural", "en-US-AvaNeural", "en-US-GuyNeural", "en-US-JennyNeural"];
 const EDGE_VOICE = SCARY ? "en-US-ChristopherNeural" : EDGE_VOICES[[...TOPIC].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % EDGE_VOICES.length];
 let edgeFails = 0;
+let USED_KOKORO = false;
+// Kokoro: free, human-sounding voice (Apache-2.0) that runs on the runner's CPU. Used first for the channels in
+// KOKORO_CHANNELS (repo variable, default "3"), because it adds about 8 minutes per video and the private repo has
+// 2,000 free GitHub minutes a month. One fixed voice per channel so each channel sounds like itself.
+// (Functions, not constants: CHANNEL is defined further down this file.)
+const kokoroOn = () => (process.env.KOKORO_CHANNELS || "3").split(",").map((x) => x.trim()).includes(String(CHANNEL));
+const kokoroVoice = () => CHANNEL === 3 ? { voice: "bm_george", lang: "en-gb", speed: 0.95 } : CHANNEL === 2 ? { voice: "am_michael", lang: "en-us", speed: 0.9 } : { voice: "af_heart", lang: "en-us", speed: 0.97 };
+let kokoro = null; // { proc, waiters, ready }
+let kokoroFails = 0;
+function kokoroStart() {
+  if (kokoro) return kokoro.ready;
+  const proc = spawn("python3", [path.join(path.dirname(new URL(import.meta.url).pathname), "kokoro_tts.py")], { stdio: ["pipe", "pipe", "pipe"] });
+  const waiters = [];
+  let buf = "";
+  let resolveReady;
+  const ready = new Promise((r) => (resolveReady = r));
+  proc.stdout.on("data", (d) => {
+    buf += d;
+    let i;
+    while ((i = buf.indexOf("\n")) >= 0) {
+      const line = buf.slice(0, i).trim();
+      buf = buf.slice(i + 1);
+      if (line === "ready") { resolveReady(true); continue; }
+      if (line.startsWith("err") && !kokoro.started) { resolveReady(false); log("Kokoro voice not available:", line.slice(4, 200)); continue; }
+      const w = waiters.shift();
+      if (w) w(line);
+    }
+  });
+  proc.stderr.on("data", () => {});
+  // Never let this helper keep the bot alive after the video is done (even if something crashes).
+  proc.unref(); proc.stdin.unref?.(); proc.stdout.unref?.(); proc.stderr.unref?.();
+  proc.on("exit", () => { resolveReady(false); while (waiters.length) waiters.shift()("err exited"); kokoro.dead = true; });
+  kokoro = { proc, waiters, ready, started: false, dead: false };
+  return ready;
+}
+function kokoroStop() {
+  if (kokoro && !kokoro.dead) { try { kokoro.proc.stdin.end(); kokoro.proc.kill(); } catch {} }
+  kokoro = null;
+}
+async function kokoroSpeak(text, file) {
+  if (!(await kokoroStart()) || kokoro.dead) throw new Error("kokoro not running");
+  kokoro.started = true;
+  const reply = await new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("kokoro timeout")), 5 * 60 * 1000);
+    kokoro.waiters.push((line) => { clearTimeout(t); resolve(line); });
+    kokoro.proc.stdin.write(JSON.stringify({ text, file, ...kokoroVoice() }) + "\n");
+  });
+  if (!reply.startsWith("ok")) throw new Error(reply.slice(0, 200));
+  const st = await stat(file);
+  if (st.size < 2000) throw new Error("empty audio");
+}
+
 async function speak(text, file) {
+  if (kokoroOn() && kokoroFails < 3) {
+    try {
+      await kokoroSpeak(text, file);
+      if (!USED_KOKORO) log("Voice: Kokoro", kokoroVoice().voice);
+      USED_KOKORO = true;
+      kokoroFails = 0;
+      return;
+    } catch (e) {
+      kokoroFails++;
+      if (kokoroFails === 1 || kokoroFails === 3) log("Kokoro voice failed, using the next voice:", String(e.message).slice(-200));
+    }
+  }
   if (edgeFails < 3) {
     try {
       const txt = file + ".txt";
@@ -347,7 +411,7 @@ async function publishVideo(videoId) {
   if (!st) throw new Error("video not found for publishing");
   const res = await fetch("https://www.googleapis.com/youtube/v3/videos?part=status", {
     method: "PUT", headers: h,
-    body: JSON.stringify({ id: videoId, status: { privacyStatus: "public", selfDeclaredMadeForKids: st.selfDeclaredMadeForKids ?? false, embeddable: st.embeddable ?? true, license: st.license ?? "youtube", publicStatsViewable: st.publicStatsViewable ?? true, containsSyntheticMedia: (CHANNEL === 3 && USED_AI_PICTURES) ? true : (st.containsSyntheticMedia ?? false) } }),
+    body: JSON.stringify({ id: videoId, status: { privacyStatus: "public", selfDeclaredMadeForKids: st.selfDeclaredMadeForKids ?? false, embeddable: st.embeddable ?? true, license: st.license ?? "youtube", publicStatsViewable: st.publicStatsViewable ?? true, containsSyntheticMedia: (!SCARY && USED_AI_PICTURES) ? true : (st.containsSyntheticMedia ?? false) } }),
   });
   if (!res.ok) throw new Error(`publish ${res.status}: ${(await res.text()).slice(0, 200)}`);
 }
@@ -678,6 +742,7 @@ async function main() {
     if ((i + 1) % 20 === 0 || i === scenes.length - 1) log(`Scene ${i + 1}/${scenes.length} done`);
   }
 
+  kokoroStop(); // all voices are made; free the CPU for the video encoding
   // 3. Join, add quiet music, upload.
   await writeFile(path.join(WORK, "list.txt"), segs.join("\n"));
   const body = path.join(WORK, "body.mp4");

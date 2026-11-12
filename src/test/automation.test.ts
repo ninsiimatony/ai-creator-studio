@@ -141,3 +141,17 @@ describe("draft sweep", () => {
     expect((await repo.loadSnapshot(db, u)).scripts).toHaveLength(1);
   });
 });
+
+import { videoMinutes } from "@/server/catchup";
+describe("video length variation", () => {
+  it("stays inside each channel's range and changes from day to day", () => {
+    const days = Array.from({ length: 30 }, (_, i) => `2026-12-${String(i + 1).padStart(2, "0")}`);
+    for (const [slot, lo, hi] of [[2, 8, 12], [3, 10, 15], [4, 9, 14]] as const) {
+      const vals = days.map((d) => videoMinutes(slot, d));
+      expect(Math.min(...vals)).toBeGreaterThanOrEqual(lo);
+      expect(Math.max(...vals)).toBeLessThanOrEqual(hi);
+      expect(new Set(vals).size).toBeGreaterThan(2);
+      expect(videoMinutes(slot, days[0]!)).toBe(vals[0]);
+    }
+  });
+});

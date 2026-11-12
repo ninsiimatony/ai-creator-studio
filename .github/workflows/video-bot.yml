@@ -40,6 +40,22 @@ jobs:
           node-version: 20
       - name: Install ffmpeg and a subtitle font
         run: sudo apt-get update -y && sudo apt-get install -y ffmpeg fonts-dejavu-core python3-pil && (python3 -m pip install --user --break-system-packages edge-tts || pip3 install --user edge-tts || true)
+      # Kokoro free voice (Apache-2.0). Only for channels listed in the repo variable KOKORO_CHANNELS (default "3").
+      - name: Cache the Kokoro voice model
+        if: contains(format(',{0},', vars.KOKORO_CHANNELS || '3'), format(',{0},', inputs.channel || '1'))
+        uses: actions/cache@v4
+        with:
+          path: ~/kokoro
+          key: kokoro-model-v1.0
+      - name: Install the Kokoro voice
+        if: contains(format(',{0},', vars.KOKORO_CHANNELS || '3'), format(',{0},', inputs.channel || '1'))
+        continue-on-error: true
+        run: |
+          python3 -m pip install --user --break-system-packages kokoro-onnx soundfile || pip3 install --user kokoro-onnx soundfile
+          mkdir -p ~/kokoro
+          [ -s ~/kokoro/kokoro-v1.0.onnx ] || curl -sSfL -o ~/kokoro/kokoro-v1.0.onnx https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
+          [ -s ~/kokoro/voices-v1.0.bin ] || curl -sSfL -o ~/kokoro/voices-v1.0.bin https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
+          ls -la ~/kokoro
       - name: Install the Kaggle CLI (only used if USE_LTX_VIDEO=1)
         if: vars.USE_LTX_VIDEO == '1'
         run: python3 -m pip install --user --break-system-packages kaggle || pip3 install --user kaggle
@@ -63,9 +79,23 @@ jobs:
           # Channel 3's Google address (only used to open the right account in Telegram links). Optional repo variable.
           CH3_EMAIL: ${{ vars.CH3_EMAIL }}
           GOOGLE_TTS_API_KEY: ${{ secrets.GOOGLE_TTS_API_KEY }}
+          KOKORO_CHANNELS: ${{ vars.KOKORO_CHANNELS }}
           KAGGLE_USERNAME: ${{ vars.KAGGLE_USERNAME }}
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
         run: node scripts/video-bot/run.mjs
+      - name: Alarm - tell Tony on Telegram if this run crashed
+        if: failure() || cancelled()
+        env:
+          AUTOMATION_SECRET: ${{ secrets.AUTOMATION_SECRET }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          WHAT: ${{ inputs.topic || 'scheduled video' }}
+          CH: ${{ inputs.channel || '1' }}
+        run: |
+          TEXT="🚨 Robot alarm: a video run stopped with an error (channel ${CH}). It will retry automatically.
+          Topic: ${WHAT}
+          Details: ${RUN_URL}"
+          export TEXT
+          node -e 'fetch("https://youtube-automation-platform.ninsiimatony.workers.dev/api/automation/notify",{method:"POST",headers:{authorization:"Bearer "+process.env.AUTOMATION_SECRET,"content-type":"application/json"},body:JSON.stringify({text:process.env.TEXT})}).then(r=>console.log("alarm sent",r.status)).catch(e=>console.log("alarm failed",e.message))'
       - name: Keep the Kaggle clips for checking (3 days)
         if: always()
         uses: actions/upload-artifact@v4
