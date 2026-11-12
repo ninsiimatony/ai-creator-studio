@@ -40,3 +40,6 @@ Tony asked for Channel 2 to work like big scary-story channels (e.g. Mr. Nightma
 - **Safety:** for teens and adults, never "made for kids" (also removes the kids-cartoon risk the research flagged). The AI label is on, because the AI pictures look realistic.
 - **Story ideas (DNA):** new themes, fears, narrators and twists for 3-story episodes. The 10 unused goblin topics were marked as archived (`used = 2`), not deleted.
 - The old goblin code, prompts and picture library are kept in git history and in the repo (`scenes/`, `thumbs/ch2`).
+
+## 2026-11-12 — Fix: Channel 3 on the "Make videos public" page
+- The one-tap publish page (`/go-public`) only showed Channels 1 and 2. It now lists **Wild Wonders World** too: its private videos, the Make public button, and a reconnect link. Its API also accepts channel 3, and publishing keeps the video's AI label.

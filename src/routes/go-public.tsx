@@ -9,7 +9,7 @@ export const Route = createFileRoute("/go-public")({
 
 type V = { id: string; title: string; thumb: string; minutes: number; when: string };
 type Ch = { ok: boolean; error?: string; channelTitle?: string; videos?: V[] };
-const NAMES: Record<string, string> = { "1": "Main channel (Tony Ninsiima)", "2": "Little Hope Tales" };
+const NAMES: Record<string, string> = { "1": "Main channel (Tony Ninsiima)", "2": "Little Hope Tales", "3": "Wild Wonders World" };
 
 function GoPublic() {
   const [data, setData] = useState<Record<string, Ch> | null>(null);
@@ -59,11 +59,11 @@ function GoPublic() {
 
   return (
     <>
-      <PageHeader title="Make videos public" desc="Your private videos from both channels. Tap Make public, then tap again to confirm." />
+      <PageHeader title="Make videos public" desc="Your private videos from all 3 channels. Tap Make public, then tap again to confirm." />
       {err && <p className="panel mb-4 p-4 text-sm text-red-400">{err}</p>}
       {!data && !err && <p className="panel p-4 text-sm">Loading…</p>}
       {data &&
-        ["1", "2"].map((ch) => {
+        ["1", "2", "3"].map((ch) => {
           const c = data[ch];
           return (
             <section key={ch} className="panel mb-6 p-4">
@@ -71,7 +71,7 @@ function GoPublic() {
               {!c?.ok && (
                 <div className="text-sm">
                   <p className="mb-2 text-red-400">{c?.error ?? "Not available."}</p>
-                  <a className="underline" href={ch === "1" ? "/channel" : "/api/auth/google2/start"}>
+                  <a className="underline" href={ch === "1" ? "/api/auth/google1/start" : ch === "3" ? "/api/auth/google3/start" : "/api/auth/google2/start"}>
                     Reconnect this channel
                   </a>
                 </div>

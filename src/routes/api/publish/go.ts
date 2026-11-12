@@ -4,7 +4,7 @@ import { AppError } from "@/server/errors";
 import { requireUser } from "@/server/context";
 import { makePublic } from "@/server/gopublic";
 
-const Body = z.object({ channel: z.number().int().min(1).max(2), id: z.string().min(6).max(20) });
+const Body = z.object({ channel: z.number().int().min(1).max(3), id: z.string().min(6).max(20) });
 const out = (status: number, body: unknown) =>
   Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 

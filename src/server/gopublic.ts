@@ -8,7 +8,7 @@ type F = typeof fetch;
 const API = "https://www.googleapis.com/youtube/v3";
 
 async function token(db: D1Database, env: WorkerEnv, userId: string, channel: number, f: F) {
-  return channel === 2 ? getAccessToken2(db, env, f) : getAccessToken(db, env, userId, f);
+  return channel === 3 ? getAccessToken2(db, env, f, 3) : channel === 2 ? getAccessToken2(db, env, f) : getAccessToken(db, env, userId, f);
 }
 
 async function yt(f: F, url: string, accessToken: string, init: RequestInit = {}) {
@@ -67,6 +67,7 @@ export async function makePublic(db: D1Database, env: WorkerEnv, userId: string,
         embeddable: st.embeddable ?? true,
         license: st.license ?? "youtube",
         publicStatsViewable: st.publicStatsViewable ?? true,
+        containsSyntheticMedia: st.containsSyntheticMedia ?? false,
       },
     }),
   });
