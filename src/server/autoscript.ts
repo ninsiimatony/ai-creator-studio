@@ -3,7 +3,7 @@
 import { AppError } from "./errors";
 import type { AiBinding, D1Database } from "./db";
 import { recordUsage } from "./ai";
-import { TITLE_SIMILAR, bannedRules, embed, nearest, recentVecs, saveVec, trigramJaccard } from "./variety";
+import { OPENING_SIMILAR, OPENING_WORDS, PLAN_SIMILAR, TITLE_SIMILAR, bannedRules, embed, nearest, recentVecs, saveVec, trigramJaccard } from "./variety";
 
 export const SCRIPT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 export const WORDS_PER_SECTION = 350;
@@ -107,6 +107,8 @@ export async function writeOutline(p: {
   let avoid = "";
   let out = { title: "", sections: [] as string[] };
   let titleVec: string | null = null;
+  let planVec: string | null = null;
+  let planText = "";
   for (let attempt = 0; attempt < 2; attempt++) {
     const text = await ask(
     p.ai,
@@ -143,11 +145,20 @@ export async function writeOutline(p: {
     const pool = await recentVecs(p.db, channel, "title", 300).catch(() => []);
     const near = nearest(titleVec, pool);
     const words = pool.some((x) => trigramJaccard(x.text, out.title) >= 0.4);
-    if (near.score < TITLE_SIMILAR && !words) break;
-    avoid = `\n\nThe title must NOT look like this earlier video: "${near.text || out.title}". Use different words and a different angle.`;
+    // Story-shape gate: the list of section headings must not repeat the plan of an earlier video.
+    planText = out.sections.join(" | ");
+    const pv = await embed(p.ai, [planText]);
+    planVec = pv?.[0] ?? null;
+    const planNear = planVec ? nearest(planVec, await recentVecs(p.db, channel, "plan", 300).catch(() => [])) : { text: "", score: 0 };
+    const planSame = planNear.score >= PLAN_SIMILAR;
+    if (near.score < TITLE_SIMILAR && !words && !planSame) break;
+    avoid = planSame && near.score < TITLE_SIMILAR && !words
+      ? `\n\nThe story must NOT follow the same plan as this earlier video: "${planNear.text.slice(0, 240)}". Use a different structure, different events and a different order.`
+      : `\n\nThe title must NOT look like this earlier video: "${near.text || out.title}". Use different words and a different angle.`;
   }
   if (out.sections.length < 2) throw new AppError("The AI plan came back empty. Please try again.");
   if (titleVec) await saveVec(p.db, channel, "title", out.title || p.topic, titleVec).catch(() => {});
+  if (planVec) await saveVec(p.db, channel, "plan", planText, planVec).catch(() => {});
   await recordUsage(p.db, p.userId, "script", SCRIPT_MODEL, p.topic.length, 0, 0);
   return { title: out.title || p.topic, sections: out.sections };
 }
@@ -227,8 +238,9 @@ export async function writeSection(p: {
   const heading = p.sections[p.index] ?? p.topic;
   const first = p.index === 0;
   const last = p.index === p.sections.length - 1;
-  const text = await ask(
-    p.ai,
+  const channel = p.tone === "scary" ? 2 : p.tone === "wonder" ? 3 : 1;
+  const run = (avoid: string) => ask(
+    p.ai!,
     [
       { role: "system", content: systemFor(p.tone) },
       {
@@ -256,14 +268,34 @@ export async function writeSection(p: {
             ? " For visuals use concrete things that can really be filmed and that are named in THIS section: the animal, habitat, weather, planet, machine or old-world scene. Prefer the plain common name (for example 'humpback whale', 'rain forest canopy', 'full moon'), each one different."
             : p.tone === "emotional"
             ? " For visuals write a shot list from THIS section's own setting and actions: mix close-ups of hands and objects, wide shots of the place (its streets, rooms, landscape, local food), people doing the action, and calm metaphor shots (empty chair, closing door, city traffic, rain). Avoid generic 'woman crying' or 'couple arguing'; every term must be different."
-            : ""),
+            : "") + avoid,
       },
     ],
     900,
     { temperature: 0.8, top_p: 0.9, frequency_penalty: 0.3 },
   );
-  const out = parseSection(text);
+  let text = await run("");
+  let out = parseSection(text);
+  // Opening-line gate: the first lines of a video must not sound like the opening of an earlier video.
+  let openVec: string | null = null;
+  let openText = "";
+  if (first) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      openText = out.narration.slice(0, 280);
+      const v = await embed(p.ai, [openText]);
+      openVec = v?.[0] ?? null;
+      if (!openVec) break;
+      const pool = await recentVecs(p.db, channel, "opening", 300).catch(() => []);
+      const near = nearest(openVec, pool);
+      const words = pool.some((x) => trigramJaccard(x.text, openText) >= OPENING_WORDS);
+      if (near.score < OPENING_SIMILAR && !words) break;
+      if (attempt === 2) break; // give up after two rewrites: never block a video
+      text = await run(`\n\nIMPORTANT: the opening must NOT sound like this earlier video opening: "${(near.text || openText).slice(0, 200)}". Start with a completely different first sentence, a different kind of hook and different words.`);
+      out = parseSection(text);
+    }
+  }
   if (out.narration.length < 80) throw new AppError("The AI section came back too short. Please try again.");
+  if (first && openVec) await saveVec(p.db, channel, "opening", openText, openVec).catch(() => {});
   await recordUsage(p.db, p.userId, "script", SCRIPT_MODEL, heading.length, out.narration.length, 0);
   return out;
 }

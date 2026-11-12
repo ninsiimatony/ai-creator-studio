@@ -8,6 +8,9 @@ import type { AiBinding, D1Database } from "./db";
 export const EMBED_MODEL = "@cf/baai/bge-small-en-v1.5"; // 384 numbers per text, free tier friendly
 export const TOPIC_SIMILAR = 0.88; // cosine at or above this = "same story"
 export const TITLE_SIMILAR = 0.9;
+export const OPENING_SIMILAR = 0.88; // first lines of a video vs earlier openings
+export const OPENING_WORDS = 0.3; // shared 3-word phrases in the opening
+export const PLAN_SIMILAR = 0.9; // list of section headings vs earlier plans
 
 // ---------- tired AI defaults we never want ----------
 export const BANNED_NAMES = [
