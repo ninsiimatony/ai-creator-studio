@@ -89,25 +89,34 @@ const AXES_1 = {
   era: ["today", "today", "today", "the 1990s", "the 1980s", "the early 2000s"],
 };
 
+// Channel 2 (since 2026-11-12): compilations of THREE short, original, first-person scary stories on one everyday
+// theme, for teens and adults (not for children). The old goblin-cartoon lists are kept in git history.
 const AXES_2 = {
-  location: ["a flooded library", "a night bus with no driver", "a toy factory after closing", "a snowed-in school", "an abandoned fairground",
-    "a clock tower", "a greenhouse full of giant plants", "a houseboat on a misty river", "a museum basement", "a train station at 3 a.m.",
-    "a grandmother's cluttered attic", "a candle shop", "an old cinema", "a lighthouse-free fishing harbour", "a bakery with an oven that hums",
-    "a hotel with a missing floor", "a carnival hall of mirrors", "a well in an orchard", "a church bell tower", "a closed swimming pool"],
-  season: ["a stormy autumn night", "the first snow of winter", "a foggy spring morning", "a hot summer night with thunder", "Halloween eve",
-    "a power cut at dusk", "a full-moon night", "a rainy school holiday"],
-  fear: ["footsteps with no one there", "a door that appears overnight", "a voice that copies yours", "a shadow that moves late", "a doll that changes places",
-    "a painting whose eyes follow", "a phone call from an empty house", "a song from a broken music box", "a reflection that blinks first",
-    "a map that redraws itself", "a key that is always warm", "whispers coming from the walls", "lights flickering in a code"],
-  guest: ["a curious girl", "a brave younger brother", "two cousins who don't get along", "a new kid in town", "a night-shift janitor",
-    "a lost puppy", "a grumpy old caretaker", "a girl who is scared of the dark", "a boy who never believes in ghosts", "three best friends on a dare"],
-  goblinRole: ["the goblin is the guardian keeping them safe", "the goblin is the mystery they chase", "the goblin is misunderstood and needs help",
-    "the goblin sets a riddle that must be solved", "the goblin narrates and warns the viewer", "the goblin is tricked and must be rescued"],
-  twist: ["the monster was protecting them all along", "the rule was misunderstood", "the ghost is a lost animal", "the hero caused it without knowing",
-    "it was a message from the past", "the house wanted to be found", "two worlds swapped places for one night", "the scary thing was afraid of them",
-    "the goblin was a person long ago", "the warning was meant for someone else"],
-  ending: ["cozy-scary: safe but one last creepy sign", "lesson learned the hard way", "a funny relief ending", "the goblin keeps one secret",
-    "a chilling final line", "a new friendship", "the door closes forever... or does it?"],
+  // "location" is the episode theme: an everyday situation where all 3 stories happen.
+  location: ["night shift at work", "camping in the woods", "home alone", "a long road trip", "babysitting", "a late-night gas station",
+    "a hospital at night", "a cheap motel", "hiking alone", "moving into a new house", "a college dorm", "a snowed-in winter cabin",
+    "a quiet farm far from town", "a new apartment", "a thunderstorm power cut", "a rural back road", "a summer lake house",
+    "a delivery driver's route", "a hunting trip", "an empty office after hours"],
+  season: ["a freezing winter night", "a foggy autumn evening", "a hot summer night with thunder", "a rainy spring night", "Halloween week",
+    "a power cut at dusk", "a full-moon night", "the longest night of the year"],
+  fear: ["footsteps upstairs when no one else is home", "a stranger who knows your name", "a knock at 3 a.m.", "a figure standing at the tree line",
+    "a voice that copies someone you love", "lights on in a house that should be empty", "a car that follows with its lights off",
+    "something tapping on the window", "a phone call from your own number", "fresh footprints in the snow around the tent",
+    "a door you locked standing open", "a person who does not blink", "a radio that picks up a calm voice describing you"],
+  guest: ["a night-shift security guard", "a young nurse", "a college student", "two friends on a road trip", "a delivery driver", "a park ranger",
+    "a babysitter", "a gas station clerk", "a young couple in their first home", "a hunter and his brother", "a truck driver", "a solo hiker"],
+  // How the three stories are framed (the old key name is kept so saved cooldowns still work).
+  goblinRole: ["each story is told in first person, as if the narrator is reading a letter sent in by a viewer (it is fiction)",
+    "each story is told by a different worker or traveller, each a different age",
+    "the three stories get scarier one after another, the worst is last",
+    "the three stories happen in three different decades",
+    "each story ends with one small unexplained detail"],
+  twist: ["the person who helped was never there", "someone had been living in the house the whole time", "the call came from inside the building",
+    "the stranger was trying to warn them", "the noise was a recording of their own voice", "the cabin had been empty for twenty years",
+    "the friend in the car was not who they thought", "the footprints led back to their own door", "the message was dated tomorrow",
+    "the person on the camera was standing right behind them"],
+  ending: ["no explanation, just one last chilling detail", "they escaped, but something followed them home", "they never went back",
+    "a final line that makes the listener check the window", "they found out the truth years later"],
 };
 
 // Channel 3: wildlife, oceans, space, planet Earth and the old world (true topics shown with free licensed footage).
@@ -226,7 +235,7 @@ export async function saveDna(db: D1Database, channel: number, dna: Dna) {
 export function dnaLine(channel: number, d: Dna): string {
   if (channel === 3) return `Subject area: ${d["subject"]}; angle: ${d["angle"]}; how the narration opens: ${d["hook"]}`;
   return channel === 2
-    ? `Place: ${d["location"]}; time: ${d["season"]}; scary thing: ${d["fear"]}; guests: ${d["guest"]} named ${d["names"]}; ${d["goblinRole"]}; twist: ${d["twist"]}; ending: ${d["ending"]}`
+    ? `Theme of all 3 stories: ${d["location"]}; time: ${d["season"]}; scariest moment: ${d["fear"]}; main narrators include ${d["guest"]} (names ${d["names"]}); ${d["goblinRole"]}; one story's twist: ${d["twist"]}; ending feel: ${d["ending"]}`
     : `Setting: ${d["setting"]} in ${d["era"]}; main character: a ${d["protagonist"]}; relationship: ${d["relationship"]}; heart of the story: ${d["theme"]}; ` +
         `it starts with ${d["inciting"]}; twist: ${d["twist"]}; ending: ${d["ending"]}; ${d["pov"]}; names to use: ${d["names"]}`;
 }

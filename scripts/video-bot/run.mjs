@@ -39,6 +39,15 @@ const CHAPTER_AT = {};
 let CHAPTER_T = 0;
 const SRT_PARTS = []; // { start, dur, narration } per scene, for one full subtitle file
 let THUMB_FILE = null;
+// Channel 2 look since 2026-11-12: dark, realistic night photographs (like scary-story compilation channels), no cartoons,
+// no faces. Varied camera and light every picture. (The goblin cartoon look is kept in git history.)
+const NIGHT_LIGHTS = ["a single porch light", "cold moonlight", "a flickering street lamp", "car headlights in fog", "a lit window in the dark",
+  "a lightning flash", "a red exit sign glow", "a flashlight beam", "dim yellow motel lights", "a faint blue TV glow"];
+function nightPrompt(chunk, n) {
+  const cam = CAMERAS[(n + PIC_OFFSET) % CAMERAS.length];
+  const light = NIGHT_LIGHTS[(n * 3 + PIC_OFFSET) % NIGHT_LIGHTS.length];
+  return `Realistic dark night photograph, eerie and quiet, slightly grainy amateur camera look, deep shadows, muted colors, no people's faces, no text, no words. Camera: ${cam}. Lighting: ${light}. Scene: ${chunk}`;
+}
 function goblinPrompt(chunk, n) {
   const cam = CAMERAS[(n + PIC_OFFSET) % CAMERAS.length];
   const light = LIGHTS[(n * 3 + PIC_OFFSET) % LIGHTS.length];
@@ -348,7 +357,10 @@ async function makeThumbnail(title) {
   const sceneLook = pickOne(["warm golden light", "cool blue night light", "soft sunrise glow", "moody dramatic shadows", "rainy window light", "candle light"]);
   let prompt;
   if (SCARY) {
-    prompt = GOBLIN_STYLE.replace("wide cinematic shot", "dramatic close-up") + `the goblin peeks out of the dark, creepy atmosphere for a scary story titled "${title}", glowing yellow eyes, strong contrast`;
+    const place = pickOne(["a lonely wooden cabin in the woods at night", "an old two-storey house with one lit window at night", "an empty motel hallway at night",
+      "a dark country road with one street lamp", "a tent by a campfire in a dark forest", "a gas station alone in the dark", "a long empty hospital corridor",
+      "a farmhouse under a stormy sky", "a parked van in a dark field", "a snowy cabin with footprints leading to the door"]);
+    prompt = `Realistic dark night photograph of ${place}, related to "${title}", eerie, quiet, deep shadows, slightly grainy amateur camera look, high contrast, no people, no text`;
   } else if (mode === "person") {
     const feel = pickOne(["shocked", "heartbroken, eyes full of tears", "worried", "hopeful and smiling softly", "angry and hurt", "surprised"]);
     if (CHANNEL === 2) {
@@ -373,7 +385,7 @@ async function makeThumbnail(title) {
   try {
     const dir = path.join(path.dirname(new URL(import.meta.url).pathname), "thumbs", CHANNEL === 3 ? "ch3" : CHANNEL === 2 ? "ch2" : "ch1");
     const files = (await readdir(dir)).filter((f) => /\.(jpe?g|png)$/i.test(f));
-    if (files.length && mode !== "tony" && Math.random() < 0.85) {
+    if (files.length && mode !== "tony" && !SCARY && Math.random() < 0.85) {
       img = await readFile(path.join(dir, pickOne(files)));
       libUsed = true;
     }
@@ -414,7 +426,7 @@ async function publishVideo(videoId) {
   if (!st) throw new Error("video not found for publishing");
   const res = await fetch("https://www.googleapis.com/youtube/v3/videos?part=status", {
     method: "PUT", headers: h,
-    body: JSON.stringify({ id: videoId, status: { privacyStatus: "public", selfDeclaredMadeForKids: st.selfDeclaredMadeForKids ?? false, embeddable: st.embeddable ?? true, license: st.license ?? "youtube", publicStatsViewable: st.publicStatsViewable ?? true, containsSyntheticMedia: (!SCARY && USED_AI_PICTURES) ? true : (st.containsSyntheticMedia ?? false) } }),
+    body: JSON.stringify({ id: videoId, status: { privacyStatus: "public", selfDeclaredMadeForKids: st.selfDeclaredMadeForKids ?? false, embeddable: st.embeddable ?? true, license: st.license ?? "youtube", publicStatsViewable: st.publicStatsViewable ?? true, containsSyntheticMedia: USED_AI_PICTURES ? true : (st.containsSyntheticMedia ?? false) } }),
   });
   if (!res.ok) throw new Error(`publish ${res.status}: ${(await res.text()).slice(0, 200)}`);
 }
@@ -550,7 +562,7 @@ async function main() {
     try {
       kaggleClips = await ltx.generateClipsOnKaggle({
         studio, scenes, channel: CHANNEL, workDir: WORK,
-        characterStyle: SCARY ? GOBLIN_STYLE : "",
+        characterStyle: "",
       });
     } catch (e) {
       log("Kaggle LTX-Video skipped, using normal pictures/clips:", String(e.message).slice(0, 160));
@@ -582,15 +594,15 @@ async function main() {
             // Every picture is new: made for this exact part of the story, with a different camera angle and light each time.
             // The saved library pictures are only a backup if the picture maker fails.
             try {
-              const img = await studio("/api/media/image", { prompt: goblinPrompt(chunk, imgN).slice(0, 1900) }, { raw: true });
+              const img = await studio("/api/media/image", { prompt: nightPrompt(chunk, imgN).slice(0, 1900) }, { raw: true });
+              USED_AI_PICTURES = true;
               curImg = path.join(WORK, `img${i}.` + (img[0] === 0x89 ? "png" : "jpg"));
               await writeFile(curImg, img);
               curWide = false;
             } catch (e) {
-              const lib = await pickLibraryScene(chunk, i >= scenes.length - 4);
-              if (!lib) throw e;
-              curImg = lib;
-              curWide = true;
+              // The old goblin picture library no longer matches this channel's look: keep the last picture instead.
+              if (!curImg) throw e;
+              throw new Error("picture maker failed: " + String(e.message).slice(0, 60));
             }
             curClip = null;
           }
@@ -808,16 +820,16 @@ async function main() {
     `${outline.title}\n` +
     (SCARY || TONE === "emotional" ? `Original fiction.\n\n` : `\n`) +
     (SCARY
-      ? `If you love scary stories, please like, share and subscribe for a new scary story every day. Would you have opened the door? Tell us in the comments.\n\n`
+      ? `Three original scary stories on one theme. Which one scared you most? Tell us in the comments, and subscribe for new scary stories every week.\n\n`
       : WONDER
       ? `If you love nature, wildlife and the wonders of space, please like, share and subscribe for a new documentary every day. Which fact surprised you most? Tell us in the comments.\n\n`
       : TONE === "emotional"
       ? `If this story touched your heart, please like, share and subscribe for a new emotional story every day.\n\n`
       : `Like and subscribe for more.\n\n`) +
     `${chapterText}\n\n` +
-    (SCARY ? `This is an original fictional story.\n` : TONE === "emotional" ? `This is a fictional story, written for reflection and inspiration.\n` : "") +
+    (SCARY ? `All stories are original fiction written for entertainment. They are not true stories.\n` : TONE === "emotional" ? `This is a fictional story, written for reflection and inspiration.\n` : "") +
     (SCARY
-      ? `Made with AI narration and AI-generated artwork.\n\n`
+      ? `Made with AI narration and AI-generated pictures.\n\n`
       : WONDER
       ? `Made with AI narration${USED_AI_PICTURES ? " and a few AI-generated pictures" : ""}. ` +
         (USED_SOURCES.size ? `Footage: ${[...USED_SOURCES].filter((x) => x in SOURCE_NAMES).map((x) => SOURCE_NAMES[x]).join("; ")}.` : "Footage from free licensed sources.") +

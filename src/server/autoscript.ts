@@ -52,12 +52,14 @@ const SYSTEM_EMOTIONAL =
   "No explicit sexual content, no graphic violence, no medical or self-harm detail, no stage directions, no markdown, no emojis, no headings, never mention scenes or the camera.";
 
 const SYSTEM_SCARY =
-  "You write narration for a faceless YouTube channel of original scary cartoon stories for teens and adults, starring a small pale gray-green goblin keeper with huge yellow eyes who guards cursed doors, keys, cellars and haunted houses. " +
-  "Tell it like a spooky campfire story: plain spoken English, short sentences, creeping dread, named characters, real dialogue (she whispered, it giggled), small creepy details, rising tension, and a big twist or shock. " +
-  "Every section must move the story forward and end on a cliffhanger line. Never be slow, vague or preachy. Each section has one shiver moment and one moment of relief or humor. " +
-  "Each episode is a new, different adventure in a new place; the goblin (his name is Grub) is the only character who returns. Follow the twist and ending the plan asks for. " +
+  "You write narration for a faceless YouTube channel of ORIGINAL fictional scary story compilations for teens and adults (not for children). " +
+  "Every video tells THREE separate short stories on one everyday theme. Each story is told in the first person by a different ordinary person " +
+  "(for example: This happened when I was working nights at a motel...), in plain spoken English, short sentences, calm voice, slowly building dread, " +
+  "realistic small details, real dialogue, a frightening peak and a chilling last line. Each story has its own narrator, place and characters. " +
+  "Between stories, add one short line that moves to the next story (for example: The next story was sent in by a delivery driver.). " +
   bannedRules() + " " +
-  "Fully original: never copy or imitate any existing story, show or creator. No gore, no graphic violence, no sexual content, no self-harm, no real people, no stage directions, no markdown, no emojis, no headings, never mention scenes or the camera.";
+  "Fully original fiction: never copy or imitate any existing story, show or creator, never say the stories are true, real or that they really happened outside the narrator's own voice, and never use real people, real crimes or real places' victims. " +
+  "No gore, no graphic violence, no sexual content, no self-harm, no harm to children or pets, no stage directions, no markdown, no emojis, no headings, never mention scenes or the camera.";
 
 const SYSTEM_WONDER =
   "You write narration for a faceless YouTube documentary channel about the wonders of nature, wildlife, the oceans, space, planet Earth and the old world, " +
@@ -118,17 +120,19 @@ export async function writeOutline(p: {
         role: "user",
         content:
           `If the topic below gives character names, use exactly those names for the main people and never swap them for other names.\n` +
-          `Plan a ${p.minutes}-minute YouTube video ${p.tone === "emotional" ? "that tells one emotional, human story" : p.tone === "scary" ? "that tells one original scary cartoon story" : p.tone === "wonder" ? "that explains one fascinating true topic" : "about"}: ${p.topic}\n\n` +
+          `Plan a ${p.minutes}-minute YouTube video ${p.tone === "emotional" ? "that tells one emotional, human story" : p.tone === "scary" ? "that tells THREE separate original fictional first-person scary stories on one theme" : p.tone === "wonder" ? "that explains one fascinating true topic" : "about"}: ${p.topic}\n\n` +
           `Reply with exactly this format and nothing else:\n` +
           (p.tone === "scary"
-            ? `Title: <a creepy, curiosity-driven title under 60 characters, Title Case, built from THIS story's own place and scary thing (not doors, keys or cellars unless the story is about them). Do not start with "The Goblin" or "Do Not">\n`
+            ? `Title: <a title under 60 characters, Title Case, in the style "3 Scary <Theme> Stories" or "3 Creepy <Theme> Stories" or "3 Disturbing <Theme> Stories" built from THIS episode's theme. Never use the words True, Real, Actual or Based On>\n`
             : p.tone === "emotional"
             ? `Title: <a creative, emotional title under 60 characters, Title Case, about love, a relationship or heartbreak and the people in it, that makes people need to know what happens. Build it from THIS story's own people, place and secret. No clickbait words (Shocking, You Won't Believe, Abandoned, Mocked, Ignored) and never claim it is a true story>\n`
             : p.tone === "wonder"
             ? `Title: <a curiosity-driven title under 60 characters, Title Case, that promises one specific amazing fact or question about THIS topic and that the video really answers. No clickbait words (Shocking, You Won't Believe, Terrifying), no false claims>\n`
             : `Title: <a catchy YouTube title>\n`) +
           `1. <section heading>\n2. <section heading>\n... up to ${want}.\n\n` +
-          (p.tone === "wonder"
+          (p.tone === "scary"
+            ? `Write exactly ${want} sections. Split them into THREE stories of about the same length, in order. The heading of the first section of each story starts with "Story 1:", "Story 2:" or "Story 3:" followed by a short name for that story; other headings name a concrete event. Make each story scarier than the one before.`
+            : p.tone === "wonder"
             ? `Write exactly ${want} sections that flow as one documentary: a surprising hook first, then each section explains a new part of the topic, and a memorable ending last. Each heading names one concrete fact or idea.`
             : `Write exactly ${want} sections that flow as one story: a strong hook first, a satisfying ending last. Each heading names a concrete event, and the story moves through different places.`) + avoid,
       },
@@ -254,7 +258,7 @@ export async function writeSection(p: {
            first ? " The very first sentence must drop the listener into the most shocking or emotional moment of the story (the hook), then go back and explain how it happened. No greeting, no slow introduction, no scene-setting before the hook." : " Continue smoothly from the previous section; do not greet or re-introduce the video.") +
           (last
             ? p.tone === "scary"
-              ? " End with a chilling twist, then ask the viewers one spooky question they can answer in the comments (for example: Would you have opened the door? What would you have done?), and finally ask them to subscribe for a new scary story every day."
+              ? " End the third story with a chilling last line, then ask the viewers which of the three stories scared them most and what they would have done, and finally ask them to subscribe for new scary stories every week."
               : p.tone === "emotional"
               ? " End with a touching conclusion, then ask the viewers one gentle personal question they can answer in the comments (for example: Would you have forgiven him? What would you have done in her place? Have you ever been betrayed by someone you loved?), and finally ask them to subscribe for a new story every day."
               : p.tone === "wonder"
@@ -267,7 +271,7 @@ export async function writeSection(p: {
                 : "")) +
           `\n\nThen on a new last line write: VISUALS: followed by 8 short ${p.style === "cartoon" ? "animation or cartoon" : "stock video"} search terms (2-3 words each, concrete things that can be filmed, separated by semicolons).` +
           (p.tone === "scary"
-            ? " For visuals use eerie things from THIS section's own place and events that can be pictured (objects, rooms, weather, the guests' actions), each one different."
+            ? " For visuals use dark, realistic, eerie things from THIS section's own place that can be photographed at night (an empty road, a lit window, a motel hallway, trees at night, a parked car), each one different and with no faces."
             : p.tone === "wonder"
             ? " For visuals use concrete things that can really be filmed and that are named in THIS section: the animal, habitat, weather, planet, machine or old-world scene. Prefer the plain common name (for example 'humpback whale', 'rain forest canopy', 'full moon'), each one different."
             : p.tone === "emotional"

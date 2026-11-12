@@ -101,9 +101,10 @@ async function makeTopics(env: WorkerEnv, channel: number, count: number): Promi
         "Every idea is a TRUE, specific topic that can be explained in about 10 minutes and shown with free stock footage, NASA footage or old public-domain films. " +
         "Pick one specific animal, place, object or phenomenon (not a whole category), and do not promise facts you are not sure are real. No made-up statistics, no conspiracy theories, no real private people. "
       : channel === 2
-      ? "You invent episode ideas for an ORIGINAL spooky cartoon story channel starring Grub, a small pale gray-green goblin keeper with huge yellow eyes. " +
-        "Stories are scary but safe: fear comes from mystery, darkness, sounds and misunderstandings, and is beaten with courage, kindness or cleverness. " +
-        "No gore, no death of children or pets, no weapons, no kidnapping, no real people, never copy an existing story. "
+      ? "You invent episode ideas for a YouTube channel of ORIGINAL fictional scary story compilations for teens and adults (not for children). " +
+        "Each episode is one everyday theme (for example night shift, camping, home alone) with THREE separate short first-person stories that happen to different ordinary people. " +
+        "Fear comes from realistic, believable situations, strangers, sounds, darkness and small wrong details, building slowly. " +
+        "No gore, no harm to children or pets, no sexual content, no real people or real crimes, never copy an existing story or creator, and never claim the stories are true or real. "
       : "You invent ORIGINAL fictional story premises for a YouTube channel of emotional human drama (love, family, secrets, second chances). " +
         "Every character wants something understandable; no cartoon villains, no revenge for its own sake, no explicit content, no real people, never copy a film, book or real post, never claim the story is true. "
   const text = await askAi(
@@ -116,6 +117,8 @@ async function makeTopics(env: WorkerEnv, channel: number, count: number): Promi
           "You get numbered story DNA lines. For EACH DNA write 2 different premises that use every part of that DNA, and give each a probability (0 to 1) of how typical or predictable it is for this kind of story. " +
           (channel === 3
             ? "Each premise is one sentence of 14 to 30 words: the specific subject and the one question or surprising fact the episode will explain. Do not use any names that are not real. "
+            : channel === 2
+            ? "Each premise is one line of 30 to 60 words: the theme, then a one-sentence seed for each of the 3 stories (who, where, the creepy thing), separated by semicolons. Use the names given. "
             : "Each premise is one sentence of 18 to 35 words: who, where, the conflict, and a hint of the twist (do not give the twist away). Use the names given. ") +
           bannedRules() +
           " Reply with exactly 2 lines per DNA in the form 'N | probability | premise' and nothing else.",
@@ -185,7 +188,7 @@ export async function refillTopics(env: WorkerEnv): Promise<string> {
   return makeTopics(env, 1, 8);
 }
 
-/** Second channel (goblin stories): own topic pool, same variety rules. */
+/** Second channel (3-story scary compilations): own topic pool, same variety rules. */
 export async function refillTopics2(env: WorkerEnv): Promise<string> {
   const db = env.DB;
   if (!db || !env.AI) return "not configured";

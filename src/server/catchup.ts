@@ -13,14 +13,16 @@ import type { D1Database, WorkerEnv } from "./db";
 const REPO = "ninsiimatony/ai-creator-studio";
 const REF = "main";
 /** A different length each day (about +-25%), so videos never look cut from one template.
- *  Main channel 8-12 min, scary stories 10-15 min, documentaries 9-14 min. Same day + slot always gives the same length. */
+ *  Main channel 8-12 min, 3-story scary compilations 22-28 min, documentaries 9-14 min. Same day + slot always gives the same length. */
 export function videoMinutes(slot: number, day: string): number {
-  const [lo, hi] = slot === 3 ? [10, 15] : slot === 4 ? [9, 14] : [8, 12];
+  const [lo, hi] = slot === 3 ? [22, 28] : slot === 4 ? [9, 14] : [8, 12];
   let h = 2166136261;
   for (const c of `${day}#${slot}`) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
   return lo + (h % (hi - lo + 1));
 }
 
+/** Days (UTC, 0 = Sunday) when channel 2 posts: Monday, Wednesday, Saturday. */
+export const CH2_DAYS = [1, 3, 6];
 const SLOT_MINUTES_UTC = [11 * 60 + 17, 16 * 60 + 17, 22 * 60 + 17, 23 * 60 + 17, 19 * 60 + 17]; // slot 4 = third channel (wildlife, space and old-world documentaries): starts 23:17 Oman, live about 3:30 PM New York; // main channel starts 15:17, 20:17, 02:17 Oman (live ~7 AM, 12 PM, 6 PM New York); slot 3 = second channel: starts 03:17 Oman (6:17 PM New York), live about 7:20 PM New York
 const MAX_ATTEMPTS = 4;
 const LOST_AFTER_MS = 12 * 60 * 1000; // dispatched but GitHub never showed a run
@@ -83,7 +85,8 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
   // Main channel makes 1 video a day (slot 2 = 22:17 UTC, about 6 PM New York). Slots 0 and 1 are switched off:
   // YouTube gives no bonus for posting more, and several AI stories a day looks like mass production (Nov 2026 upgrade).
   const slots = [2];
-  if (await channelConnected(db, 2)) slots.push(3);
+  // Channel 2 makes longer 3-story videos (~25 min) on 3 days a week only: Monday, Wednesday and Saturday (UTC).
+  if (CH2_DAYS.includes(now.getUTCDay()) && (await channelConnected(db, 2))) slots.push(3);
   if (await channelConnected(db, 3)) slots.push(4);
   for (const slot of slots) {
     if (minuteOfDay < SLOT_MINUTES_UTC[slot]!) continue; // slot not due yet

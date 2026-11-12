@@ -30,3 +30,13 @@ All new steps run after the video is already uploaded and published. If any step
 - **Shorts:** each Short gets its own vertical picture (custom Shorts thumbnails, Nov 2026) and a comment from the channel linking to the full video. The API can't pin comments.
 - **Backup recipe:** title, script scenes, voice, sources, description and tags of every video are kept 90 days as a GitHub artifact (`recipe-<run id>`), so any video can be rebuilt.
 - Code: new `scripts/video-bot/extras.mjs` (tested offline with a fake YouTube), `src/server/translate.ts`.
+
+## 2026-11-12 — Channel 2 new format (inspired by scary-story compilation channels)
+
+Tony asked for Channel 2 to work like big scary-story channels (e.g. Mr. Nightmare), but honest: our stories are fiction.
+- **Format:** every video is now **3 separate, original, first-person scary stories on one everyday theme** (night shift, camping, home alone...), each scarier than the last. Titles look like "3 Scary Night Shift Stories". The words True, Real, Actual and Based On are never used, and the description says the stories are fiction.
+- **Length and schedule:** 22–28 minutes, **3 videos a week** (Monday, Wednesday and Saturday at 23:17 UTC, so they go live early Tuesday, Thursday and Sunday in Oman). Before this it was 10–15 minutes every day.
+- **Look:** the cartoon goblin is gone. Pictures and thumbnails are now **dark, real-looking night photos** (cabins, motels, roads, forests, no faces). The old cartoon picture library is no longer used. If the picture maker fails, the last picture is kept.
+- **Safety:** for teens and adults, never "made for kids" (also removes the kids-cartoon risk the research flagged). The AI label is on, because the AI pictures look realistic.
+- **Story ideas (DNA):** new themes, fears, narrators and twists for 3-story episodes. The 10 unused goblin topics were marked as archived (`used = 2`), not deleted.
+- The old goblin code, prompts and picture library are kept in git history and in the repo (`scenes/`, `thumbs/ch2`).
