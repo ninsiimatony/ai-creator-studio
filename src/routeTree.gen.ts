@@ -31,6 +31,7 @@ import { Route as ApiAutomationGrowthReportRouteImport } from './routes/api/auto
 import { Route as ApiAutomationKaggleBudgetRouteImport } from './routes/api/automation/kaggle-budget'
 import { Route as ApiAutomationNotifyRouteImport } from './routes/api/automation/notify'
 import { Route as ApiAutomationNotifyVideoRouteImport } from './routes/api/automation/notify-video'
+import { Route as ApiAutomationPauseRouteImport } from './routes/api/automation/pause'
 import { Route as ApiAutomationTranslateRouteImport } from './routes/api/automation/translate'
 import { Route as ApiAutomationYoutubeTokenRouteImport } from './routes/api/automation/youtube-token'
 import { Route as ApiMediaAutoScriptRouteImport } from './routes/api/media/auto-script'
@@ -159,6 +160,11 @@ const ApiAutomationNotifyVideoRoute =
     path: '/api/automation/notify-video',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAutomationPauseRoute = ApiAutomationPauseRouteImport.update({
+  id: '/api/automation/pause',
+  path: '/api/automation/pause',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAutomationTranslateRoute = ApiAutomationTranslateRouteImport.update({
   id: '/api/automation/translate',
   path: '/api/automation/translate',
@@ -254,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/api/automation/kaggle-budget': typeof ApiAutomationKaggleBudgetRoute
   '/api/automation/notify': typeof ApiAutomationNotifyRoute
   '/api/automation/notify-video': typeof ApiAutomationNotifyVideoRoute
+  '/api/automation/pause': typeof ApiAutomationPauseRoute
   '/api/automation/translate': typeof ApiAutomationTranslateRoute
   '/api/automation/youtube-token': typeof ApiAutomationYoutubeTokenRoute
   '/api/media/auto-script': typeof ApiMediaAutoScriptRoute
@@ -292,6 +299,7 @@ export interface FileRoutesByTo {
   '/api/automation/kaggle-budget': typeof ApiAutomationKaggleBudgetRoute
   '/api/automation/notify': typeof ApiAutomationNotifyRoute
   '/api/automation/notify-video': typeof ApiAutomationNotifyVideoRoute
+  '/api/automation/pause': typeof ApiAutomationPauseRoute
   '/api/automation/translate': typeof ApiAutomationTranslateRoute
   '/api/automation/youtube-token': typeof ApiAutomationYoutubeTokenRoute
   '/api/media/auto-script': typeof ApiMediaAutoScriptRoute
@@ -331,6 +339,7 @@ export interface FileRoutesById {
   '/api/automation/kaggle-budget': typeof ApiAutomationKaggleBudgetRoute
   '/api/automation/notify': typeof ApiAutomationNotifyRoute
   '/api/automation/notify-video': typeof ApiAutomationNotifyVideoRoute
+  '/api/automation/pause': typeof ApiAutomationPauseRoute
   '/api/automation/translate': typeof ApiAutomationTranslateRoute
   '/api/automation/youtube-token': typeof ApiAutomationYoutubeTokenRoute
   '/api/media/auto-script': typeof ApiMediaAutoScriptRoute
@@ -371,6 +380,7 @@ export interface FileRouteTypes {
     | '/api/automation/kaggle-budget'
     | '/api/automation/notify'
     | '/api/automation/notify-video'
+    | '/api/automation/pause'
     | '/api/automation/translate'
     | '/api/automation/youtube-token'
     | '/api/media/auto-script'
@@ -409,6 +419,7 @@ export interface FileRouteTypes {
     | '/api/automation/kaggle-budget'
     | '/api/automation/notify'
     | '/api/automation/notify-video'
+    | '/api/automation/pause'
     | '/api/automation/translate'
     | '/api/automation/youtube-token'
     | '/api/media/auto-script'
@@ -447,6 +458,7 @@ export interface FileRouteTypes {
     | '/api/automation/kaggle-budget'
     | '/api/automation/notify'
     | '/api/automation/notify-video'
+    | '/api/automation/pause'
     | '/api/automation/translate'
     | '/api/automation/youtube-token'
     | '/api/media/auto-script'
@@ -486,6 +498,7 @@ export interface RootRouteChildren {
   ApiAutomationKaggleBudgetRoute: typeof ApiAutomationKaggleBudgetRoute
   ApiAutomationNotifyRoute: typeof ApiAutomationNotifyRoute
   ApiAutomationNotifyVideoRoute: typeof ApiAutomationNotifyVideoRoute
+  ApiAutomationPauseRoute: typeof ApiAutomationPauseRoute
   ApiAutomationTranslateRoute: typeof ApiAutomationTranslateRoute
   ApiAutomationYoutubeTokenRoute: typeof ApiAutomationYoutubeTokenRoute
   ApiMediaAutoScriptRoute: typeof ApiMediaAutoScriptRoute
@@ -658,6 +671,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAutomationNotifyVideoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/automation/pause': {
+      id: '/api/automation/pause'
+      path: '/api/automation/pause'
+      fullPath: '/api/automation/pause'
+      preLoaderRoute: typeof ApiAutomationPauseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/automation/translate': {
       id: '/api/automation/translate'
       path: '/api/automation/translate'
@@ -782,6 +802,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAutomationKaggleBudgetRoute: ApiAutomationKaggleBudgetRoute,
   ApiAutomationNotifyRoute: ApiAutomationNotifyRoute,
   ApiAutomationNotifyVideoRoute: ApiAutomationNotifyVideoRoute,
+  ApiAutomationPauseRoute: ApiAutomationPauseRoute,
   ApiAutomationTranslateRoute: ApiAutomationTranslateRoute,
   ApiAutomationYoutubeTokenRoute: ApiAutomationYoutubeTokenRoute,
   ApiMediaAutoScriptRoute: ApiMediaAutoScriptRoute,

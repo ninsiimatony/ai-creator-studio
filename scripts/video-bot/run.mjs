@@ -74,6 +74,7 @@ const EDGE_VOICES = WONDER
 const EDGE_VOICE = SCARY ? "en-US-ChristopherNeural" : EDGE_VOICES[[...TOPIC].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % EDGE_VOICES.length];
 let edgeFails = 0;
 let USED_KOKORO = false;
+let AI_ALLOWANCE_GONE = false; // set when Workers AI says the free daily allowance is used up
 // Kokoro: free, human-sounding voice (Apache-2.0) that runs on the runner's CPU. Used first for the channels in
 // KOKORO_CHANNELS (repo variable, default "3"), because it adds about 8 minutes per video and the private repo has
 // 2,000 free GitHub minutes a month. One fixed voice per channel so each channel sounds like itself.
@@ -584,8 +585,9 @@ async function main() {
     CHAPTER_T += dur;
     await writeFile(path.join(WORK, "seg.srt"), srtFor(sc.narration, dur));
     if (SCARY) {
-      if (i % 4 === 0) {
-        const chunk = scenes.slice(i, i + 4).map((x) => x.narration).join(" ").replace(/\s+/g, " ").slice(0, 230);
+      // A new picture every 6 scenes (was 4) to save the free daily AI allowance; each picture slowly zooms.
+      if (i % 6 === 0) {
+        const chunk = scenes.slice(i, i + 6).map((x) => x.narration).join(" ").replace(/\s+/g, " ").slice(0, 230);
         try {
           if (kaggleClips && kaggleClips[i]) {
             curClip = kaggleClips[i];
@@ -594,12 +596,14 @@ async function main() {
             // Every picture is new: made for this exact part of the story, with a different camera angle and light each time.
             // The saved library pictures are only a backup if the picture maker fails.
             try {
+              if (AI_ALLOWANCE_GONE) throw new Error("free AI allowance used up today");
               const img = await studio("/api/media/image", { prompt: nightPrompt(chunk, imgN).slice(0, 1900) }, { raw: true });
               USED_AI_PICTURES = true;
               curImg = path.join(WORK, `img${i}.` + (img[0] === 0x89 ? "png" : "jpg"));
               await writeFile(curImg, img);
               curWide = false;
             } catch (e) {
+              if (/allowance|used up/i.test(String(e.message))) AI_ALLOWANCE_GONE = true;
               // The old goblin picture library no longer matches this channel's look: keep the last picture instead.
               if (!curImg) throw e;
               throw new Error("picture maker failed: " + String(e.message).slice(0, 60));
@@ -948,7 +952,7 @@ async function main() {
   // Stage-2 extras (never block the video): translated titles, series playlist, full subtitles.
   const extras = makeExtras({ token: async () => (await studio("/api/automation/youtube-token", { channel: CHANNEL })).accessToken, studio, log });
   const hook = (scenes[0]?.narration || outline.title).split(/(?<=[.!?])\s+/).slice(0, 2).join(" ");
-  await extras.localize(id, outline.title, hook);
+  if (WONDER) await extras.localize(id, outline.title, hook); // only Channel 3, to save the free daily AI allowance
   await extras.addToPlaylist(
     id,
     CHANNEL === 3 ? "Wild Wonders - Full Documentaries" : CHANNEL === 2 ? "Little Hope Tales - Scary Stories" : "Tony Ninsiima - Full Stories",
@@ -1033,6 +1037,12 @@ main()
     if (e?.quota) {
       // Retrying today would only fail again. Finish quietly; tomorrow's videos continue as normal.
       await notify("⚠️ YouTube's daily upload limit is full. This video is skipped today. Tomorrow's 3 videos continue normally.");
+      return;
+    }
+    if (/free daily allowance|allowance may be used up|allowance is used up/i.test(String(e.message ?? e))) {
+      // Retrying before the allowance resets (00:00 UTC) would only fail again: pause new videos until 00:10 UTC.
+      await studio("/api/automation/pause", { reason: "ai-allowance" }).catch(() => {});
+      await notify("⏸️ The free AI allowance is used up for today, so this video is skipped. The robot pauses and starts again by itself after 04:10 Oman time.");
       return;
     }
     await notify(`❌ I could not finish the video (I will try again automatically).\nReason: ${String(e.message ?? e).slice(0, 500)}`);

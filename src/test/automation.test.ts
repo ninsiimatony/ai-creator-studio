@@ -155,3 +155,11 @@ describe("video length variation", () => {
     }
   });
 });
+
+import { nextResetIso } from "@/routes/api/automation/pause";
+describe("AI allowance pause", () => {
+  it("pauses until 00:10 UTC the next day", () => {
+    expect(nextResetIso(new Date("2026-11-12T19:30:00Z"))).toBe("2026-11-13T00:10:00.000Z");
+    expect(nextResetIso(new Date("2026-12-31T23:59:00Z"))).toBe("2027-01-01T00:10:00.000Z");
+  });
+});

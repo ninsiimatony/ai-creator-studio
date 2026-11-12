@@ -49,3 +49,10 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - **Free Workers AI allowance used up for the day** (it resets at 00:00 UTC): pictures, thumbnail, policy check and translations failed. Added a **pause switch** (`app_notes.pause_dispatch_until`). The catch-up starts no new videos until that time. It's set to 2026-11-13 00:10 UTC, so today's Channel 3 and Channel 1 videos are skipped cleanly instead of failing 3 times. The test video stayed private (not published) because the checks were not green.
 - **Subtitles and Short link comments returned 403:** YouTube needs the `youtube.force-ssl` permission for them. It was added to the scopes, and all 3 channels were reconnected.
 - Lesson: a 25-min Channel 2 video uses about 2.5× the AI of a 10-min video. Keep extra manual test runs away from posting days.
+
+## 2026-11-12 — Save the free daily AI allowance
+- Channel 2 makes a new picture every 6 scenes instead of every 4 (about 12 pictures instead of 18 in a 25-min video). Each picture slowly zooms, so it still moves.
+- After Workers AI says the allowance is used up, the bot stops asking for more pictures in that run and reuses the last one (no more 3× retries per picture).
+- Translated titles and descriptions now run on **Channel 3 only**, the most international channel.
+- **Auto-pause:** if a video fails because the free AI allowance is used up, the bot calls the new `/api/automation/pause`. No new videos start until 00:10 UTC (04:10 Oman, just after the reset), and Tony gets one calm Telegram message instead of 3 failure alarms.
+- Hashtags for Channel 2 no longer include the old #goblin and #animatedhorror.
