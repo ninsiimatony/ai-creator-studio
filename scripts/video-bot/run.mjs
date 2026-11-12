@@ -795,7 +795,7 @@ async function main() {
     .filter((w) => w.length > 3 && !["about", "their", "with", "from", "that", "this", "until", "every", "after"].includes(w))
     .slice(0, 3).map((w) => `#${w}`);
   const baseTags = SCARY
-    ? ["#scarystories", "#horrorstory", "#goblin", "#animatedhorror", "#creepystories", "#storytime"]
+    ? ["#scarystories", "#horrorstories", "#creepystories", "#scarystorytime", "#horrorstory", "#scary"]
     : CHANNEL === 2
     ? ["#animation", "#cartoonstory", "#animatedstory", "#familystory", "#faith", "#hope"]
     : WONDER
