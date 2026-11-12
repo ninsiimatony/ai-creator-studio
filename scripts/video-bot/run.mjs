@@ -5,6 +5,7 @@ import { mkdir, readFile, writeFile, rm, stat, open, readdir } from "node:fs/pro
 import path from "node:path";
 import os from "node:os";
 import * as ltx from "./kaggle-ltx.mjs";
+import { makeExtras, fullSrt } from "./extras.mjs";
 
 const STUDIO = (process.env.STUDIO_URL ?? "").replace(/\/$/, "");
 const SECRET = process.env.AUTOMATION_SECRET ?? "";
@@ -36,6 +37,8 @@ const PIC_OFFSET = Math.floor(Math.random() * 10);
 // Chapter start time (seconds) of each story part, for YouTube chapters in the description.
 const CHAPTER_AT = {};
 let CHAPTER_T = 0;
+const SRT_PARTS = []; // { start, dur, narration } per scene, for one full subtitle file
+let THUMB_FILE = null;
 function goblinPrompt(chunk, n) {
   const cam = CAMERAS[(n + PIC_OFFSET) % CAMERAS.length];
   const light = LIGHTS[(n * 3 + PIC_OFFSET) % LIGHTS.length];
@@ -565,6 +568,7 @@ async function main() {
     await speak(sc.narration, voice);
     const dur = (await duration(voice)) + 0.5;
     if (CHAPTER_AT[sc.section] === undefined) CHAPTER_AT[sc.section] = CHAPTER_T;
+    SRT_PARTS.push({ start: CHAPTER_T, dur, narration: sc.narration });
     CHAPTER_T += dur;
     await writeFile(path.join(WORK, "seg.srt"), srtFor(sc.narration, dur));
     if (SCARY) {
@@ -903,7 +907,8 @@ async function main() {
   let thumbNote = "";
   try {
     log("Making thumbnail...");
-    await setThumbnail(id, await makeThumbnail(outline.title));
+    THUMB_FILE = await makeThumbnail(outline.title);
+    await setThumbnail(id, THUMB_FILE);
     log("Thumbnail set");
   } catch (e) {
     log("thumbnail skipped:", e.message);
@@ -914,6 +919,30 @@ async function main() {
     try { await publishVideo(id); log("Published (public)"); pubNote = "PUBLIC"; }
     catch (e) { log("auto-publish failed:", e.message); pubNote = "FAILED"; }
   }
+  // Backup "recipe": everything needed to rebuild this video, kept 90 days as a GitHub artifact (see workflow).
+  try {
+    const dir = path.join(process.env.GITHUB_WORKSPACE || os.tmpdir(), "recipes");
+    await mkdir(dir, { recursive: true });
+    await writeFile(path.join(dir, `recipe-ch${CHANNEL}-${id}.json`), JSON.stringify({
+      videoId: id, channel: CHANNEL, topic: TOPIC, title: outline.title, minutes: MINUTES, tone: TONE, style: STYLE,
+      voice: USED_KOKORO ? `kokoro:${kokoroVoice().voice}` : `edge:${EDGE_VOICE}`, sources: [...USED_SOURCES], aiPictures: USED_AI_PICTURES,
+      description, tags: globalThis.__videoTags ?? [], scenes: scenes.map((x) => ({ section: x.section, narration: x.narration, term: x.term })),
+      made: new Date().toISOString(),
+    }, null, 1));
+    log("Recipe backup saved");
+  } catch (e) {
+    log("recipe backup skipped:", String(e.message).slice(0, 120));
+  }
+  // Stage-2 extras (never block the video): translated titles, series playlist, full subtitles.
+  const extras = makeExtras({ token: async () => (await studio("/api/automation/youtube-token", { channel: CHANNEL })).accessToken, studio, log });
+  const hook = (scenes[0]?.narration || outline.title).split(/(?<=[.!?])\s+/).slice(0, 2).join(" ");
+  await extras.localize(id, outline.title, hook);
+  await extras.addToPlaylist(
+    id,
+    CHANNEL === 3 ? "Wild Wonders - Full Documentaries" : CHANNEL === 2 ? "Little Hope Tales - Scary Stories" : "Tony Ninsiima - Full Stories",
+    CHANNEL === 3 ? "Every full documentary about nature, space and the old world." : CHANNEL === 2 ? "Every full scary story, newest first." : "Every full emotional story.",
+  );
+  if (SRT_PARTS.length) await extras.uploadCaptions(id, fullSrt(SRT_PARTS));
   // Short: first ~55 seconds as a vertical 1080x1920 clip, linking to the full story.
   let shortNote = "";
   // Channel 1 stays at 1 Short per video (YouTube's daily upload quota); channel 2 gets 2.
@@ -949,6 +978,18 @@ async function main() {
     );
     shortNote += `\n\nShort ${part} (1 min): https://www.youtube.com/watch?v=${shortId}&${AUTH}\nPublish it: https://studio.youtube.com/video/${shortId}/edit?${AUTH}`;
     log("Short uploaded:", shortId);
+    // Shorts can now have their own picture (Nov 2026): a vertical version of the video's thumbnail.
+    if (THUMB_FILE) {
+      try {
+        const vt = path.join(WORK, `short-thumb${part}.jpg`);
+        await run("ffmpeg", ["-y", "-i", THUMB_FILE, "-filter_complex", "[0:v]split[a][b];[a]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=18:2[bg];[b]scale=1080:-2[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2", "-q:v", "3", vt]);
+        await setThumbnail(shortId, vt);
+        log("Short thumbnail set");
+      } catch (e) {
+        log("short thumbnail skipped:", String(e.message).slice(0, 120));
+      }
+    }
+    await extras.commentLink(shortId, `▶ Watch the full ${WONDER ? "documentary" : "story"} here: https://youtu.be/${id}`);
     if (AUTO) { try { await publishVideo(shortId); log("Short published"); } catch (e) { log("short publish failed:", e.message); } }
     // Also send the Short file to Telegram, ready to post on TikTok.
     try {
