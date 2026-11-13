@@ -6,7 +6,7 @@ import { listPrivate } from "@/server/gopublic";
 const out = (status: number, body: unknown) =>
   Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 
-// Private videos of all 3 channels (session required).
+// Private videos of all channels (session required).
 export const Route = createFileRoute("/api/publish/list")({
   server: {
     handlers: {
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/api/publish/list")({
         try {
           const { db, user, env } = await requireUser();
           const result: Record<string, unknown> = {};
-          for (const ch of [1, 2, 3]) {
+          for (const ch of [1, 2, 3, 4]) {
             try {
               result[String(ch)] = { ok: true, ...(await listPrivate(db, env, user.id, ch)) };
             } catch (e) {

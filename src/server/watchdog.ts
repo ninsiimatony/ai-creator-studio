@@ -29,15 +29,16 @@ export async function runWatchdog(env: WorkerEnv): Promise<string> {
     { n: 1, name: "Tony AI (main channel)", link: `${STUDIO}/api/auth/google1/start`, sql: "SELECT user_id AS uid, connected_at FROM youtube_accounts LIMIT 1" },
     { n: 2, name: "Little Hope Tales", link: `${STUDIO}/api/auth/google2/start`, sql: "SELECT '' AS uid, connected_at FROM extra_channels WHERE slot = 2" },
     { n: 3, name: "Channel 3 (wonders of nature and space)", link: `${STUDIO}/api/auth/google3/start`, sql: "SELECT '' AS uid, connected_at FROM extra_channels WHERE slot = 3" },
+    { n: 4, name: "Night Tales Uganda (Channel 4)", link: `${STUDIO}/api/auth/google4/start`, sql: "SELECT '' AS uid, connected_at FROM extra_channels WHERE slot = 4" },
   ];
   const out: string[] = [];
   for (const c of channels) {
     const row = await db.prepare(c.sql).first<{ uid: string; connected_at: string }>().catch(() => null);
-    if (!row) { if (c.n !== 3) out.push(`${c.n}: not connected`); continue; }
+    if (!row) { if (c.n < 3) out.push(`${c.n}: not connected`); continue; }
     let ok = true;
     try {
       if (c.n === 1) await getAccessToken(db, env as any, row.uid);
-      else await getAccessToken2(db, env as any, fetch, c.n === 3 ? 3 : 2);
+      else await getAccessToken2(db, env as any, fetch, c.n === 4 ? 4 : c.n === 3 ? 3 : 2);
     } catch { ok = false; }
     const flag = `wd_alert_${c.n}`;
     if (!ok) {

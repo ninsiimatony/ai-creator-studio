@@ -62,3 +62,8 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - Fix: a keep-alive timer while waiting for Kokoro, plus a 4-minute limit. If Kokoro isn't ready the bot logs it and uses the next voice (edge-tts).
 - Two more Kokoro bugs found by the re-run and fixed: (1) the voice file was saved without a format (name ends in .bin), so Kokoro always failed and the bot used the backup voice; now saved as WAV. (2) A crash at the very end when the helper closed (a null check), which stopped the video before upload.
 - Auto-publish: the black-screen limit that holds a video back as private was raised from 8 to 30 seconds (a normal 11-min video had 10 s of black and stayed private, so it did not go public by itself).
+
+## 2026-11-14 — Channel 4 "Night Tales Uganda" (phase 1: connection)
+- New YouTube channel **Night Tales Uganda** (@NightTalesUganda, Luganda scary stories) created. It is slot 4 in `extra_channels` and shares the second channel's Google project (In production).
+- New login link `/api/auth/google4/start`; the Google callback, YouTube token route, one-tap publish page (`/go-public`) and the watchdog now include channel 4.
+- Still to do (phases 2 and 3): Luganda scripts (Sunbird Sunflower) and voice (Sunbird TTS), schedule and style, and a separate Cloudflare account for its AI.

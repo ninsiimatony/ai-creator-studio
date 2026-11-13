@@ -46,6 +46,7 @@ import { Route as ApiAuthGoogleCallbackRouteImport } from './routes/api/auth/goo
 import { Route as ApiAuthGoogle1StartRouteImport } from './routes/api/auth/google1/start'
 import { Route as ApiAuthGoogle2StartRouteImport } from './routes/api/auth/google2/start'
 import { Route as ApiAuthGoogle3StartRouteImport } from './routes/api/auth/google3/start'
+import { Route as ApiAuthGoogle4StartRouteImport } from './routes/api/auth/google4/start'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -236,6 +237,11 @@ const ApiAuthGoogle3StartRoute = ApiAuthGoogle3StartRouteImport.update({
   path: '/api/auth/google3/start',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthGoogle4StartRoute = ApiAuthGoogle4StartRouteImport.update({
+  id: '/api/auth/google4/start',
+  path: '/api/auth/google4/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -275,6 +281,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/google1/start': typeof ApiAuthGoogle1StartRoute
   '/api/auth/google2/start': typeof ApiAuthGoogle2StartRoute
   '/api/auth/google3/start': typeof ApiAuthGoogle3StartRoute
+  '/api/auth/google4/start': typeof ApiAuthGoogle4StartRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -314,6 +321,7 @@ export interface FileRoutesByTo {
   '/api/auth/google1/start': typeof ApiAuthGoogle1StartRoute
   '/api/auth/google2/start': typeof ApiAuthGoogle2StartRoute
   '/api/auth/google3/start': typeof ApiAuthGoogle3StartRoute
+  '/api/auth/google4/start': typeof ApiAuthGoogle4StartRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -354,6 +362,7 @@ export interface FileRoutesById {
   '/api/auth/google1/start': typeof ApiAuthGoogle1StartRoute
   '/api/auth/google2/start': typeof ApiAuthGoogle2StartRoute
   '/api/auth/google3/start': typeof ApiAuthGoogle3StartRoute
+  '/api/auth/google4/start': typeof ApiAuthGoogle4StartRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -395,6 +404,7 @@ export interface FileRouteTypes {
     | '/api/auth/google1/start'
     | '/api/auth/google2/start'
     | '/api/auth/google3/start'
+    | '/api/auth/google4/start'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -434,6 +444,7 @@ export interface FileRouteTypes {
     | '/api/auth/google1/start'
     | '/api/auth/google2/start'
     | '/api/auth/google3/start'
+    | '/api/auth/google4/start'
   id:
     | '__root__'
     | '/'
@@ -473,6 +484,7 @@ export interface FileRouteTypes {
     | '/api/auth/google1/start'
     | '/api/auth/google2/start'
     | '/api/auth/google3/start'
+    | '/api/auth/google4/start'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -513,6 +525,7 @@ export interface RootRouteChildren {
   ApiAuthGoogle1StartRoute: typeof ApiAuthGoogle1StartRoute
   ApiAuthGoogle2StartRoute: typeof ApiAuthGoogle2StartRoute
   ApiAuthGoogle3StartRoute: typeof ApiAuthGoogle3StartRoute
+  ApiAuthGoogle4StartRoute: typeof ApiAuthGoogle4StartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -776,6 +789,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthGoogle3StartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/google4/start': {
+      id: '/api/auth/google4/start'
+      path: '/api/auth/google4/start'
+      fullPath: '/api/auth/google4/start'
+      preLoaderRoute: typeof ApiAuthGoogle4StartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -817,6 +837,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthGoogle1StartRoute: ApiAuthGoogle1StartRoute,
   ApiAuthGoogle2StartRoute: ApiAuthGoogle2StartRoute,
   ApiAuthGoogle3StartRoute: ApiAuthGoogle3StartRoute,
+  ApiAuthGoogle4StartRoute: ApiAuthGoogle4StartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

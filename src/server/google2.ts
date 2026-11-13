@@ -6,21 +6,22 @@ import { decryptSecret, encryptSecret } from "./secretbox";
 import { SCOPES, buildAuthUrl, pkce, redirectUriFor } from "./google";
 
 export const STATE2 = "c2.";
+export const STATE4 = "c4."; // fourth channel (Luganda): shares the second channel's Google project
 export const STATE3 = "c3."; // third channel: same code, its own stored slot (uses GOOGLE_CLIENT_ID_3 when set, else the second channel's Google project)
 const now = () => Math.floor(Date.now() / 1000);
 type F = typeof fetch;
 type Env2 = Pick<WorkerEnv, "GOOGLE_CLIENT_ID_2" | "GOOGLE_CLIENT_SECRET_2" | "GOOGLE_CLIENT_ID_3" | "GOOGLE_CLIENT_SECRET_3" | "TOKEN_ENC_KEY">;
-export type Slot = 2 | 3;
+export type Slot = 2 | 3 | 4;
 
 /** Google client for a slot: the third channel may have its own project, otherwise it shares the second one's. */
 function creds(env: Env2, slot: Slot): { id: string; secret: string } {
   const id = (slot === 3 ? env.GOOGLE_CLIENT_ID_3 : undefined) || env.GOOGLE_CLIENT_ID_2;
   const secret = (slot === 3 ? env.GOOGLE_CLIENT_SECRET_3 : undefined) || env.GOOGLE_CLIENT_SECRET_2;
   if (!id || !secret || !env.TOKEN_ENC_KEY)
-    throw new AppError(`The ${slot === 3 ? "third" : "second"} channel is not set up yet (GOOGLE_CLIENT_ID_2 / GOOGLE_CLIENT_SECRET_2 missing).`);
+    throw new AppError(`The ${ordinal(slot)} channel is not set up yet (GOOGLE_CLIENT_ID_2 / GOOGLE_CLIENT_SECRET_2 missing).`);
   return { id, secret };
 }
-const ordinal = (slot: Slot) => (slot === 3 ? "third" : "second");
+const ordinal = (slot: Slot) => (slot === 4 ? "fourth" : slot === 3 ? "third" : "second");
 
 async function ensure(db: D1Database) {
   await db
@@ -45,7 +46,7 @@ export async function channelConnected(db: D1Database, slot: Slot): Promise<bool
 
 export async function startOAuth2(db: D1Database, env: Env2, userId: string, origin: string, slot: Slot = 2): Promise<string> {
   const c = creds(env, slot);
-  const state = (slot === 3 ? STATE3 : STATE2) + randomToken(32);
+  const state = (slot === 4 ? STATE4 : slot === 3 ? STATE3 : STATE2) + randomToken(32);
   const { verifier, challenge } = await pkce();
   await db.prepare("DELETE FROM oauth_states WHERE expires_at < ?").bind(now()).run();
   await db
@@ -74,7 +75,7 @@ export async function completeOAuth2(
   state: string,
   f: F = fetch,
 ): Promise<{ channelTitle: string }> {
-  const slot: Slot = state.startsWith(STATE3) ? 3 : 2;
+  const slot: Slot = state.startsWith(STATE4) ? 4 : state.startsWith(STATE3) ? 3 : 2;
   const c = creds(env, slot);
   await ensure(db);
   const stateHash = await sha256Hex(state);

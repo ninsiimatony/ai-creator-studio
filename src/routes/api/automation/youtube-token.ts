@@ -17,7 +17,7 @@ export const Route = createFileRoute("/api/automation/youtube-token")({
           const { db, env, user } = await requireUserOrBot(request);
           const body = (await request.json().catch(() => ({}))) as { channel?: number };
           const { accessToken } =
-            body.channel === 2 || body.channel === 3
+            body.channel === 2 || body.channel === 3 || body.channel === 4
               ? await getAccessToken2(db, env, fetch, body.channel)
               : await getAccessToken(db, env, user.id, fetch);
           return Response.json({ accessToken }, { headers: { "Cache-Control": "no-store" } });

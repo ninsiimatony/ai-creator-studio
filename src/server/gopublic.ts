@@ -8,7 +8,7 @@ type F = typeof fetch;
 const API = "https://www.googleapis.com/youtube/v3";
 
 async function token(db: D1Database, env: WorkerEnv, userId: string, channel: number, f: F) {
-  return channel === 3 ? getAccessToken2(db, env, f, 3) : channel === 2 ? getAccessToken2(db, env, f) : getAccessToken(db, env, userId, f);
+  return channel === 4 ? getAccessToken2(db, env, f, 4) : channel === 3 ? getAccessToken2(db, env, f, 3) : channel === 2 ? getAccessToken2(db, env, f) : getAccessToken(db, env, userId, f);
 }
 
 async function yt(f: F, url: string, accessToken: string, init: RequestInit = {}) {
