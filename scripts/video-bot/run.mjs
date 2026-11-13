@@ -89,7 +89,11 @@ function kokoroStart() {
   const waiters = [];
   let buf = "";
   let resolveReady;
-  const ready = new Promise((r) => (resolveReady = r));
+  // Keep-alive: the helper is unref'd below, so while we wait for it (model loading) node would see nothing
+  // pending and exit silently with code 0 (this happened on 2026-11-13). This timer keeps the bot alive until ready/failed.
+  const keepAlive = setInterval(() => {}, 1000);
+  const readyTimer = setTimeout(() => { log("Kokoro voice not ready after 4 minutes, using the next voice"); resolveReady(false); }, 4 * 60 * 1000);
+  const ready = new Promise((r) => (resolveReady = (v) => { clearInterval(keepAlive); clearTimeout(readyTimer); r(v); }));
   proc.stdout.on("data", (d) => {
     buf += d;
     let i;

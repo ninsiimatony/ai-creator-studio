@@ -56,3 +56,7 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - Translated titles and descriptions now run on **Channel 3 only**, the most international channel.
 - **Auto-pause:** if a video fails because the free AI allowance is used up, the bot calls the new `/api/automation/pause`. No new videos start until 00:10 UTC (04:10 Oman, just after the reset), and Tony gets one calm Telegram message instead of 3 failure alarms.
 - Hashtags for Channel 2 no longer include the old #goblin and #animatedhorror.
+
+## 2026-11-13 — Fix: silent stop while the Kokoro voice loads
+- Channel 3's video (run 43492872858) wrote the script, then the bot quietly ended with "success" and no video. Cause: the Kokoro helper process was set to not keep the bot alive, so while the bot waited for the voice model to load, nothing kept it running and it exited with code 0.
+- Fix: a keep-alive timer while waiting for Kokoro, plus a 4-minute limit. If Kokoro isn't ready the bot logs it and uses the next voice (edge-tts).
