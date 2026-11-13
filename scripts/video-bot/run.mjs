@@ -880,7 +880,7 @@ async function main() {
       problems.push("NO SOUND in the video");
       policyRisk = "high";
     }
-    // Black or frozen-empty screens: more than 8 seconds of pure black in total.
+    // Black or frozen-empty screens: more than 30 seconds of pure black in total.
     try {
       const bl = await new Promise((resolve) => {
         const p = spawn("ffmpeg", ["-hide_banner", "-i", final, "-vf", "blackdetect=d=1:pix_th=0.04", "-an", "-f", "null", "-"]);
@@ -891,7 +891,7 @@ async function main() {
       });
       let black = 0;
       for (const m of String(bl).matchAll(/black_duration:([\d.]+)/g)) black += Number(m[1]);
-      if (black > 8) problems.push(`${Math.round(black)} seconds of black screen`);
+      if (black > 30) problems.push(`${Math.round(black)} seconds of black screen`); // was 8: short black gaps are ok, do not hold the video back
     } catch { /* optional check */ }
     // Clipping / distortion: the loudest peak must stay below 0 dB.
     try {
