@@ -133,8 +133,20 @@ async function kokoroSpeak(text, file) {
 
 // ---- Channel 4 (Night Tales Uganda): Luganda text and voice from Sunbird AI (the same engine as the Ensi AI site) ----
 const SUNBIRD = "https://api.sunbird.ai";
-const sunbirdKey = () => process.env.SUNBIRD_API_TOKEN || "";
+let sunbirdLogin = "";
+// The key page on Sunbird cannot copy the whole key, so the robot can also log in itself (email + password in GitHub secrets) to get a fresh 7-day key.
+const sunbirdKey = () => sunbirdLogin || process.env.SUNBIRD_API_TOKEN || "";
+async function sunbirdSignIn() {
+  const user = process.env.SUNBIRD_USERNAME, pass = process.env.SUNBIRD_PASSWORD;
+  if (!user || !pass || sunbirdLogin) return;
+  const res = await fetch(SUNBIRD + "/auth/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ username: user, password: pass }) });
+  if (!res.ok) throw new Error(`Sunbird login failed (${res.status}) - check SUNBIRD_USERNAME / SUNBIRD_PASSWORD and that the email is verified`);
+  sunbirdLogin = String((await res.json())?.access_token ?? "");
+  if (!sunbirdLogin) throw new Error("Sunbird login returned no key");
+  log("Signed in to Sunbird");
+}
 async function sunbirdFetch(pathname, init, tries = 5) {
+  await sunbirdSignIn();
   let last = "";
   for (let a = 0; a < tries; a++) {
     try {
