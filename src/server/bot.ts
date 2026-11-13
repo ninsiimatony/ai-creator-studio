@@ -29,12 +29,13 @@ export function parseVideoRequest(textIn: string): VideoRequest | null {
   // "channel 2" / "little hope tales" / "goblin" / "scary" asks for the second channel's scary-goblin
   // style, same as the daily automatic channel-2 videos.
   // "channel 3" / "wonder" / "nature channel" asks for the third channel's wildlife, space and old-world documentary style.
+  const wantsChannel4 = /\b(channel\s*4|fourth\s*channel|night\s*tales|luganda)\b/i.test(textIn);
   const wantsChannel3 = /\b(channel\s*3|third\s*channel|nature\s*channel|wonder\s*channel)\b/i.test(textIn);
   const wantsChannel2 = /\b(channel\s*2|little\s*hope\s*tales|goblin|scary)\b/i.test(textIn);
   const style = /\b(cartoon|animation|animated|anime)\b/i.test(text) ? "cartoon" : "real";
   const topic = text
     .replace(/\b(cartoon|animation|animated|anime)\b/gi, " ")
-    .replace(/\b(channel\s*3|third\s*channel|nature\s*channel|wonder\s*channel|channel\s*2|channel\s*1|little\s*hope\s*tales)\b/gi, " ")
+    .replace(/\b(channel\s*4|fourth\s*channel|night\s*tales|luganda|channel\s*3|third\s*channel|nature\s*channel|wonder\s*channel|channel\s*2|channel\s*1|little\s*hope\s*tales)\b/gi, " ")
     .replace(/\b(please|generate|make|create|build|produce|post|upload)\b/gi, " ")
     .replace(/^[\s,.:;-]+/, "")
     .replace(/^(?:(?:a|an|the|me|us|for|long|video|videos|youtube|about|on|of)\b[\s,.:;-]*)+/i, "")
@@ -43,6 +44,7 @@ export function parseVideoRequest(textIn: string): VideoRequest | null {
     .trim();
   const finalTopic = (topic.length >= 3 ? topic : text).slice(0, 500);
   if (finalTopic.length < 3) return null;
+  if (wantsChannel4) return { topic: finalTopic, minutes, style: "real", tone: "scary", channel: 4 };
   if (wantsChannel3) return { topic: finalTopic, minutes, style: "real", tone: "wonder", channel: 3 };
   if (wantsChannel2) return { topic: finalTopic, minutes, style: "real", tone: "scary", channel: 2 };
   const emotional = /\b(sad|emotional|heartbreaking|touching|moving)\b/i.test(textIn);

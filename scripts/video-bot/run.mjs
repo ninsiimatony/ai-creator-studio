@@ -130,7 +130,101 @@ async function kokoroSpeak(text, file) {
   if (st.size < 2000) throw new Error("empty audio");
 }
 
+
+// ---- Channel 4 (Night Tales Uganda): Luganda text and voice from Sunbird AI (the same engine as the Ensi AI site) ----
+const SUNBIRD = "https://api.sunbird.ai";
+const sunbirdKey = () => process.env.SUNBIRD_API_TOKEN || "";
+async function sunbirdFetch(pathname, init, tries = 5) {
+  let last = "";
+  for (let a = 0; a < tries; a++) {
+    try {
+      const res = await fetch(SUNBIRD + pathname, { ...init, headers: { authorization: `Bearer ${sunbirdKey()}`, ...(init.headers || {}) } });
+      if (res.ok) return res;
+      last = `${res.status} ${(await res.text().catch(() => "")).slice(0, 200)}`;
+      if (res.status === 401 || res.status === 403) throw new Error(`Sunbird key rejected (${last})`);
+      if (res.status === 400 || res.status === 422) throw new Error(`Sunbird refused the request (${last})`);
+    } catch (e) {
+      if (/Sunbird (key|refused)/.test(String(e.message))) throw e;
+      last = String(e.message).slice(0, 200);
+    }
+    await new Promise((r) => setTimeout(r, 4000 * (a + 1)));
+  }
+  throw new Error("Sunbird failed: " + last);
+}
+/** English story text -> Luganda, in short pieces so the model never cuts a story off. */
+async function toLuganda(text) {
+  const clean = String(text || "").trim();
+  if (!clean) return clean;
+  const res = await sunbirdFetch("/tasks/chat/completions", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      model: "sunflower-9b",
+      temperature: 0.3,
+      messages: [
+        { role: "system", content: "You are a skilled Luganda storyteller and translator. Translate the user's text into natural, fluent Luganda, the way a Ugandan storyteller would tell a scary story. Keep names, keep the meaning and the mood. Reply with ONLY the Luganda text, no notes, no English." },
+        { role: "user", content: clean },
+      ],
+    }),
+  });
+  const out = String((await res.json())?.choices?.[0]?.message?.content ?? "").trim();
+  if (out.length < Math.min(20, clean.length / 3)) throw new Error("Sunbird returned an empty translation");
+  return out;
+}
+let sunbirdVoice = null;
+async function sunbirdPickVoice() {
+  if (sunbirdVoice !== null) return sunbirdVoice;
+  sunbirdVoice = process.env.SUNBIRD_VOICE || "";
+  if (sunbirdVoice) return sunbirdVoice;
+  try {
+    const j = await (await sunbirdFetch("/tasks/voice/speakers", { method: "GET" }, 2)).json();
+    const list = Array.isArray(j) ? j : j?.speakers ?? j?.voices ?? Object.values(j ?? {});
+    log("Sunbird voices:", JSON.stringify(list).slice(0, 400));
+  } catch (e) {
+    log("Sunbird voice list not available:", String(e.message).slice(0, 120));
+  }
+  return sunbirdVoice; // empty = Sunbird's default Luganda speaker
+}
+function chunkText(text, max = 300) {
+  const parts = [];
+  let cur = "";
+  for (const sentence of String(text).replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s+/)) {
+    if ((cur + " " + sentence).trim().length > max && cur) { parts.push(cur.trim()); cur = ""; }
+    cur += " " + sentence;
+    while (cur.trim().length > max * 1.5) { parts.push(cur.trim().slice(0, max)); cur = cur.trim().slice(max); }
+  }
+  if (cur.trim()) parts.push(cur.trim());
+  return parts;
+}
+async function sunbirdSpeak(text, file) {
+  const voice = await sunbirdPickVoice();
+  const pieces = chunkText(text);
+  const files = [];
+  for (let i = 0; i < pieces.length; i++) {
+    const res = await sunbirdFetch("/tasks/audio/speech", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text: pieces[i], language: "lug", ...(voice ? { voice } : {}), response_mode: "stream" }),
+    });
+    const bytes = Buffer.from(await res.arrayBuffer());
+    if (bytes.length < 1500) throw new Error("Sunbird voice returned empty audio");
+    const f = `${file}.p${i}.audio`;
+    await writeFile(f, bytes);
+    files.push(f);
+  }
+  const list = file + ".list.txt";
+  await writeFile(list, files.map((f) => `file '${f}'`).join("\n"));
+  await run("ffmpeg", ["-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", list, "-ar", "44100", "-ac", "1", "-f", "mp3", file]);
+  const st = await stat(file);
+  if (st.size < 2000) throw new Error("empty audio");
+}
+
 async function speak(text, file) {
+  if (CHANNEL === 4) {
+    // Luganda only works with the Luganda voice. Never read Luganda text with an English voice.
+    await sunbirdSpeak(text, file);
+    return;
+  }
   if (kokoroOn() && kokoroFails < 3) {
     try {
       await kokoroSpeak(text, file);
@@ -266,7 +360,7 @@ const CLIP_OFFSET = Math.floor(Math.random() * 20);
 
 async function notify(text) {
   try {
-    await studio("/api/automation/notify", { text: CHANNEL === 3 ? `[Ninsiima Atwooki (channel 3) - atwookininsiima@gmail.com]\n${text}` : CHANNEL === 2 ? `[Little Hope Tales - ninsiimamusigo@gmail.com]\n${text}` : `[Tony Ninsiima - ninsiimatony@gmail.com]\n${text}` });
+    await studio("/api/automation/notify", { text: CHANNEL === 4 ? `[Night Tales Uganda - tonymusigo@gmail.com]\n${text}` : CHANNEL === 3 ? `[Ninsiima Atwooki (channel 3) - atwookininsiima@gmail.com]\n${text}` : CHANNEL === 2 ? `[Little Hope Tales - ninsiimamusigo@gmail.com]\n${text}` : `[Tony Ninsiima - ninsiimatony@gmail.com]\n${text}` });
   } catch (e) {
     log("notify failed:", e.message);
   }
@@ -557,6 +651,22 @@ async function main() {
     );
     log(`Script part ${i + 1}/${outline.sections.length} done`);
   }
+  if (CHANNEL === 4) {
+    // Stories are written in English by the free AI, then told in Luganda by Sunbird (Sunflower). Pictures keep their English search words.
+    log("Translating the story into Luganda...");
+    outline.title = (await toLuganda(outline.title).catch((e) => { log("title kept in English:", String(e.message).slice(0, 100)); return outline.title; })).replace(/[\r\n]+/g, " ").slice(0, 100);
+    for (let k = 0; k < scenes.length; k += 3) {
+      const group = scenes.slice(k, k + 3);
+      const joined = group.map((x) => x.narration).join("\n\n");
+      let lug = "";
+      try { lug = await toLuganda(joined); } catch (e) { throw new Error(`Luganda translation failed: ${e.message}`); }
+      const pieces = lug.split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean);
+      if (pieces.length === group.length) group.forEach((x, n) => (x.narration = pieces[n]));
+      else { group[0].narration = lug; for (let n = 1; n < group.length; n++) group[n].narration = ""; }
+      if ((k / 3) % 10 === 0) log(`Luganda ${Math.min(k + 3, scenes.length)}/${scenes.length}`);
+    }
+    for (let k = scenes.length - 1; k >= 0; k--) if (!scenes[k].narration) scenes.splice(k, 1);
+  }
 
   // 1.5 Optional upgrade: moving clips from LTX-Video on free Kaggle GPU, instead of the usual
   // still pictures (channel 2) / Pixabay stock clips (channel 1). OFF unless USE_LTX_VIDEO=1 and
@@ -802,7 +912,9 @@ async function main() {
   const topicTags = TOPIC.toLowerCase().replace(/[^a-z ]/g, " ").split(/\s+/)
     .filter((w) => w.length > 3 && !["about", "their", "with", "from", "that", "this", "until", "every", "after"].includes(w))
     .slice(0, 3).map((w) => `#${w}`);
-  const baseTags = SCARY
+  const baseTags = CHANNEL === 4
+    ? ["#Luganda", "#Uganda", "#EbyafaayoByaLuganda", "#sitoori", "#horror", "#NightTalesUganda"]
+    : SCARY
     ? ["#scarystories", "#horrorstories", "#creepystories", "#scarystorytime", "#horrorstory", "#scary"]
     : CHANNEL === 2
     ? ["#animation", "#cartoonstory", "#animatedstory", "#familystory", "#faith", "#hope"]
@@ -824,7 +936,9 @@ async function main() {
   const chapterText = chapters.length >= 3
     ? chapters.map((c) => `${mmss(c.t)} ${c.name}`).join("\n")
     : outline.sections.map((s, i) => `${i + 1}. ${s}`).join("\n");
-  const description =
+  const description = CHANNEL === 4
+    ? `${outline.title}\n\nEbigambo bino bya kuyiiya (original fiction) - tebyali bituufu. Ssaamu like, subscribe era otubuulire mu comments ekitontome ekyakutiisa ennyo.\n\n${chapterText}\n\nMade with AI narration (Sunbird AI Luganda voice) and AI-generated pictures. Original fiction, not true stories.\n\n${hashtags.join(" ")}`
+    :
     `${outline.title}\n` +
     (SCARY || TONE === "emotional" ? `Original fiction.\n\n` : `\n`) +
     (SCARY
@@ -922,8 +1036,11 @@ async function main() {
   log("Uploading to YouTube (private)...");
   const id = await uploadToYouTube(final, outline.title, description);
   let pubNote = "";
-  const AUTO = process.env.AUTO_PUBLISH !== "0" && green;
-  if (process.env.AUTO_PUBLISH !== "0" && !green) pubNote = "HELD";
+  // Channel 4 (Luganda) stays private until Tony has listened to the voice and turned on CH4_AUTO_PUBLISH=1 (repo variable).
+  const CH4_HOLD = CHANNEL === 4 && process.env.CH4_AUTO_PUBLISH !== "1";
+  const AUTO = process.env.AUTO_PUBLISH !== "0" && green && !CH4_HOLD;
+  if (CH4_HOLD) pubNote = "HELD";
+  else if (process.env.AUTO_PUBLISH !== "0" && !green) pubNote = "HELD";
   let thumbNote = "";
   try {
     log("Making thumbnail...");
@@ -959,8 +1076,8 @@ async function main() {
   if (WONDER) await extras.localize(id, outline.title, hook); // only Channel 3, to save the free daily AI allowance
   await extras.addToPlaylist(
     id,
-    CHANNEL === 3 ? "Wild Wonders - Full Documentaries" : CHANNEL === 2 ? "Little Hope Tales - Scary Stories" : "Tony Ninsiima - Full Stories",
-    CHANNEL === 3 ? "Every full documentary about nature, space and the old world." : CHANNEL === 2 ? "Every full scary story, newest first." : "Every full emotional story.",
+    CHANNEL === 4 ? "Night Tales Uganda - Ebitontome" : CHANNEL === 3 ? "Wild Wonders - Full Documentaries" : CHANNEL === 2 ? "Little Hope Tales - Scary Stories" : "Tony Ninsiima - Full Stories",
+    CHANNEL === 4 ? "Every full scary story in Luganda, newest first." : CHANNEL === 3 ? "Every full documentary about nature, space and the old world." : CHANNEL === 2 ? "Every full scary story, newest first." : "Every full emotional story.",
   );
   if (SRT_PARTS.length) await extras.uploadCaptions(id, fullSrt(SRT_PARTS));
   // Short: first ~55 seconds as a vertical 1080x1920 clip, linking to the full story.

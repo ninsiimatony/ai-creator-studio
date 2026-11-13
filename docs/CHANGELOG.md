@@ -71,3 +71,8 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 ## Channel 4 phase 3 — separate Cloudflare AI
 - New src/server/aipick.ts: Channel 4 AI calls go to its own Cloudflare account (REST, CF_AI_TOKEN_4 + CF_ACCOUNT_ID_4); other channels unchanged.
 - Video bot sends x-channel header; run.mjs accepts CHANNEL=4. deploy.yml sets the two Worker secrets.
+
+## Channel 4 phase 2 — Luganda story + voice (test stage)
+- run.mjs: CHANNEL=4 translates the English story into Luganda (Sunbird Sunflower), speaks it with Sunbird's Luganda voice (no English fallback), Luganda title/description/hashtags.
+- Channel 4 stays PRIVATE until repo variable CH4_AUTO_PUBLISH=1. Not yet in the daily scheduler (catchup.ts) until Tony approves the test video.
+- Telegram: "channel 4" / "luganda" / "night tales" starts a Channel 4 video.

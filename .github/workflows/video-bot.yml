@@ -21,7 +21,7 @@ on:
         required: false
         default: ""
       channel:
-        description: 2 or 3 for the second or third channel (optional)
+        description: 2, 3 or 4 for the second, third or fourth channel (optional)
         required: false
         default: ""
 
@@ -80,6 +80,10 @@ jobs:
           CH3_EMAIL: ${{ vars.CH3_EMAIL }}
           GOOGLE_TTS_API_KEY: ${{ secrets.GOOGLE_TTS_API_KEY }}
           KOKORO_CHANNELS: ${{ vars.KOKORO_CHANNELS }}
+          # Channel 4 (Night Tales Uganda): Luganda text and voice from Sunbird AI
+          SUNBIRD_API_TOKEN: ${{ secrets.SUNBIRD_API_TOKEN }}
+          SUNBIRD_VOICE: ${{ vars.SUNBIRD_VOICE }}
+          CH4_AUTO_PUBLISH: ${{ vars.CH4_AUTO_PUBLISH }}
           KAGGLE_USERNAME: ${{ vars.KAGGLE_USERNAME }}
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
         run: node scripts/video-bot/run.mjs
