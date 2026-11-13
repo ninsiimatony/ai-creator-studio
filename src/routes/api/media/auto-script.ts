@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { aiFor } from "@/server/aipick";
 import { z } from "zod";
 import { AppError } from "@/server/errors";
 import { hasBotBearer, requireUserOrBot } from "@/server/context";
@@ -47,15 +48,15 @@ export const Route = createFileRoute("/api/media/auto-script")({
           const body = Body.parse(await request.json().catch(() => ({})));
           const out =
             body.step === "policy"
-              ? await writePolicyCheck({ ai: env.AI, title: body.title, description: body.description, script: body.script })
+              ? await writePolicyCheck({ ai: aiFor(env, request), title: body.title, description: body.description, script: body.script })
               : body.step === "scenes"
-              ? await writeSceneTerms({ db, userId: user.id, ai: env.AI, scenes: body.scenes, style: body.style })
+              ? await writeSceneTerms({ db, userId: user.id, ai: aiFor(env, request), scenes: body.scenes, style: body.style })
               : body.step === "outline"
-              ? await writeOutline({ db, userId: user.id, ai: env.AI, topic: body.topic, minutes: body.minutes, tone: body.tone })
+              ? await writeOutline({ db, userId: user.id, ai: aiFor(env, request), topic: body.topic, minutes: body.minutes, tone: body.tone })
               : await writeSection({
                   db,
                   userId: user.id,
-                  ai: env.AI,
+                  ai: aiFor(env, request),
                   topic: body.topic,
                   title: body.title,
                   sections: body.sections,

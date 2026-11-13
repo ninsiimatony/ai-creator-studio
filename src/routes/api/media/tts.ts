@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { aiFor } from "@/server/aipick";
 import { z } from "zod";
 import { AppError } from "@/server/errors";
 import { hasBotBearer, requireUserOrBot } from "@/server/context";
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/api/media/tts")({
           const { bytes, mime } = await synthesizeSpeech({
             db,
             userId: user.id,
-            ai: env.AI,
+            ai: aiFor(env, request),
             text: body.text,
             ...(body.lang ? { lang: body.lang } : {}),
           });

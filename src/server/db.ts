@@ -24,6 +24,9 @@ export type WorkerEnv = {
   DB?: D1Database;
   /** Workers AI binding (free daily allowance). Optional: image/speech providers are off without it. */
   AI?: AiBinding;
+  /** Channel 4 only: its own Cloudflare account's Workers AI (REST token with Workers AI permission) and that account's id. */
+  CF_AI_TOKEN_4?: string;
+  CF_ACCOUNT_ID_4?: string;
   SETUP_CODE?: string;
   ANTHROPIC_API_KEY?: string;
   /** Model for long-form writing (default claude-sonnet-5-5). */

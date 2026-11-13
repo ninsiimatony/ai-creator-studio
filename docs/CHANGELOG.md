@@ -67,3 +67,7 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - New YouTube channel **Night Tales Uganda** (@NightTalesUganda, Luganda scary stories) created. It is slot 4 in `extra_channels` and shares the second channel's Google project (In production).
 - New login link `/api/auth/google4/start`; the Google callback, YouTube token route, one-tap publish page (`/go-public`) and the watchdog now include channel 4.
 - Still to do (phases 2 and 3): Luganda scripts (Sunbird Sunflower) and voice (Sunbird TTS), schedule and style, and a separate Cloudflare account for its AI.
+
+## Channel 4 phase 3 — separate Cloudflare AI
+- New src/server/aipick.ts: Channel 4 AI calls go to its own Cloudflare account (REST, CF_AI_TOKEN_4 + CF_ACCOUNT_ID_4); other channels unchanged.
+- Video bot sends x-channel header; run.mjs accepts CHANNEL=4. deploy.yml sets the two Worker secrets.

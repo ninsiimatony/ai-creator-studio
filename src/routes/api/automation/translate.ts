@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { aiFor } from "@/server/aipick";
 import { z } from "zod";
 import { AppError } from "@/server/errors";
 import { requireUserOrBot, hasBotBearer } from "@/server/context";
@@ -20,8 +21,9 @@ export const Route = createFileRoute("/api/automation/translate")({
         try {
           const { env } = await requireUserOrBot(request);
           const body = Body.parse(await request.json().catch(() => ({})));
-          if (!env.AI) throw new AppError("The free AI is not available.");
-          const out = await translateAll(env.AI, body.texts, body.langs);
+          const ai = aiFor(env, request);
+          if (!ai) throw new AppError("The free AI is not available.");
+          const out = await translateAll(ai, body.texts, body.langs);
           return Response.json({ ok: true, translations: out }, { headers: { "Cache-Control": "no-store" } });
         } catch (e) {
           if (e instanceof AppError) return fail(400, e.message);

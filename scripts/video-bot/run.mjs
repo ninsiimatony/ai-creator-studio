@@ -239,7 +239,7 @@ async function studio(pathname, body, { raw = false, meta = false } = {}) {
     try {
       const res = await fetch(STUDIO + pathname, {
         method: "POST",
-        headers: { authorization: `Bearer ${SECRET}`, "content-type": "application/json" },
+        headers: { authorization: `Bearer ${SECRET}`, "content-type": "application/json", "x-channel": String(CHANNEL) },
         body: JSON.stringify(body),
       });
       if (res.ok) {
@@ -257,10 +257,10 @@ async function studio(pathname, body, { raw = false, meta = false } = {}) {
   throw new Error(last || "The studio did not answer.");
 }
 
-const CHANNEL = process.env.CHANNEL === "3" ? 3 : process.env.CHANNEL === "2" ? 2 : 1;
+const CHANNEL = process.env.CHANNEL === "4" ? 4 : process.env.CHANNEL === "3" ? 3 : process.env.CHANNEL === "2" ? 2 : 1;
 // Links in Telegram ask Google to open the right account for each channel (channel 3: set the repo variable CH3_EMAIL to its Google address).
 const AUTH =
-  "authuser=" + encodeURIComponent(CHANNEL === 3 ? process.env.CH3_EMAIL || "atwookininsiima@gmail.com" : CHANNEL === 2 ? "ninsiimamusigo@gmail.com" : "ninsiimatony@gmail.com");
+  "authuser=" + encodeURIComponent(CHANNEL === 4 ? process.env.CH4_EMAIL || "tonymusigo@gmail.com" : CHANNEL === 3 ? process.env.CH3_EMAIL || "atwookininsiima@gmail.com" : CHANNEL === 2 ? "ninsiimamusigo@gmail.com" : "ninsiimatony@gmail.com");
 // Random start so different videos pick different clips from the same search.
 const CLIP_OFFSET = Math.floor(Math.random() * 20);
 

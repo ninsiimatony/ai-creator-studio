@@ -36,6 +36,15 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: "Channel 4: give the Worker its own Cloudflare AI key (separate free allowance)"
+        if: ${{ env.CF_AI_TOKEN_4 != '' }}
+        run: |
+          printf '%s' "$CF_AI_TOKEN_4" | npx wrangler secret put CF_AI_TOKEN_4
+          printf '%s' "22889174bf5150b9d9c19f2be002e81e" | npx wrangler secret put CF_ACCOUNT_ID_4
+        env:
+          CF_AI_TOKEN_4: ${{ secrets.CF_AI_TOKEN_4 }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Health check the live site
         if: ${{ vars.DEPLOY_URL != '' }}
         run: |
