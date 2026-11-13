@@ -141,7 +141,7 @@ async function sunbirdFetch(pathname, init, tries = 5) {
       const res = await fetch(SUNBIRD + pathname, { ...init, headers: { authorization: `Bearer ${sunbirdKey()}`, ...(init.headers || {}) } });
       if (res.ok) return res;
       last = `${res.status} ${(await res.text().catch(() => "")).slice(0, 200)}`;
-      if (res.status === 401 || res.status === 403) throw new Error(`Sunbird key rejected (${last})`);
+      if (res.status === 401 || res.status === 403) { const k = sunbirdKey(); throw new Error(`Sunbird key rejected (${last}) [key shape: length ${k.length}, starts eyJ: ${k.startsWith("eyJ")}, dots: ${k.split(".").length - 1}, has space/newline: ${/\s/.test(k)}, has quotes: ${/["']/.test(k)}]`); }
       if (res.status === 400 || res.status === 422) throw new Error(`Sunbird refused the request (${last})`);
     } catch (e) {
       if (/Sunbird (key|refused)/.test(String(e.message))) throw e;
