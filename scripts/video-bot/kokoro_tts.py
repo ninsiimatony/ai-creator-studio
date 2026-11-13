@@ -25,7 +25,7 @@ for line in sys.stdin:
         pad = int(sr * 0.35)
         import numpy as np
         samples = np.concatenate([samples, np.zeros(pad, dtype=samples.dtype)])
-        sf.write(req["file"], samples, sr)
+        sf.write(req["file"], samples, sr, format="WAV")  # file name ends in .bin, so the format must be given
         print("ok %.2f" % (len(samples) / sr), flush=True)
     except Exception as e:
         print("err " + str(e).replace("\n", " ")[:300], flush=True)

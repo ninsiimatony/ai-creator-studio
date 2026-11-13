@@ -60,3 +60,4 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 ## 2026-11-13 — Fix: silent stop while the Kokoro voice loads
 - Channel 3's video (run 43492872858) wrote the script, then the bot quietly ended with "success" and no video. Cause: the Kokoro helper process was set to not keep the bot alive, so while the bot waited for the voice model to load, nothing kept it running and it exited with code 0.
 - Fix: a keep-alive timer while waiting for Kokoro, plus a 4-minute limit. If Kokoro isn't ready the bot logs it and uses the next voice (edge-tts).
+- Two more Kokoro bugs found by the re-run and fixed: (1) the voice file was saved without a format (name ends in .bin), so Kokoro always failed and the bot used the backup voice; now saved as WAV. (2) A crash at the very end when the helper closed (a null check), which stopped the video before upload.

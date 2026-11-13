@@ -109,7 +109,7 @@ function kokoroStart() {
   proc.stderr.on("data", () => {});
   // Never let this helper keep the bot alive after the video is done (even if something crashes).
   proc.unref(); proc.stdin.unref?.(); proc.stdout.unref?.(); proc.stderr.unref?.();
-  proc.on("exit", () => { resolveReady(false); while (waiters.length) waiters.shift()("err exited"); kokoro.dead = true; });
+  proc.on("exit", () => { resolveReady(false); while (waiters.length) waiters.shift()("err exited"); if (kokoro) kokoro.dead = true; });
   kokoro = { proc, waiters, ready, started: false, dead: false };
   return ready;
 }
