@@ -163,10 +163,37 @@ async function sunbirdFetch(pathname, init, tries = 5) {
   }
   throw new Error("Sunbird failed: " + last);
 }
-/** English story text -> Luganda, in short pieces so the model never cuts a story off. */
+/** Free backup translator: Cloudflare m2m100 on Channel 4's own Cloudflare account (Luganda = "lg"), through the studio. */
+async function toLugandaFree(clean) {
+  const sentences = clean.replace(/\s+/g, " ").split(/(?<=[.!?])\s+/);
+  const pieces = [];
+  let cur = "";
+  for (const sn of sentences) {
+    if ((cur + " " + sn).length > 900 && cur) { pieces.push(cur.trim()); cur = ""; }
+    cur += " " + sn;
+  }
+  if (cur.trim()) pieces.push(cur.trim());
+  const out = [];
+  for (let i = 0; i < pieces.length; i += 4) {
+    const r = await studio("/api/automation/translate", { texts: pieces.slice(i, i + 4), langs: ["lg"] });
+    const got = r?.translations?.lg;
+    if (!Array.isArray(got) || got.length !== pieces.slice(i, i + 4).length) throw new Error("free translator returned nothing");
+    out.push(...got);
+  }
+  return out.join(" ");
+}
+let sunbirdTextOk = true;
+/** English story text -> Luganda. Sunbird Sunflower first (best Luganda); the free Cloudflare translator if Sunbird is not available. */
 async function toLuganda(text) {
   const clean = String(text || "").trim();
   if (!clean) return clean;
+  if (sunbirdTextOk) {
+    try { return await toLugandaSunbird(clean); }
+    catch (e) { sunbirdTextOk = false; log("Sunbird translation not available, using the free translator:", String(e.message).slice(0, 160)); }
+  }
+  return toLugandaFree(clean);
+}
+async function toLugandaSunbird(clean) {
   const res = await sunbirdFetch("/tasks/chat/completions", {
     method: "POST",
     headers: { "content-type": "application/json" },
