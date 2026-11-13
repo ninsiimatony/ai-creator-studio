@@ -139,8 +139,14 @@ const sunbirdKey = () => sunbirdLogin || process.env.SUNBIRD_API_TOKEN || "";
 async function sunbirdSignIn() {
   const user = process.env.SUNBIRD_USERNAME, pass = process.env.SUNBIRD_PASSWORD;
   if (!user || !pass || sunbirdLogin) return;
-  const res = await fetch(SUNBIRD + "/auth/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ username: user, password: pass }) });
-  if (!res.ok) throw new Error(`Sunbird login failed (${res.status}) - check SUNBIRD_USERNAME / SUNBIRD_PASSWORD and that the email is verified`);
+  // Sunbird logs in by username (Channel 4's account is "tony"); also try what was saved and the part before the @.
+  const names = [...new Set([user, process.env.SUNBIRD_LOGIN_NAME || "tony", user.split("@")[0]])];
+  let res = null;
+  for (const name of names) {
+    res = await fetch(SUNBIRD + "/auth/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ username: name, password: pass }) });
+    if (res.ok) break;
+  }
+  if (!res || !res.ok) throw new Error(`Sunbird login failed (${res?.status}) - check SUNBIRD_PASSWORD and that the email is verified`);
   sunbirdLogin = String((await res.json())?.access_token ?? "");
   if (!sunbirdLogin) throw new Error("Sunbird login returned no key");
   log("Signed in to Sunbird");
