@@ -81,3 +81,8 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - Pictures: the image maker was being given Luganda text (it cannot read it). Now it gets the English scene text, with a scary rural-Uganda look, and a new picture every 3 scenes (own Cloudflare allowance). Slow zoom kept.
 - Sound: Luganda voice is normalised and boosted; music for Channel 4 dropped to 0.07 and uses the scary (ch2) tracks.
 - Luganda: English source written in short plain sentences with a Ugandan setting; stricter Sunflower translation prompt, temperature 0.15, 2 scenes per request.
+
+## Channel 4 test #2 findings (black screens) and photo library
+- Bug: the Channel 4 picture prompt was longer than the picture maker's 600-character limit, so every AI picture failed and the video had 155 s of black screen. Fixed (prompt capped at 590 characters).
+- New: scripts/video-bot/ch4-photos/use = 11 scary Uganda pictures from Tony (2240x1260), used with the slow zoom every other picture, and as the backup whenever the AI picture fails. spare/ = 2 unused (one has text in the image, one is a Western bedroom). assets/night-tales-uganda-logo.png = channel logo from Tony.
+- Not done / by design: no automatic ChatGPT picture ordering (needs Tony's login, against ChatGPT's terms to automate). Tony can add new batches to ch4-photos/use.

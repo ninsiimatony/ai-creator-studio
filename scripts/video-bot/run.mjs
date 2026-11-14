@@ -46,7 +46,7 @@ const NIGHT_LIGHTS = ["a single porch light", "cold moonlight", "a flickering st
 function nightPrompt(chunk, n) {
   const cam = CAMERAS[(n + PIC_OFFSET) % CAMERAS.length];
   const light = NIGHT_LIGHTS[(n * 3 + PIC_OFFSET) % NIGHT_LIGHTS.length];
-  if (CHANNEL === 4) return `Terrifying realistic horror film still shot at night in rural Uganda: red dirt paths, banana plantations, mud-brick houses with rusty tin roofs, tall grass, mist, a flickering kerosene lantern, long ominous shadows, an unsettling dark silhouette in the distance (faceless, never clear), cinematic, high contrast, grainy, dread, no text, no words. Camera: ${cam}. Lighting: ${light}. Scene: ${chunk}`;
+  if (CHANNEL === 4) return `Terrifying realistic horror film still at night in rural Uganda: mud-brick houses, red dirt path, banana trees, mist, faint lantern light, dark faceless silhouette, cinematic, grainy, no text. ${cam}. ${light}. Scene: ${chunk}`.slice(0, 590);
   return `Realistic dark night photograph, eerie and quiet, slightly grainy amateur camera look, deep shadows, muted colors, no people's faces, no text, no words. Camera: ${cam}. Lighting: ${light}. Scene: ${chunk}`;
 }
 function goblinPrompt(chunk, n) {
@@ -263,6 +263,24 @@ async function sunbirdSpeak(text, file) {
   await run("ffmpeg", ["-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", list, "-ar", "44100", "-ac", "1", "-af", "loudnorm=I=-16:TP=-1.5:LRA=7,volume=1.5", "-f", "mp3", file]);
   const st = await stat(file);
   if (st.size < 2000) throw new Error("empty audio");
+}
+
+
+// Channel 4: Tony's own scary Uganda pictures (scripts/video-bot/ch4-photos/use), used in turn so a picture is not repeated until all were shown.
+let ch4Pool = null, ch4Used = [];
+async function ch4Photo() {
+  if (ch4Pool === null) {
+    try {
+      const dir = path.join(path.dirname(new URL(import.meta.url).pathname), "ch4-photos", "use");
+      ch4Pool = (await readdir(dir)).filter((f) => /\.jpe?g$/i.test(f)).map((f) => path.join(dir, f));
+    } catch { ch4Pool = []; }
+  }
+  if (!ch4Pool.length) return null;
+  if (ch4Used.length >= ch4Pool.length) ch4Used = [];
+  const fresh = ch4Pool.filter((f) => !ch4Used.includes(f));
+  const pick = fresh[Math.floor(Math.random() * fresh.length)];
+  ch4Used.push(pick);
+  return pick;
 }
 
 async function speak(text, file) {
@@ -752,7 +770,7 @@ async function main() {
     if (SCARY) {
       // A new picture every 6 scenes (was 4) to save the free daily AI allowance; each picture slowly zooms.
       if (i % (CHANNEL === 4 ? 3 : 6) === 0) {
-        const chunk = scenes.slice(i, i + (CHANNEL === 4 ? 3 : 6)).map((x) => x.en ?? x.narration).join(" ").replace(/\s+/g, " ").slice(0, 230);
+        const chunk = scenes.slice(i, i + (CHANNEL === 4 ? 3 : 6)).map((x) => x.en ?? x.narration).join(" ").replace(/\s+/g, " ").slice(0, CHANNEL === 4 ? 180 : 230);
         try {
           if (kaggleClips && kaggleClips[i]) {
             curClip = kaggleClips[i];
@@ -760,9 +778,17 @@ async function main() {
           } else {
             // Every picture is new: made for this exact part of the story, with a different camera angle and light each time.
             // The saved library pictures are only a backup if the picture maker fails.
+            // Channel 4: Tony's own scary Uganda photos (ch4-photos/use) every other picture, and whenever the picture maker fails.
+            let lib = null;
+            if (CHANNEL === 4 && (imgN % 2 === 0 || AI_ALLOWANCE_GONE)) lib = await ch4Photo();
+            if (lib) {
+              curImg = lib;
+              curWide = true;
+              USED_AI_PICTURES = true;
+            } else
             try {
               if (AI_ALLOWANCE_GONE) throw new Error("free AI allowance used up today");
-              const img = await studio("/api/media/image", { prompt: nightPrompt(chunk, imgN).slice(0, 1900) }, { raw: true });
+              const img = await studio("/api/media/image", { prompt: nightPrompt(chunk, imgN).slice(0, CHANNEL === 4 ? 590 : 1900) }, { raw: true });
               USED_AI_PICTURES = true;
               curImg = path.join(WORK, `img${i}.` + (img[0] === 0x89 ? "png" : "jpg"));
               await writeFile(curImg, img);
@@ -770,8 +796,14 @@ async function main() {
             } catch (e) {
               if (/allowance|used up/i.test(String(e.message))) AI_ALLOWANCE_GONE = true;
               // The old goblin picture library no longer matches this channel's look: keep the last picture instead.
-              if (!curImg) throw e;
-              throw new Error("picture maker failed: " + String(e.message).slice(0, 60));
+              if (CHANNEL === 4) {
+                const ph = await ch4Photo();
+                if (ph) { curImg = ph; curWide = true; USED_AI_PICTURES = true; }
+                else if (!curImg) throw e;
+              } else {
+                if (!curImg) throw e;
+                throw new Error("picture maker failed: " + String(e.message).slice(0, 60));
+              }
             }
             curClip = null;
           }
