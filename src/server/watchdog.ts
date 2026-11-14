@@ -61,7 +61,7 @@ export async function runWatchdog(env: WorkerEnv): Promise<string> {
       const since = new Date(now - 24 * HOUR).toISOString().slice(0, 10);
       const rows = ((await db.prepare("SELECT day, slot, status, attempts, note FROM video_slots WHERE day >= ? ORDER BY day, slot").bind(since).all()) as { results?: { day: string; slot: number; status: string; attempts: number; note: string | null }[] }).results ?? [];
       const mark = (s: string) => (s === "done" ? "✅" : s === "gave_up" ? "🔴" : "⏳");
-      const lines = rows.map((r) => `${mark(r.status)} ${r.day} ${r.slot === 5 ? "Night Tales Uganda" : r.slot === 4 ? "Channel 3" : r.slot === 3 ? "Little Hope Tales" : "Tony Ninsiima"}: ${r.status}${r.attempts > 1 ? ` (${r.attempts} tries)` : ""}${r.status !== "done" && r.note ? " - " + r.note.slice(0, 80) : ""}`);
+      const lines = rows.map((r) => `${mark(r.status)} ${r.day} ${r.slot === 5 || r.slot === 6 ? "Night Tales Uganda" : r.slot === 4 ? "Channel 3" : r.slot === 3 ? "Little Hope Tales" : "Tony Ninsiima"}: ${r.status}${r.attempts > 1 ? ` (${r.attempts} tries)` : ""}${r.status !== "done" && r.note ? " - " + r.note.slice(0, 80) : ""}`);
       const left = ((await db.prepare("SELECT channel, COUNT(*) AS n FROM extra_topics WHERE used=0 GROUP BY channel").all()) as { results?: { channel: number; n: number }[] }).results ?? [];
       const ideas = left.map((l) => `channel ${l.channel}: ${l.n}`).join(", ") || "none (using the built-in list)";
       await say(`📋 Daily health report\nConnections: ${out.join(", ")}\nLast videos:\n${lines.join("\n") || "none yet"}\nStory ideas left: ${ideas}`);

@@ -114,3 +114,6 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - New topic list scripts/video-bot/topics4.json (44 original Uganda night stories: men, women, children, elders).
 - Videos stay PRIVATE until Tony sets CH4_AUTO_PUBLISH=1 (he approves first). Watchdog label added.
 - Tests: 133 passed.
+
+## 2026-11-14 — Channel 4: 2 videos a day (6 AM and 12 PM Oman)
+- Slots 5 and 6: start 05:30 and 11:30 Oman (01:30 and 07:30 UTC), ready about 06:00 and 12:00 Oman. Still private until Tony approves (CH4_AUTO_PUBLISH).

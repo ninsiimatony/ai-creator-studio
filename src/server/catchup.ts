@@ -16,7 +16,7 @@ const REF = "main";
 /** A different length each day (about +-25%), so videos never look cut from one template.
  *  Main channel 8-12 min, 3-story scary compilations 22-28 min, documentaries 9-14 min. Same day + slot always gives the same length. */
 export function videoMinutes(slot: number, day: string): number {
-  const [lo, hi] = slot === 3 ? [22, 28] : slot === 4 ? [9, 14] : slot === 5 ? [10, 14] : [8, 12]; // slot 5 = Channel 4 (Night Tales Uganda), at least 10 minutes
+  const [lo, hi] = slot === 3 ? [22, 28] : slot === 4 ? [9, 14] : slot === 5 || slot === 6 ? [10, 14] : [8, 12]; // slot 5 = Channel 4 (Night Tales Uganda), at least 10 minutes
   let h = 2166136261;
   for (const c of `${day}#${slot}`) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
   return lo + (h % (hi - lo + 1));
@@ -24,7 +24,7 @@ export function videoMinutes(slot: number, day: string): number {
 
 /** Days (UTC, 0 = Sunday) when channel 2 posts: Monday, Wednesday, Saturday. */
 export const CH2_DAYS = [1, 3, 6];
-const SLOT_MINUTES_UTC = [11 * 60 + 17, 16 * 60 + 17, 22 * 60 + 17, 23 * 60 + 17, 19 * 60 + 17, 14 * 60 + 30]; // slot 5 = fourth channel (Night Tales Uganda, Luganda horror): starts 18:30 Oman, ready about 19:00 Oman = 7 PM Uganda; slot 4 = third channel (wildlife, space and old-world documentaries): starts 23:17 Oman, live about 3:30 PM New York; // main channel starts 15:17, 20:17, 02:17 Oman (live ~7 AM, 12 PM, 6 PM New York); slot 3 = second channel: starts 03:17 Oman (6:17 PM New York), live about 7:20 PM New York
+const SLOT_MINUTES_UTC = [11 * 60 + 17, 16 * 60 + 17, 22 * 60 + 17, 23 * 60 + 17, 19 * 60 + 17, 1 * 60 + 30, 7 * 60 + 30]; // slots 5 and 6 = fourth channel (Night Tales Uganda, Luganda horror): start 05:30 and 11:30 Oman, ready about 06:00 and 12:00 Oman; slot 4 = third channel (wildlife, space and old-world documentaries): starts 23:17 Oman, live about 3:30 PM New York; // main channel starts 15:17, 20:17, 02:17 Oman (live ~7 AM, 12 PM, 6 PM New York); slot 3 = second channel: starts 03:17 Oman (6:17 PM New York), live about 7:20 PM New York
 const MAX_ATTEMPTS = 4;
 const LOST_AFTER_MS = 12 * 60 * 1000; // dispatched but GitHub never showed a run
 const STUCK_AFTER_MS = 100 * 60 * 1000; // run still going far too long
@@ -93,17 +93,17 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
   // Channel 2 makes longer 3-story videos (~25 min) on 3 days a week only: Monday, Wednesday and Saturday (UTC).
   if (CH2_DAYS.includes(now.getUTCDay()) && (await channelConnected(db, 2))) slots.push(3);
   if (await channelConnected(db, 3)) slots.push(4);
-  // Channel 4 (Night Tales Uganda, Luganda horror): 1 video a day. Videos stay private until CH4_AUTO_PUBLISH=1 (Tony approves first).
-  if (await channelConnected(db, 4)) slots.push(5);
+  // Channel 4 (Night Tales Uganda, Luganda horror): 2 videos a day, ready at 6 AM and 12 PM Oman. Videos stay private until CH4_AUTO_PUBLISH=1 (Tony approves first).
+  if (await channelConnected(db, 4)) slots.push(5, 6);
   for (const slot of slots) {
     if (minuteOfDay < SLOT_MINUTES_UTC[slot]!) continue; // slot not due yet
     const isCh2 = slot === 3;
     const isCh3 = slot === 4;
-    const isCh4 = slot === 5;
+    const isCh4 = slot === 5 || slot === 6;
     const chan = isCh4 ? 4 : isCh3 ? 3 : isCh2 ? 2 : 1;
     const label = isCh4 ? "the fourth channel (Night Tales Uganda)" : isCh3 ? "the third channel" : isCh2 ? "the second channel" : `video ${slot + 1} of 3`;
     let topic = isCh4
-      ? (topics4 as string[])[dayOfYear(now) % (topics4 as string[]).length]!
+      ? (topics4 as string[])[(dayOfYear(now) * 2 + (slot - 5)) % (topics4 as string[]).length]!
       : isCh3
       ? (topics3 as string[])[dayOfYear(now) % (topics3 as string[]).length]!
       : isCh2
