@@ -4,6 +4,7 @@
 import topics from "../../scripts/video-bot/topics.json";
 import topics2 from "../../scripts/video-bot/topics2.json";
 import topics3 from "../../scripts/video-bot/topics3.json";
+import topics4 from "../../scripts/video-bot/topics4.json";
 import { channelConnected } from "./google2";
 import { dispatchVideoJob, sendTelegram } from "./bot";
 import { pickTopic } from "./topicgen";
@@ -23,7 +24,7 @@ export function videoMinutes(slot: number, day: string): number {
 
 /** Days (UTC, 0 = Sunday) when channel 2 posts: Monday, Wednesday, Saturday. */
 export const CH2_DAYS = [1, 3, 6];
-const SLOT_MINUTES_UTC = [11 * 60 + 17, 16 * 60 + 17, 22 * 60 + 17, 23 * 60 + 17, 19 * 60 + 17]; // slot 4 = third channel (wildlife, space and old-world documentaries): starts 23:17 Oman, live about 3:30 PM New York; // main channel starts 15:17, 20:17, 02:17 Oman (live ~7 AM, 12 PM, 6 PM New York); slot 3 = second channel: starts 03:17 Oman (6:17 PM New York), live about 7:20 PM New York
+const SLOT_MINUTES_UTC = [11 * 60 + 17, 16 * 60 + 17, 22 * 60 + 17, 23 * 60 + 17, 19 * 60 + 17, 14 * 60 + 30]; // slot 5 = fourth channel (Night Tales Uganda, Luganda horror): starts 18:30 Oman, ready about 19:00 Oman = 7 PM Uganda; slot 4 = third channel (wildlife, space and old-world documentaries): starts 23:17 Oman, live about 3:30 PM New York; // main channel starts 15:17, 20:17, 02:17 Oman (live ~7 AM, 12 PM, 6 PM New York); slot 3 = second channel: starts 03:17 Oman (6:17 PM New York), live about 7:20 PM New York
 const MAX_ATTEMPTS = 4;
 const LOST_AFTER_MS = 12 * 60 * 1000; // dispatched but GitHub never showed a run
 const STUCK_AFTER_MS = 100 * 60 * 1000; // run still going far too long
@@ -92,13 +93,18 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
   // Channel 2 makes longer 3-story videos (~25 min) on 3 days a week only: Monday, Wednesday and Saturday (UTC).
   if (CH2_DAYS.includes(now.getUTCDay()) && (await channelConnected(db, 2))) slots.push(3);
   if (await channelConnected(db, 3)) slots.push(4);
+  // Channel 4 (Night Tales Uganda, Luganda horror): 1 video a day. Videos stay private until CH4_AUTO_PUBLISH=1 (Tony approves first).
+  if (await channelConnected(db, 4)) slots.push(5);
   for (const slot of slots) {
     if (minuteOfDay < SLOT_MINUTES_UTC[slot]!) continue; // slot not due yet
     const isCh2 = slot === 3;
     const isCh3 = slot === 4;
-    const chan = isCh3 ? 3 : isCh2 ? 2 : 1;
-    const label = isCh3 ? "the third channel" : isCh2 ? "the second channel" : `video ${slot + 1} of 3`;
-    let topic = isCh3
+    const isCh4 = slot === 5;
+    const chan = isCh4 ? 4 : isCh3 ? 3 : isCh2 ? 2 : 1;
+    const label = isCh4 ? "the fourth channel (Night Tales Uganda)" : isCh3 ? "the third channel" : isCh2 ? "the second channel" : `video ${slot + 1} of 3`;
+    let topic = isCh4
+      ? (topics4 as string[])[dayOfYear(now) % (topics4 as string[]).length]!
+      : isCh3
       ? (topics3 as string[])[dayOfYear(now) % (topics3 as string[]).length]!
       : isCh2
       ? (topics2 as string[])[dayOfYear(now) % (topics2 as string[]).length]!
@@ -135,7 +141,7 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
 
     if (row.attempts >= MAX_ATTEMPTS) {
       await db.prepare("UPDATE video_slots SET status='gave_up' WHERE day=? AND slot=?").bind(day, slot).run();
-      await notify(`⚠️ ${isCh3 ? "The third channel video" : isCh2 ? "The second channel video" : `Video ${slot + 1} of today`} failed ${MAX_ATTEMPTS} times. Send me a topic here to make it by hand.`);
+      await notify(`⚠️ ${isCh4 ? "The fourth channel video" : isCh3 ? "The third channel video" : isCh2 ? "The second channel video" : `Video ${slot + 1} of today`} failed ${MAX_ATTEMPTS} times. Send me a topic here to make it by hand.`);
       continue;
     }
 
@@ -154,8 +160,8 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
           topic: row.topic,
           minutes: videoMinutes(slot, day),
           style: "real", // channel 2 is realistic night photos since 2026-11-12 (was "cartoon")
-          tone: isCh3 ? "wonder" : isCh2 ? "scary" : "emotional",
-          ...(isCh3 ? { channel: 3 } : isCh2 ? { channel: 2 } : {}),
+          tone: isCh3 ? "wonder" : isCh2 || isCh4 ? "scary" : "emotional",
+          ...(isCh4 ? { channel: 4 } : isCh3 ? { channel: 3 } : isCh2 ? { channel: 2 } : {}),
         },
       });
       await db.prepare("UPDATE video_slots SET status='dispatched' WHERE day=? AND slot=?").bind(day, slot).run();

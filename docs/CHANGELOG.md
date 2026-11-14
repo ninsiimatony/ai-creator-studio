@@ -108,3 +108,9 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - Added 13 bright vivid photos from Gemini (1024x572 upscaled to 2240x1260): mother+daughter+ghost, boy in graveyard, woman on banana path, healer hut, boda rider with ghost passenger, girl at well, man with torch in forest, mother cooking with ghost child, student with candle, fisherman on lake, farmer with scarecrow ghost, ghost bride at lake, funeral by the fire.
 - Tagged each in `CH4_PHOTOS` with man/woman rule + keywords. Library now 44 photos. Nothing removed.
 - Gemini free limit reached (resets 11:12 AM Oman time); 7 more prompts queued for next time.
+
+## 2026-11-14 — Channel 4 added to the automatic schedule
+- New slot 5 in catchup.ts: Night Tales Uganda, 1 video a day, starts 18:30 Oman (14:30 UTC), 10-14 minutes, tone scary, channel 4.
+- New topic list scripts/video-bot/topics4.json (44 original Uganda night stories: men, women, children, elders).
+- Videos stay PRIVATE until Tony sets CH4_AUTO_PUBLISH=1 (he approves first). Watchdog label added.
+- Tests: 133 passed.
