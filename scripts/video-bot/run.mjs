@@ -298,6 +298,18 @@ const CH4_PHOTOS = {
   "haunted-forest-spirits": { who: "any", must: [/forest|woods|trees|spirits|lights|whisper|wander|mist|bush/] },
   "elder-lantern-road": { who: "any", must: [/old|elder|grandmother|grandfather|stranger|healer|witch|herbalist|mzee|traveler|traveller|road|path|lantern/] },
   "ghost-over-girl-house": { who: "f", must: [/girl|daughter|young woman/, /ghost|spirit|house|haunt|reach|hand|dead/] },
+  "forest-red-eyes-man": { who: "m", must: [/forest|woods|jungle|trees|bush|eyes|watch|fear|terror|frozen/] },
+  "lantern-girl-ghost-behind": { who: "f", must: [/girl|woman|lantern|young/, /ghost|spirit|behind|follow|figure|shadow/] },
+  "giant-monster-huts": { who: "any", must: [/monster|giant|beast|creature|huge|towering|sky/] },
+  "witch-hut-spirit": { who: "any", must: [/witch|healer|herbalist|medicine|hut|spirit|bones|candle|curse|bewitch|ritual/] },
+  "old-man-lantern-faceless": { who: "m", must: [/old|elder|man|grandfather|mzee|stranger|traveler|traveller/, /lantern|road|path|faceless|figure|behind|night/] },
+  "grave-ghost": { who: "any", must: [/grave|cemetery|tomb|bury|buried|dead|crawl|ghost/] },
+  "boy-under-bed-eyes": { who: "m", must: [/boy|child|son|kid|young/, /bed|hide|hiding|dark|eyes|room|hut|night/] },
+  "hanging-tree-spirit": { who: "any", must: [/tree|hang|hanged|forest|sacred|branch|misty|spirit/] },
+  "woman-window-ghost": { who: "f", must: [/woman|mother|wife|girl|daughter/, /window|scream|hut|house|ghost|face|candle/] },
+  "man-running-road": { who: "m", must: [/man|he|him|his|husband|father|boy|driver|boda/, /run|ran|chase|chased|escape|flee|fled|road|path|terror|fear/] },
+  "well-ghost-white": { who: "f", must: [/well|water|ghost|dress|white|woman|girl/] },
+  "well-ghost-fog": { who: "f", must: [/well|water|ghost|dress|white|woman|girl|fog|mist/] },
 };
 let ch4Pool = null;
 const ch4Count = new Map();

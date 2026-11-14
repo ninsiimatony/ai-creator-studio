@@ -94,3 +94,8 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - Sound: scary tracks joined with crossfades + night wind + crickets, music ducks under the voice (sidechain compression).
 - Length: Channel 4 videos 10-14 minutes (videoMinutes slot 5). Scheduler not yet switched on for Channel 4.
 - Thumbnail: built from Tony's photos with the Luganda title (works once the channel is phone-verified; YouTube refuses custom thumbnails on unverified channels).
+
+## 2026-11-14 — Channel 4 photo library v2 (Leonardo batch)
+- Added 12 new horror photos made in Leonardo (single pictures, 16:9, Uganda night/fog): forest red eyes, lantern girl + ghost, giant monster, witch hut, old man + faceless figure, grave ghost, boy under bed, hanging tree, woman at window, man running, well ghost x2.
+- Tagged each in `CH4_PHOTOS` (run.mjs) with man/woman rule + keywords. Library now 23 photos. Old photos untouched.
+- Not yet tested in a full video run.
