@@ -46,6 +46,7 @@ const NIGHT_LIGHTS = ["a single porch light", "cold moonlight", "a flickering st
 function nightPrompt(chunk, n) {
   const cam = CAMERAS[(n + PIC_OFFSET) % CAMERAS.length];
   const light = NIGHT_LIGHTS[(n * 3 + PIC_OFFSET) % NIGHT_LIGHTS.length];
+  if (CHANNEL === 4) return `Terrifying realistic horror film still shot at night in rural Uganda: red dirt paths, banana plantations, mud-brick houses with rusty tin roofs, tall grass, mist, a flickering kerosene lantern, long ominous shadows, an unsettling dark silhouette in the distance (faceless, never clear), cinematic, high contrast, grainy, dread, no text, no words. Camera: ${cam}. Lighting: ${light}. Scene: ${chunk}`;
   return `Realistic dark night photograph, eerie and quiet, slightly grainy amateur camera look, deep shadows, muted colors, no people's faces, no text, no words. Camera: ${cam}. Lighting: ${light}. Scene: ${chunk}`;
 }
 function goblinPrompt(chunk, n) {
@@ -205,9 +206,9 @@ async function toLugandaSunbird(clean) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       model: "sunflower-9b",
-      temperature: 0.3,
+      temperature: 0.15,
       messages: [
-        { role: "system", content: "You are a skilled Luganda storyteller and translator. Translate the user's text into natural, fluent Luganda, the way a Ugandan storyteller would tell a scary story. Keep names, keep the meaning and the mood. Reply with ONLY the Luganda text, no notes, no English." },
+        { role: "system", content: "You are an expert Luganda storyteller from Buganda who also translates. Translate the user's English story text into correct, natural, spoken Luganda, the way a grandmother or village storyteller would tell a scary story out loud: short clear sentences, correct noun classes and verb forms, everyday Luganda words (not literal word-for-word English). Keep every name, every event and the scary mood. Do not add or remove story events. Keep the same number of paragraphs, separated by blank lines. Reply with ONLY the Luganda text, no notes, no English, no quotation marks." },
         { role: "user", content: clean },
       ],
     }),
@@ -259,7 +260,7 @@ async function sunbirdSpeak(text, file) {
   }
   const list = file + ".list.txt";
   await writeFile(list, files.map((f) => `file '${f}'`).join("\n"));
-  await run("ffmpeg", ["-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", list, "-ar", "44100", "-ac", "1", "-f", "mp3", file]);
+  await run("ffmpeg", ["-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", list, "-ar", "44100", "-ac", "1", "-af", "loudnorm=I=-16:TP=-1.5:LRA=7,volume=1.5", "-f", "mp3", file]);
   const st = await stat(file);
   if (st.size < 2000) throw new Error("empty audio");
 }
@@ -662,7 +663,11 @@ async function main() {
   }
 
   // 1. Script
-  const outline = await studio("/api/media/auto-script", { step: "outline", topic: TOPIC, minutes: MINUTES, tone: TONE });
+  // Channel 4: ask for a Ugandan-village setting and short, plain sentences, so the Luganda translation comes out clean and natural.
+  const STORY_TOPIC = CHANNEL === 4
+    ? `${TOPIC} (Setting: villages, trading centres and roads of Uganda, Ugandan names. Write short, simple, concrete sentences with plain everyday words. No idioms, no metaphors, no wordplay, so it translates cleanly into Luganda.)`.slice(0, 480)
+    : TOPIC;
+  const outline = await studio("/api/media/auto-script", { step: "outline", topic: STORY_TOPIC, minutes: MINUTES, tone: TONE });
   // Keep the outline inside the studio's size limits so the next step never rejects it.
   outline.title = String(outline.title || TOPIC).slice(0, 200);
   outline.sections = (outline.sections || []).map((x) => String(x).trim().slice(0, 200)).filter(Boolean).slice(0, 50);
@@ -672,7 +677,7 @@ async function main() {
   for (let i = 0; i < outline.sections.length; i++) {
     const sec = await studio("/api/media/auto-script", {
       step: "section",
-      topic: TOPIC,
+      topic: STORY_TOPIC,
       title: outline.title,
       sections: outline.sections,
       index: i,
@@ -690,6 +695,7 @@ async function main() {
     parts.forEach((narration, k) =>
       scenes.push({
         narration,
+        en: narration,
         section: i,
         term: terms[k] || sec.visuals[k % Math.max(1, sec.visuals.length)] || outline.sections[i],
       }),
@@ -700,15 +706,15 @@ async function main() {
     // Stories are written in English by the free AI, then told in Luganda by Sunbird (Sunflower). Pictures keep their English search words.
     log("Translating the story into Luganda...");
     outline.title = (await toLuganda(outline.title).catch((e) => { log("title kept in English:", String(e.message).slice(0, 100)); return outline.title; })).replace(/[\r\n]+/g, " ").slice(0, 100);
-    for (let k = 0; k < scenes.length; k += 3) {
-      const group = scenes.slice(k, k + 3);
+    for (let k = 0; k < scenes.length; k += 2) {
+      const group = scenes.slice(k, k + 2);
       const joined = group.map((x) => x.narration).join("\n\n");
       let lug = "";
       try { lug = await toLuganda(joined); } catch (e) { throw new Error(`Luganda translation failed: ${e.message}`); }
       const pieces = lug.split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean);
       if (pieces.length === group.length) group.forEach((x, n) => (x.narration = pieces[n]));
       else { group[0].narration = lug; for (let n = 1; n < group.length; n++) group[n].narration = ""; }
-      if ((k / 3) % 10 === 0) log(`Luganda ${Math.min(k + 3, scenes.length)}/${scenes.length}`);
+      if ((k / 2) % 12 === 0) log(`Luganda ${Math.min(k + 3, scenes.length)}/${scenes.length}`);
     }
     for (let k = scenes.length - 1; k >= 0; k--) if (!scenes[k].narration) scenes.splice(k, 1);
   }
@@ -745,8 +751,8 @@ async function main() {
     await writeFile(path.join(WORK, "seg.srt"), srtFor(sc.narration, dur));
     if (SCARY) {
       // A new picture every 6 scenes (was 4) to save the free daily AI allowance; each picture slowly zooms.
-      if (i % 6 === 0) {
-        const chunk = scenes.slice(i, i + 6).map((x) => x.narration).join(" ").replace(/\s+/g, " ").slice(0, 230);
+      if (i % (CHANNEL === 4 ? 3 : 6) === 0) {
+        const chunk = scenes.slice(i, i + (CHANNEL === 4 ? 3 : 6)).map((x) => x.en ?? x.narration).join(" ").replace(/\s+/g, " ").slice(0, 230);
         try {
           if (kaggleClips && kaggleClips[i]) {
             curClip = kaggleClips[i];
@@ -937,11 +943,11 @@ async function main() {
   let musicIn = ["-f", "lavfi", "-i", music];
   let musicVol = 0.5;
   try {
-    const mdir = path.join(path.dirname(new URL(import.meta.url).pathname), "music", CHANNEL === 2 ? "ch2" : "ch1");
+    const mdir = path.join(path.dirname(new URL(import.meta.url).pathname), "music", CHANNEL === 2 || CHANNEL === 4 ? "ch2" : "ch1");
     const tracks = (await readdir(mdir)).filter((f) => /\.(mp3|m4a|wav)$/i.test(f));
     if (tracks.length) {
       musicIn = ["-stream_loop", "-1", "-i", path.join(mdir, tracks[Math.floor(Math.random() * tracks.length)])];
-      musicVol = 0.22;
+      musicVol = CHANNEL === 4 ? 0.07 : 0.22; // Luganda voice must stay clearly above the music
       log("Music: real track");
     }
   } catch {

@@ -76,3 +76,8 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - run.mjs: CHANNEL=4 translates the English story into Luganda (Sunbird Sunflower), speaks it with Sunbird's Luganda voice (no English fallback), Luganda title/description/hashtags.
 - Channel 4 stays PRIVATE until repo variable CH4_AUTO_PUBLISH=1. Not yet in the daily scheduler (catchup.ts) until Tony approves the test video.
 - Telegram: "channel 4" / "luganda" / "night tales" starts a Channel 4 video.
+
+## Channel 4 test #1 feedback fixes
+- Pictures: the image maker was being given Luganda text (it cannot read it). Now it gets the English scene text, with a scary rural-Uganda look, and a new picture every 3 scenes (own Cloudflare allowance). Slow zoom kept.
+- Sound: Luganda voice is normalised and boosted; music for Channel 4 dropped to 0.07 and uses the scary (ch2) tracks.
+- Luganda: English source written in short plain sentences with a Ugandan setting; stricter Sunflower translation prompt, temperature 0.15, 2 scenes per request.
