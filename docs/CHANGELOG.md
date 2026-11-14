@@ -103,3 +103,8 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 ## 2026-11-14 — Channel 4 photo library v3 (Ideogram batch, brighter style)
 - Added 8 bright, vivid moonlit photos from Ideogram (2560x1440 → 2240x1260): man chased by ghost on village road x4, grandfather telling scary story by the fire with ghost behind children x4.
 - Tagged in `CH4_PHOTOS` (man-chased-bright, fireside-story-ghost). Library now 31 photos. Nothing removed.
+
+## 2026-11-14 — Channel 4 photo library v4 (Gemini batch, bright + meaningful)
+- Added 13 bright vivid photos from Gemini (1024x572 upscaled to 2240x1260): mother+daughter+ghost, boy in graveyard, woman on banana path, healer hut, boda rider with ghost passenger, girl at well, man with torch in forest, mother cooking with ghost child, student with candle, fisherman on lake, farmer with scarecrow ghost, ghost bride at lake, funeral by the fire.
+- Tagged each in `CH4_PHOTOS` with man/woman rule + keywords. Library now 44 photos. Nothing removed.
+- Gemini free limit reached (resets 11:12 AM Oman time); 7 more prompts queued for next time.

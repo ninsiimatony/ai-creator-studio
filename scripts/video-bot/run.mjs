@@ -312,6 +312,19 @@ const CH4_PHOTOS = {
   "well-ghost-fog": { who: "f", must: [/well|water|ghost|dress|white|woman|girl|fog|mist/] },
   "man-chased-bright": { who: "m", must: [/run|ran|chase|chased|escape|flee|fled|road|path|follow|behind|terror|fear|night/] },
   "fireside-story-ghost": { who: "any", must: [/story|tale|told|tell|grandfather|grandmother|elder|fire|children|kids|legend|village|night|ghost|spirit/] },
+  "mother-daughter-ghost-hut": { who: "f", must: [/woman|mother|wife|daughter|girl/, /ghost|spirit|hut|house|lantern|haunt|night|reach|behind/] },
+  "boy-graveyard-ghost-bright": { who: "m", must: [/boy|child|son|kid|young/, /grave|cemetery|ghost|spirit|dead|tomb|bury|cross/] },
+  "woman-banana-path-spirit": { who: "f", must: [/woman|girl|wife|mother|lady/, /banana|path|garden|dusk|walk|spirit|shadow|follow|trees/] },
+  "healer-hut-horned-spirit": { who: "any", must: [/witch|healer|herbalist|herb|medicine|curse|spirit|candle|ritual|hut|bewitch|charm/] },
+  "boda-ghost-passenger": { who: "m", must: [/boda|motorcycle|motorbike|rider|driver|passenger|taxi|road|night/, /ghost|spirit|passenger|behind|seat|pale|ride|lift/] },
+  "girl-well-reflection": { who: "f", must: [/girl|woman|daughter|student|school/, /well|water|river|pond|reflection|fetch|borehole|ghost/] },
+  "man-torch-forest-eyes": { who: "m", must: [/forest|woods|jungle|bush|trees|hunter|torch|eyes|watch/] },
+  "mother-cooking-ghost-child": { who: "f", must: [/mother|woman|wife|cook|kitchen|fire|hut|child|baby|doorway|ghost/] },
+  "student-candle-window-ghost": { who: "f", must: [/girl|student|pupil|school|study|studying|homework|candle|window|room/] },
+  "fisherman-lake-ghost": { who: "m", must: [/fisher|lake|canoe|boat|water|victoria|river|ghost|rising|mist/] },
+  "farmer-scarecrow-ghost": { who: "m", must: [/farmer|garden|field|farm|banana|scarecrow|dusk|plantation|digging|hoe|ghost/] },
+  "bride-lake-ghost": { who: "m", must: [/bride|wedding|lake|shore|water|jetty|ghost|white|dress|marry|married|love/] },
+  "funeral-fire-ghost": { who: "any", must: [/funeral|mourn|burial|buried|death|died|dead|fire|gathering|village|ghost|spirit|elders|crowd/] },
 };
 let ch4Pool = null;
 const ch4Count = new Map();
