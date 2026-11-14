@@ -15,7 +15,7 @@ const REF = "main";
 /** A different length each day (about +-25%), so videos never look cut from one template.
  *  Main channel 8-12 min, 3-story scary compilations 22-28 min, documentaries 9-14 min. Same day + slot always gives the same length. */
 export function videoMinutes(slot: number, day: string): number {
-  const [lo, hi] = slot === 3 ? [22, 28] : slot === 4 ? [9, 14] : [8, 12];
+  const [lo, hi] = slot === 3 ? [22, 28] : slot === 4 ? [9, 14] : slot === 5 ? [10, 14] : [8, 12]; // slot 5 = Channel 4 (Night Tales Uganda), at least 10 minutes
   let h = 2166136261;
   for (const c of `${day}#${slot}`) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
   return lo + (h % (hi - lo + 1));

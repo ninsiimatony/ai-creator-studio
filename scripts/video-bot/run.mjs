@@ -43,10 +43,10 @@ let THUMB_FILE = null;
 // no faces. Varied camera and light every picture. (The goblin cartoon look is kept in git history.)
 const NIGHT_LIGHTS = ["a single porch light", "cold moonlight", "a flickering street lamp", "car headlights in fog", "a lit window in the dark",
   "a lightning flash", "a red exit sign glow", "a flashlight beam", "dim yellow motel lights", "a faint blue TV glow"];
-function nightPrompt(chunk, n) {
+function nightPrompt(chunk, n, g = null) {
   const cam = CAMERAS[(n + PIC_OFFSET) % CAMERAS.length];
   const light = NIGHT_LIGHTS[(n * 3 + PIC_OFFSET) % NIGHT_LIGHTS.length];
-  if (CHANNEL === 4) return `Terrifying realistic horror film still at night in rural Uganda: mud-brick houses, red dirt path, banana trees, mist, faint lantern light, dark faceless silhouette, cinematic, grainy, no text. ${cam}. ${light}. Scene: ${chunk}`.slice(0, 590);
+  if (CHANNEL === 4) return `Terrifying realistic horror film still at night in rural Uganda: mud-brick houses, red dirt path, banana trees, mist, faint lantern light, dark shadows, cinematic, grainy, no text. ${g === "m" ? "Any person shown is a Ugandan man, seen from behind or in shadow. " : g === "f" ? "Any person shown is a Ugandan woman, seen from behind or in shadow. " : ""}${cam}. ${light}. Scene: ${chunk}`.slice(0, 590);
   return `Realistic dark night photograph, eerie and quiet, slightly grainy amateur camera look, deep shadows, muted colors, no people's faces, no text, no words. Camera: ${cam}. Lighting: ${light}. Scene: ${chunk}`;
 }
 function goblinPrompt(chunk, n) {
@@ -189,6 +189,19 @@ async function toLugandaFree(clean) {
   }
   return out.join(" ");
 }
+/** A short, scary, catchy Luganda YouTube title (not a word-for-word translation). */
+async function lugandaTitle(enTitle, topic) {
+  const res = await sunbirdFetch("/tasks/chat/completions", {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ model: "sunflower-9b", temperature: 0.4, messages: [
+      { role: "system", content: "You write YouTube titles in natural Luganda for scary village stories. Write ONE short, catchy, scary title (4 to 8 words). Reply with ONLY the Luganda title, no quotes, no English." },
+      { role: "user", content: `Story ideas: ${topic}\nEnglish title: ${enTitle}` },
+    ] }),
+  });
+  const t = String((await res.json())?.choices?.[0]?.message?.content ?? "").replace(/["\r\n]+/g, " ").trim();
+  if (t.length < 6 || t.length > 90) throw new Error("bad title");
+  return t;
+}
 let sunbirdTextOk = true;
 /** English story text -> Luganda. Sunbird Sunflower first (best Luganda); the free Cloudflare translator if Sunbird is not available. */
 async function toLuganda(text) {
@@ -266,22 +279,50 @@ async function sunbirdSpeak(text, file) {
 }
 
 
-// Channel 4: Tony's own scary Uganda pictures (scripts/video-bot/ch4-photos/use), used in turn so a picture is not repeated until all were shown.
-let ch4Pool = null, ch4Used = [];
-async function ch4Photo() {
+// Channel 4: Tony's own scary Uganda pictures (scripts/video-bot/ch4-photos/use), chosen to MATCH the scene (who is in it, where, what happens).
+const MALE_RE = /\b(he|him|his|himself|man|men|boy|father|dad|husband|brother|uncle|grandfather|son|rider|driver|fisherman|mzee|sir)\b/gi;
+const FEMALE_RE = /\b(she|her|hers|herself|woman|women|girl|mother|mum|mama|wife|sister|aunt|auntie|grandmother|daughter|madam)\b/gi;
+function genderOf(text) {
+  const m = (String(text).match(MALE_RE) || []).length, f = (String(text).match(FEMALE_RE) || []).length;
+  return m > f ? "m" : f > m ? "f" : null;
+}
+const CH4_PHOTOS = {
+  "lantern-woman-ghost": { who: "f", must: [/ghost|spirit|figure|shadow|something|haunt|behind|follow|chase|scream|terror/] },
+  "woman-ghost-hut": { who: "f", must: [/ghost|spirit|figure|shadow|haunt|door|hut|house|scream/] },
+  "boy-ghost-graveyard": { who: "m", must: [/boy|child|son|kid|young/, /grave|cemetery|ghost|spirit|dead|hand|crawl|tomb|bury/] },
+  "village-mist-silhouette": { who: "any", must: [/village|mist|fog|field|path|silhouette|figure|huts|homestead|night|moon/] },
+  "ghost-crawling": { who: "any", must: [/ghost|spirit|creature|monster|witch|crawl|claw|corpse|hair|demon|evil|grave|dead/] },
+  "woman-fallen-ghost": { who: "f", must: [/ghost|spirit|creature|reach|grab|crawl|scream|fell|fall|dead/] },
+  "forest-monster": { who: "any", must: [/forest|woods|jungle|trees|bush|swamp|creature|monster|beast|glow|bridge|river/] },
+  "village-huts-ghosts": { who: "any", must: [/village|huts|homestead|compound|empty|silent|fog|mist|ghost|figures|houses/] },
+  "haunted-forest-spirits": { who: "any", must: [/forest|woods|trees|spirits|lights|whisper|wander|mist|bush/] },
+  "elder-lantern-road": { who: "any", must: [/old|elder|grandmother|grandfather|stranger|healer|witch|herbalist|mzee|traveler|traveller|road|path|lantern/] },
+  "ghost-over-girl-house": { who: "f", must: [/girl|daughter|young woman/, /ghost|spirit|house|haunt|reach|hand|dead/] },
+};
+let ch4Pool = null;
+const ch4Count = new Map();
+async function ch4Photo(text = "", gender = null) {
   if (ch4Pool === null) {
     try {
       const dir = path.join(path.dirname(new URL(import.meta.url).pathname), "ch4-photos", "use");
-      ch4Pool = (await readdir(dir)).filter((f) => /\.jpe?g$/i.test(f)).map((f) => path.join(dir, f));
+      ch4Pool = (await readdir(dir)).filter((f) => /\.jpe?g$/i.test(f)).map((f) => ({ file: path.join(dir, f), key: Object.keys(CH4_PHOTOS).find((k) => f.includes(k)) }));
     } catch { ch4Pool = []; }
   }
-  if (!ch4Pool.length) return null;
-  if (ch4Used.length >= ch4Pool.length) ch4Used = [];
-  const fresh = ch4Pool.filter((f) => !ch4Used.includes(f));
-  const pick = fresh[Math.floor(Math.random() * fresh.length)];
-  ch4Used.push(pick);
-  return pick;
+  const t = String(text).toLowerCase();
+  const ok = ch4Pool.filter((x) => {
+    const tag = x.key && CH4_PHOTOS[x.key];
+    if (!tag) return false;
+    if (tag.who !== "any" && gender && tag.who !== gender) return false; // never show a woman in a story about a man (or the other way round)
+    return tag.must.every((re) => re.test(t));
+  });
+  if (!ok.length) return null;
+  const least = Math.min(...ok.map((x) => ch4Count.get(x.file) ?? 0));
+  const pool = ok.filter((x) => (ch4Count.get(x.file) ?? 0) === least);
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  ch4Count.set(pick.file, least + 1);
+  return pick.file;
 }
+let ch4Streak = 0;
 
 async function speak(text, file) {
   if (CHANNEL === 4) {
@@ -546,9 +587,9 @@ async function makeThumbnail(title) {
   let img = null;
   let libUsed = false;
   try {
-    const dir = path.join(path.dirname(new URL(import.meta.url).pathname), "thumbs", CHANNEL === 3 ? "ch3" : CHANNEL === 2 ? "ch2" : "ch1");
+    const dir = CHANNEL === 4 ? path.join(path.dirname(new URL(import.meta.url).pathname), "ch4-photos", "use") : path.join(path.dirname(new URL(import.meta.url).pathname), "thumbs", CHANNEL === 3 ? "ch3" : CHANNEL === 2 ? "ch2" : "ch1");
     const files = (await readdir(dir)).filter((f) => /\.(jpe?g|png)$/i.test(f));
-    if (files.length && mode !== "tony" && !SCARY && Math.random() < 0.85) {
+    if (files.length && mode !== "tony" && (CHANNEL === 4 || !SCARY) && Math.random() < (CHANNEL === 4 ? 1 : 0.85)) {
       img = await readFile(path.join(dir, pickOne(files)));
       libUsed = true;
     }
@@ -564,7 +605,7 @@ async function makeThumbnail(title) {
   log("Thumbnail mode:", mode, "face:", face);
   await run("python3", [
     path.join(here, "thumb.py"), src, face === "none" ? "none" : path.join(here, "faces", `${face}.png`),
-    face === "pointing" ? "left" : "right", title, out, mode === "person" || libUsed ? "half" : "full",
+    face === "pointing" ? "left" : "right", title, out, mode === "person" || (libUsed && CHANNEL !== 4) ? "half" : "full",
   ]);
   return out;
 }
@@ -683,7 +724,7 @@ async function main() {
   // 1. Script
   // Channel 4: ask for a Ugandan-village setting and short, plain sentences, so the Luganda translation comes out clean and natural.
   const STORY_TOPIC = CHANNEL === 4
-    ? `${TOPIC} (Setting: villages, trading centres and roads of Uganda, Ugandan names. Write short, simple, concrete sentences with plain everyday words. No idioms, no metaphors, no wordplay, so it translates cleanly into Luganda.)`.slice(0, 480)
+    ? `${TOPIC.slice(0, 150)} | Rules: original Ugandan horror inspired by folklore (mizimu ghosts, misambwa tree or rock spirits, the death spirit Walumbe, night dancers). Real places (Ttanda, Mubende, Kibale, Jinja, Kampala). Each story has ONE named main character, clearly a man or a woman, same person and gender all through. Short plain sentences, no idioms.`.slice(0, 500)
     : TOPIC;
   const outline = await studio("/api/media/auto-script", { step: "outline", topic: STORY_TOPIC, minutes: MINUTES, tone: TONE });
   // Keep the outline inside the studio's size limits so the next step never rejects it.
@@ -723,7 +764,7 @@ async function main() {
   if (CHANNEL === 4) {
     // Stories are written in English by the free AI, then told in Luganda by Sunbird (Sunflower). Pictures keep their English search words.
     log("Translating the story into Luganda...");
-    outline.title = (await toLuganda(outline.title).catch((e) => { log("title kept in English:", String(e.message).slice(0, 100)); return outline.title; })).replace(/[\r\n]+/g, " ").slice(0, 100);
+    outline.title = (await lugandaTitle(outline.title, TOPIC).catch(() => toLuganda(outline.title)).catch((e) => { log("title kept in English:", String(e.message).slice(0, 100)); return outline.title; })).replace(/[\r\n]+/g, " ").slice(0, 100);
     for (let k = 0; k < scenes.length; k += 2) {
       const group = scenes.slice(k, k + 2);
       const joined = group.map((x) => x.narration).join("\n\n");
@@ -754,6 +795,9 @@ async function main() {
     }
   }
 
+  // Who is in each scene (sticky: a scene without "he/she" keeps the person from the scene before), so pictures never show the wrong gender.
+  { let last = null; for (const sc of scenes) { const g = genderOf(sc.en ?? sc.narration); if (g) last = g; sc.g = g ?? last; } }
+
   // 2. One scene at a time: voice, clip, encode.
   const segs = [];
   let curImg = null, curClip = null, curWide = false, imgN = 0, imgT = 0;
@@ -780,24 +824,26 @@ async function main() {
             // The saved library pictures are only a backup if the picture maker fails.
             // Channel 4: Tony's own scary Uganda photos (ch4-photos/use) every other picture, and whenever the picture maker fails.
             let lib = null;
-            if (CHANNEL === 4 && (imgN % 2 === 0 || AI_ALLOWANCE_GONE)) lib = await ch4Photo();
+            if (CHANNEL === 4 && (ch4Streak < 2 || AI_ALLOWANCE_GONE)) lib = await ch4Photo(scenes.slice(i, i + 3).map((x) => x.en ?? x.narration).join(" "), sc.g);
             if (lib) {
               curImg = lib;
               curWide = true;
+              ch4Streak++;
               USED_AI_PICTURES = true;
             } else
             try {
               if (AI_ALLOWANCE_GONE) throw new Error("free AI allowance used up today");
-              const img = await studio("/api/media/image", { prompt: nightPrompt(chunk, imgN).slice(0, CHANNEL === 4 ? 590 : 1900) }, { raw: true });
+              const img = await studio("/api/media/image", { prompt: nightPrompt(chunk, imgN, sc.g).slice(0, CHANNEL === 4 ? 590 : 1900) }, { raw: true });
               USED_AI_PICTURES = true;
               curImg = path.join(WORK, `img${i}.` + (img[0] === 0x89 ? "png" : "jpg"));
               await writeFile(curImg, img);
               curWide = false;
+              ch4Streak = 0;
             } catch (e) {
               if (/allowance|used up/i.test(String(e.message))) AI_ALLOWANCE_GONE = true;
               // The old goblin picture library no longer matches this channel's look: keep the last picture instead.
               if (CHANNEL === 4) {
-                const ph = await ch4Photo();
+                const ph = await ch4Photo(scenes.slice(i, i + 3).map((x) => x.en ?? x.narration).join(" "), sc.g);
                 if (ph) { curImg = ph; curWide = true; USED_AI_PICTURES = true; }
                 else if (!curImg) throw e;
               } else {
@@ -985,7 +1031,43 @@ async function main() {
   } catch {
     /* use the drone */
   }
-  await ffmpeg([
+  let mixed = false;
+  if (CHANNEL === 4) {
+    // Professional sound for Channel 4: all scary tracks joined with crossfades, night wind and crickets underneath,
+    // and the music ducks (gets quieter) whenever the storyteller speaks, so the voice is always clear.
+    try {
+      const mdir = path.join(path.dirname(new URL(import.meta.url).pathname), "music", "ch2");
+      const tracks = (await readdir(mdir)).filter((f) => /\.(mp3|m4a|wav)$/i.test(f)).sort(() => Math.random() - 0.5);
+      const bed = path.join(WORK, "bed.mp3");
+      if (tracks.length > 1) {
+        let chain = "[0:a]", fc = "";
+        for (let k = 1; k < tracks.length; k++) { fc += `${chain}[${k}:a]acrossfade=d=4:c1=tri:c2=tri[x${k}];`; chain = `[x${k}]`; }
+        await ffmpeg([...tracks.flatMap((f) => ["-i", path.join(mdir, f)]), "-filter_complex", fc.replace(/;$/, "").replace(new RegExp(`\\[x${tracks.length - 1}\\]$`), `[x${tracks.length - 1}]`), "-map", `[x${tracks.length - 1}]`, bed]);
+      } else if (tracks.length === 1) await ffmpeg(["-i", path.join(mdir, tracks[0]), bed]);
+      else throw new Error("no music files");
+      const D = Math.ceil(total);
+      const st = "aformat=sample_rates=48000:channel_layouts=stereo";
+      await ffmpeg([
+        "-i", body, "-stream_loop", "-1", "-i", bed,
+        "-f", "lavfi", "-i", `anoisesrc=color=pink:amplitude=0.5:sample_rate=48000:d=${D}`,
+        "-f", "lavfi", "-i", `anoisesrc=color=white:amplitude=0.4:sample_rate=48000:d=${D}`,
+        "-filter_complex",
+        `[0:a]${st},asplit=2[v1][v2];` +
+        `[1:a]${st},volume=0.20,afade=t=in:d=3,afade=t=out:st=${Math.max(0, total - 5).toFixed(1)}:d=5[mus];` +
+        `[2:a]lowpass=f=420,tremolo=f=0.13:d=0.6,volume=0.55,${st}[wind];` +
+        `[3:a]highpass=f=4200,lowpass=f=7200,tremolo=f=11:d=0.9,volume=0.10,${st}[cric];` +
+        `[mus][wind][cric]amix=inputs=3:duration=first:normalize=0[bg];` +
+        `[bg][v2]sidechaincompress=threshold=0.02:ratio=9:attack=20:release=600:makeup=1[bgd];` +
+        `[v1][bgd]amix=inputs=2:duration=first:normalize=0,loudnorm=I=-14:TP=-1:LRA=11[a]`,
+        "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", final,
+      ]);
+      mixed = true;
+      log("Music: scary tracks + night ambience, ducked under the voice");
+    } catch (e) {
+      log("Pro sound mix failed, using the simple mix:", String(e.message).slice(0, 200));
+    }
+  }
+  if (!mixed) await ffmpeg([
     "-i", body, ...musicIn,
     "-filter_complex",
     `[1:a]volume=${musicVol},afade=t=in:d=3,afade=t=out:st=${Math.max(0, total - 4).toFixed(1)}:d=4[m];[0:a][m]amix=inputs=2:duration=first:normalize=0,loudnorm=I=-14:TP=-1:LRA=11[a]`,

@@ -86,3 +86,11 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - Bug: the Channel 4 picture prompt was longer than the picture maker's 600-character limit, so every AI picture failed and the video had 155 s of black screen. Fixed (prompt capped at 590 characters).
 - New: scripts/video-bot/ch4-photos/use = 11 scary Uganda pictures from Tony (2240x1260), used with the slow zoom every other picture, and as the backup whenever the AI picture fails. spare/ = 2 unused (one has text in the image, one is a Western bedroom). assets/night-tales-uganda-logo.png = channel logo from Tony.
 - Not done / by design: no automatic ChatGPT picture ordering (needs Tony's login, against ChatGPT's terms to automate). Tony can add new batches to ch4-photos/use.
+
+## Channel 4 test #3 feedback (matching, music, length, thumbnail)
+- Pictures now MATCH the story: each scene is tagged man/woman (kept from the scene before when a scene has no he/she). Tony's photos are used only when the scene fits (e.g. woman photos only in stories about a woman; ghost photos only when a ghost/spirit appears); otherwise the AI makes a picture for that exact scene (with the right gender). At most 2 photos in a row.
+- Stories: research-based rules (mizimu ghosts, misambwa tree/rock spirits, Walumbe, night dancers; real places Ttanda, Mubende, Kibale, Jinja, Kampala), one named main character per story, gender kept.
+- Title: short catchy Luganda title from Sunflower (not a word-for-word translation).
+- Sound: scary tracks joined with crossfades + night wind + crickets, music ducks under the voice (sidechain compression).
+- Length: Channel 4 videos 10-14 minutes (videoMinutes slot 5). Scheduler not yet switched on for Channel 4.
+- Thumbnail: built from Tony's photos with the Luganda title (works once the channel is phone-verified; YouTube refuses custom thumbnails on unverified channels).
