@@ -117,3 +117,7 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 
 ## 2026-11-14 — Channel 4: 2 videos a day (6 AM and 12 PM Oman)
 - Slots 5 and 6: start 05:30 and 11:30 Oman (01:30 and 07:30 UTC), ready about 06:00 and 12:00 Oman. Still private until Tony approves (CH4_AUTO_PUBLISH).
+
+## 2026-11-14 — Channel 4 posts automatically + safer photos
+- Tony asked for auto-post: Channel 4 videos now publish by themselves when the quality check is green (a failed check still holds the video private). Set repo variable CH4_AUTO_PUBLISH=0 to hold again.
+- Photos with blood/claws (ghost-crawling, woman-fallen-ghost, ghost-over-girl-house, boy-ghost-graveyard) are never thumbnails and are used in videos only when no gentler photo fits (YouTube age-restriction risk). Files kept, nothing deleted.

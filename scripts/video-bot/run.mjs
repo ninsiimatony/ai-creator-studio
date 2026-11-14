@@ -326,6 +326,9 @@ const CH4_PHOTOS = {
   "bride-lake-ghost": { who: "m", must: [/bride|wedding|lake|shore|water|jetty|ghost|white|dress|marry|married|love/] },
   "funeral-fire-ghost": { who: "any", must: [/funeral|mourn|burial|buried|death|died|dead|fire|gathering|village|ghost|spirit|elders|crowd/] },
 };
+// Photos with blood/claws/gore: never used as thumbnails, and used inside videos only when no gentler photo fits (YouTube age-restriction risk).
+const CH4_GORY = ["ghost-crawling", "woman-fallen-ghost", "ghost-over-girl-house", "boy-ghost-graveyard"];
+const ch4Gory = (f) => CH4_GORY.some((g) => String(f).includes(g));
 let ch4Pool = null;
 const ch4Count = new Map();
 async function ch4Photo(text = "", gender = null) {
@@ -343,8 +346,10 @@ async function ch4Photo(text = "", gender = null) {
     return tag.must.every((re) => re.test(t));
   });
   if (!ok.length) return null;
-  const least = Math.min(...ok.map((x) => ch4Count.get(x.file) ?? 0));
-  const pool = ok.filter((x) => (ch4Count.get(x.file) ?? 0) === least);
+  const gentle = ok.filter((x) => !ch4Gory(x.file));
+  const use = gentle.length ? gentle : ok;
+  const least = Math.min(...use.map((x) => ch4Count.get(x.file) ?? 0));
+  const pool = use.filter((x) => (ch4Count.get(x.file) ?? 0) === least);
   const pick = pool[Math.floor(Math.random() * pool.length)];
   ch4Count.set(pick.file, least + 1);
   return pick.file;
@@ -615,7 +620,7 @@ async function makeThumbnail(title) {
   let libUsed = false;
   try {
     const dir = CHANNEL === 4 ? path.join(path.dirname(new URL(import.meta.url).pathname), "ch4-photos", "use") : path.join(path.dirname(new URL(import.meta.url).pathname), "thumbs", CHANNEL === 3 ? "ch3" : CHANNEL === 2 ? "ch2" : "ch1");
-    const files = (await readdir(dir)).filter((f) => /\.(jpe?g|png)$/i.test(f));
+    const files = (await readdir(dir)).filter((f) => /\.(jpe?g|png)$/i.test(f) && !(CHANNEL === 4 && ch4Gory(f)));
     if (files.length && mode !== "tony" && (CHANNEL === 4 || !SCARY) && Math.random() < (CHANNEL === 4 ? 1 : 0.85)) {
       img = await readFile(path.join(dir, pickOne(files)));
       libUsed = true;
@@ -1228,8 +1233,8 @@ async function main() {
   log("Uploading to YouTube (private)...");
   const id = await uploadToYouTube(final, outline.title, description);
   let pubNote = "";
-  // Channel 4 (Luganda) stays private until Tony has listened to the voice and turned on CH4_AUTO_PUBLISH=1 (repo variable).
-  const CH4_HOLD = CHANNEL === 4 && process.env.CH4_AUTO_PUBLISH !== "1";
+  // Channel 4 (Luganda) posts automatically (Tony's decision, 2026-11-14) when the quality check is green; a failed check keeps it private.
+  const CH4_HOLD = CHANNEL === 4 && process.env.CH4_AUTO_PUBLISH === "0"; // Tony approved auto-post on 2026-11-14; set CH4_AUTO_PUBLISH=0 to hold again
   const AUTO = process.env.AUTO_PUBLISH !== "0" && green && !CH4_HOLD;
   if (CH4_HOLD) pubNote = "HELD";
   else if (process.env.AUTO_PUBLISH !== "0" && !green) pubNote = "HELD";
