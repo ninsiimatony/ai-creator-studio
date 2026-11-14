@@ -127,3 +127,7 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 
 ## 2026-11-14 — Channel 4: every story different
 - Each Channel 4 video now gets a random hero name (30 men, 30 women), a random place and a random twist, so names, places and plots stop repeating.
+
+## 2026-11-14 — Channel 4 brighter pictures and thumbnails
+- Channel 4 video pictures get a brightness/gamma lift (YouTube picks its own frame as thumbnail until the channel is phone-verified, so bright frames matter).
+- Channel 4 custom thumbnails (thumb.py) are now brightened (1.12–1.28) instead of darkened (0.55–0.8). Bloody photos stay out of thumbnails (earlier change).

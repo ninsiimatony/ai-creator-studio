@@ -1,3 +1,4 @@
+import os
 # Makes a YouTube thumbnail: AI background + Tony's face (emotion) + big title text. 1280x720 JPEG.
 # usage: python3 thumb.py <background.jpg> <face.png> <left|right face side> <text> <out.jpg>
 import sys, os, random
@@ -14,6 +15,8 @@ TEXT_A, TEXT_B = random.choice(PALETTES)
 GLOWS = [(255, 190, 80), (80, 170, 255), (255, 90, 120), (120, 255, 170), (200, 130, 255)]
 GLOW = random.choice(GLOWS)
 BRIGHT = random.uniform(0.55, 0.8)
+if os.environ.get("THUMB_BRIGHT"):
+    BRIGHT = random.uniform(1.12, 1.28)  # Channel 4: bright thumbnails so people can see them
 SAT = random.uniform(0.9, 1.5)
 FACE_SCALE = random.uniform(0.88, 1.05)
 TILT = random.choice([-4, -2, 0, 2, 4])

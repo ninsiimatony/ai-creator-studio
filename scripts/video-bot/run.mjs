@@ -638,7 +638,7 @@ async function makeThumbnail(title) {
   await run("python3", [
     path.join(here, "thumb.py"), src, face === "none" ? "none" : path.join(here, "faces", `${face}.png`),
     face === "pointing" ? "left" : "right", title, out, mode === "person" || (libUsed && CHANNEL !== 4) ? "half" : "full",
-  ]);
+  ], CHANNEL === 4 ? { env: { ...process.env, THUMB_BRIGHT: "1" } } : {});
   return out;
 }
 
@@ -910,9 +910,9 @@ async function main() {
       const zoom = imgN % 2 === 0 ? `min(1.0+0.00025*(${off}+on),1.4)` : `max(1.4-0.00025*(${off}+on),1.0)`;
       const sub = `subtitles=seg.srt:force_style='FontName=DejaVu Sans,FontSize=20,Bold=1,Outline=2,Shadow=0,MarginV=36'`;
       const vfs = curClip
-        ? `scale=2240:1260:force_original_aspect_ratio=increase,crop=2240:1260,fps=30,vignette=PI/4,format=yuv420p,${sub}`
+        ? `scale=2240:1260:force_original_aspect_ratio=increase,crop=2240:1260,fps=30,vignette=PI/4,${CHANNEL === 4 ? "eq=brightness=0.08:gamma=1.22:saturation=1.1," : ""}format=yuv420p,${sub}`
         : curImg
-        ? `${curWide ? "scale=2240:1260" : "scale=2240:2240,crop=2240:1260"},zoompan=z='${zoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${W}x${H}:fps=30,vignette=PI/4,format=yuv420p,${sub}`
+        ? `${curWide ? "scale=2240:1260" : "scale=2240:2240,crop=2240:1260"},zoompan=z='${zoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${W}x${H}:fps=30,vignette=PI/4,${CHANNEL === 4 ? "eq=brightness=0.08:gamma=1.22:saturation=1.1," : ""}format=yuv420p,${sub}`
         : `fps=30,format=yuv420p,${sub}`;
       const segS = path.join(WORK, `seg${id}.mp4`);
       await ffmpeg(
