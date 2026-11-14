@@ -331,7 +331,7 @@ const CH4_GORY = ["ghost-crawling", "woman-fallen-ghost", "ghost-over-girl-house
 const ch4Gory = (f) => CH4_GORY.some((g) => String(f).includes(g));
 let ch4Pool = null;
 const ch4Count = new Map();
-async function ch4Photo(text = "", gender = null) {
+async function ch4Photo(text = "", gender = null, loose = false) {
   if (ch4Pool === null) {
     try {
       const dir = path.join(path.dirname(new URL(import.meta.url).pathname), "ch4-photos", "use");
@@ -343,7 +343,7 @@ async function ch4Photo(text = "", gender = null) {
     const tag = x.key && CH4_PHOTOS[x.key];
     if (!tag) return false;
     if (tag.who !== "any" && gender && tag.who !== gender) return false; // never show a woman in a story about a man (or the other way round)
-    return tag.must.every((re) => re.test(t));
+    return loose || tag.must.every((re) => re.test(t));
   });
   if (!ok.length) return null;
   const gentle = ok.filter((x) => !ch4Gory(x.file));
@@ -866,7 +866,8 @@ async function main() {
             let lib = null;
             // Channel 2 (Little Hope Tales): about 1 picture in 3 is one of the same scary photos, only when one matches the story and never the bloody ones (Tony, 2026-11-14: more variety, safer for YouTube).
             if (CHANNEL === 2 && imgN % 3 === 2) {
-              const g2 = await ch4Photo(scenes.slice(i, i + 6).map((x) => x.en ?? x.narration).join(" "), null);
+              const t2 = scenes.slice(i, i + 6).map((x) => x.en ?? x.narration).join(" ");
+              const g2 = (await ch4Photo(t2, null)) ?? (await ch4Photo(t2, null, true)); // best match first, otherwise any gentle photo
               if (g2 && !ch4Gory(g2)) lib = g2;
             }
             if (CHANNEL === 4 && (ch4Streak < 2 || AI_ALLOWANCE_GONE)) lib = await ch4Photo(scenes.slice(i, i + 3).map((x) => x.en ?? x.narration).join(" "), sc.g);
