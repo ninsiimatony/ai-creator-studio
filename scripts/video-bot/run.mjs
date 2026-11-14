@@ -310,6 +310,8 @@ const CH4_PHOTOS = {
   "man-running-road": { who: "m", must: [/man|he|him|his|husband|father|boy|driver|boda/, /run|ran|chase|chased|escape|flee|fled|road|path|terror|fear/] },
   "well-ghost-white": { who: "f", must: [/well|water|ghost|dress|white|woman|girl/] },
   "well-ghost-fog": { who: "f", must: [/well|water|ghost|dress|white|woman|girl|fog|mist/] },
+  "man-chased-bright": { who: "m", must: [/run|ran|chase|chased|escape|flee|fled|road|path|follow|behind|terror|fear|night/] },
+  "fireside-story-ghost": { who: "any", must: [/story|tale|told|tell|grandfather|grandmother|elder|fire|children|kids|legend|village|night|ghost|spirit/] },
 };
 let ch4Pool = null;
 const ch4Count = new Map();

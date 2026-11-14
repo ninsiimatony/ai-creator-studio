@@ -99,3 +99,7 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - Added 12 new horror photos made in Leonardo (single pictures, 16:9, Uganda night/fog): forest red eyes, lantern girl + ghost, giant monster, witch hut, old man + faceless figure, grave ghost, boy under bed, hanging tree, woman at window, man running, well ghost x2.
 - Tagged each in `CH4_PHOTOS` (run.mjs) with man/woman rule + keywords. Library now 23 photos. Old photos untouched.
 - Not yet tested in a full video run.
+
+## 2026-11-14 — Channel 4 photo library v3 (Ideogram batch, brighter style)
+- Added 8 bright, vivid moonlit photos from Ideogram (2560x1440 → 2240x1260): man chased by ghost on village road x4, grandfather telling scary story by the fire with ghost behind children x4.
+- Tagged in `CH4_PHOTOS` (man-chased-bright, fireside-story-ghost). Library now 31 photos. Nothing removed.
