@@ -131,3 +131,6 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 ## 2026-11-14 — Channel 4 brighter pictures and thumbnails
 - Channel 4 video pictures get a brightness/gamma lift (YouTube picks its own frame as thumbnail until the channel is phone-verified, so bright frames matter).
 - Channel 4 custom thumbnails (thumb.py) are now brightened (1.12–1.28) instead of darkened (0.55–0.8). Bloody photos stay out of thumbnails (earlier change).
+
+## 2026-11-14 — Photo library v5 (8 new bright Gemini photos)
+- Added 46–53: child sleeping with ghost mother, taxi van ghost passenger, haunted tree hands, empty market ghost vendor, healer ritual fire, couple with shadow figure, women washing at river with ghost, schoolboy with shadow monster. Library now 52 photos. Nothing deleted.

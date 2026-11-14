@@ -325,6 +325,14 @@ const CH4_PHOTOS = {
   "farmer-scarecrow-ghost": { who: "m", must: [/farmer|garden|field|farm|banana|scarecrow|dusk|plantation|digging|hoe|ghost/] },
   "bride-lake-ghost": { who: "m", must: [/bride|wedding|lake|shore|water|jetty|ghost|white|dress|marry|married|love/] },
   "funeral-fire-ghost": { who: "any", must: [/funeral|mourn|burial|buried|death|died|dead|fire|gathering|village|ghost|spirit|elders|crowd/] },
+  "child-sleeping-ghost-mother": { who: "any", must: [/child|boy|girl|son|daughter|mother|mum|sleep|bed|room|night|ghost|spirit|watch|lantern/] },
+  "taxi-van-ghost-passenger": { who: "m", must: [/taxi|van|bus|driver|passenger|mirror|seat|journey|road|ghost|spirit|pale/] },
+  "haunted-tree-ghostly-hands": { who: "f", must: [/tree|mango|branch|hands|girl|water|jerrycan|path|sunset|ghost|spirit|reach/] },
+  "empty-market-ghost-vendor": { who: "m", must: [/market|vendor|stall|trader|tomato|dawn|morning|empty|shop|ghost|spirit|woman/] },
+  "witch-doctor-ritual-fire": { who: "f", must: [/healer|witch|doctor|ritual|fire|smoke|hut|spirit|herb|charm|curse|ancestor/] },
+  "couple-shadow-figure": { who: "any", must: [/husband|wife|couple|marriage|home|table|door|doorway|shadow|figure|stranger|eyes|evening|night/] },
+  "women-washing-river-ghost": { who: "f", must: [/river|lake|wash|washing|clothes|women|water|mist|morning|reflection|ghost|spirit|white/] },
+  "schoolboy-shadow-monster": { who: "m", must: [/school|boy|student|uniform|home|road|path|shadow|monster|beast|creature|follow/] },
 };
 // Photos with blood/claws/gore: never used as thumbnails, and used inside videos only when no gentler photo fits (YouTube age-restriction risk).
 const CH4_GORY = ["ghost-crawling", "woman-fallen-ghost", "ghost-over-girl-house", "boy-ghost-graveyard"];
