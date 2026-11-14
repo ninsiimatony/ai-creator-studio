@@ -755,8 +755,16 @@ async function main() {
 
   // 1. Script
   // Channel 4: ask for a Ugandan-village setting and short, plain sentences, so the Luganda translation comes out clean and natural.
+  // Channel 4: every story gets its own random hero name, place and twist so stories never repeat names or plots (Tony, 2026-11-14).
+  const CH4_MEN = ["Kato","Ssebo","Walusimbi","Kizito","Mugisha","Lubega","Ssemakula","Byaruhanga","Okello","Kasozi","Mutebi","Ssekitoleko","Wasswa","Lwanga","Kiggundu","Tumusiime","Ochieng","Ssentamu","Baguma","Nsubuga","Katumba","Mawanda","Kakooza","Sserwadda","Bbosa","Kyeyune","Muwonge","Ssali","Zziwa","Kaweesi"];
+  const CH4_WOMEN = ["Nalongo Babirye","Nabirye","Nansubuga","Nakiyingi","Namatovu","Nankya","Nambi","Namutebi","Nalubega","Nassuna","Nakacwa","Namusoke","Tendo","Nakimuli","Akello","Atuhaire","Nabukalu","Nakawesi","Kemigisha","Nanteza","Nakirya","Nalwoga","Namugga","Nabbosa","Nakyanzi","Akoth","Birungi","Nakitende","Namuddu","Nantongo"];
+  const CH4_PLACES = ["Masaka","Mbarara","Gulu","Fort Portal","Entebbe","Kabale","Mbale","Soroti","Hoima","Lira","Kasese","Busia","Masindi","Kyotera","Mpigi","Luweero","Kamuli","Bushenyi","Arua","Tororo","Mityana","Mubende","Jinja","Kibale"];
+  const CH4_TWISTS = ["the ghost is not the real danger","the hero finds out he or she is the one who died","a promise to a dead relative is broken","a stranger who knows the hero's name","a sound that repeats every night","a market, school or church at night","a river, lake or swamp","a gift or object that must not be accepted","a taxi, truck or bus journey","a wedding, funeral or birthday","an animal that behaves like a person","a hospital or clinic at night","a borrowed phone or radio","a path through the sugarcane or coffee farm"];
+  const rpick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const heroIsMan = Math.random() < 0.5;
+  const CH4_SEED = CHANNEL === 4 ? ` Hero: ${heroIsMan ? "a man" : "a woman"} named ${heroIsMan ? rpick(CH4_MEN) : rpick(CH4_WOMEN)}. Place: near ${rpick(CH4_PLACES)}. Twist: ${rpick(CH4_TWISTS)}. Use this name, place and twist; new names only.` : "";
   const STORY_TOPIC = CHANNEL === 4
-    ? `${TOPIC.slice(0, 150)} | Rules: original Ugandan horror inspired by folklore (mizimu ghosts, misambwa tree or rock spirits, the death spirit Walumbe, night dancers). Real places (Ttanda, Mubende, Kibale, Jinja, Kampala). Each story has ONE named main character, clearly a man or a woman, same person and gender all through. Short plain sentences, no idioms.`.slice(0, 500)
+    ? `${TOPIC.slice(0, 100)} |${CH4_SEED} Original Ugandan horror from folklore (mizimu ghosts, misambwa spirits, night dancers). ONE named hero, same gender all through. Short plain sentences, no idioms.`.slice(0, 500)
     : TOPIC;
   const outline = await studio("/api/media/auto-script", { step: "outline", topic: STORY_TOPIC, minutes: MINUTES, tone: TONE });
   // Keep the outline inside the studio's size limits so the next step never rejects it.

@@ -124,3 +124,6 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 
 ## 2026-11-14 — Channel 2 also uses the scary photo library
 - Little Hope Tales: about 1 picture in 3 may now be one of the realistic scary photos (only if it matches the story, never the bloody ones), mixed with the goblin pictures for more variety. Nothing deleted.
+
+## 2026-11-14 — Channel 4: every story different
+- Each Channel 4 video now gets a random hero name (30 men, 30 women), a random place and a random twist, so names, places and plots stop repeating.
