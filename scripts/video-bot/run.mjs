@@ -856,6 +856,11 @@ async function main() {
             // The saved library pictures are only a backup if the picture maker fails.
             // Channel 4: Tony's own scary Uganda photos (ch4-photos/use) every other picture, and whenever the picture maker fails.
             let lib = null;
+            // Channel 2 (Little Hope Tales): about 1 picture in 3 is one of the same scary photos, only when one matches the story and never the bloody ones (Tony, 2026-11-14: more variety, safer for YouTube).
+            if (CHANNEL === 2 && imgN % 3 === 2) {
+              const g2 = await ch4Photo(scenes.slice(i, i + 6).map((x) => x.en ?? x.narration).join(" "), null);
+              if (g2 && !ch4Gory(g2)) lib = g2;
+            }
             if (CHANNEL === 4 && (ch4Streak < 2 || AI_ALLOWANCE_GONE)) lib = await ch4Photo(scenes.slice(i, i + 3).map((x) => x.en ?? x.narration).join(" "), sc.g);
             if (lib) {
               curImg = lib;

@@ -121,3 +121,6 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 ## 2026-11-14 — Channel 4 posts automatically + safer photos
 - Tony asked for auto-post: Channel 4 videos now publish by themselves when the quality check is green (a failed check still holds the video private). Set repo variable CH4_AUTO_PUBLISH=0 to hold again.
 - Photos with blood/claws (ghost-crawling, woman-fallen-ghost, ghost-over-girl-house, boy-ghost-graveyard) are never thumbnails and are used in videos only when no gentler photo fits (YouTube age-restriction risk). Files kept, nothing deleted.
+
+## 2026-11-14 — Channel 2 also uses the scary photo library
+- Little Hope Tales: about 1 picture in 3 may now be one of the realistic scary photos (only if it matches the story, never the bloody ones), mixed with the goblin pictures for more variety. Nothing deleted.
