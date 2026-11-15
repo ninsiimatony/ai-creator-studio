@@ -189,6 +189,15 @@ async function toLugandaFree(clean) {
   }
   return out.join(" ");
 }
+/** Honest titles (YouTube spam rule, Nov 2026): our stories are fiction, so remove claims like "true story" or "real footage". */
+function cleanTitle(t) {
+  const tidy = (x) => x.replace(/\s{2,}/g, " ").replace(/^[\s:\-–|,]+|[\s:\-–|,]+$/g, "").trim();
+  const orig = String(t || "").trim();
+  const soft = tidy(orig.replace(/\b(100%\s+)?(true|real)(\s+life)?\s+(?=story|stories|footage|events?|account|case|ghost|haunting|video)/gi, ""));
+  const hard = tidy(soft.replace(/\b(caught on (camera|tape|video)|based on a true story|actually happened|really happened|real footage|real video|leaked footage)\b/gi, ""));
+  return hard.split(" ").length >= 3 ? hard : soft.length >= 4 ? soft : orig;
+}
+
 /** A short, scary, catchy Luganda YouTube title (not a word-for-word translation). */
 async function lugandaTitle(enTitle, topic) {
   const res = await sunbirdFetch("/tasks/chat/completions", {
@@ -689,7 +698,7 @@ async function uploadToYouTube(file, title, description) {
         "x-upload-content-type": "video/mp4",
       },
       body: JSON.stringify({
-        snippet: { title: title.slice(0, 100), description: description.slice(0, 4900), tags: globalThis.__videoTags ?? [], categoryId: SCARY ? "24" : TONE === "emotional" ? "22" : "28" },
+        snippet: { title: cleanTitle(title).slice(0, 100), description: description.slice(0, 4900), tags: globalThis.__videoTags ?? [], categoryId: SCARY ? "24" : TONE === "emotional" ? "22" : "28" },
         status: { privacyStatus: "private", selfDeclaredMadeForKids: false, containsSyntheticMedia: true },
       }),
     },
@@ -776,7 +785,7 @@ async function main() {
     : TOPIC;
   const outline = await studio("/api/media/auto-script", { step: "outline", topic: STORY_TOPIC, minutes: MINUTES, tone: TONE });
   // Keep the outline inside the studio's size limits so the next step never rejects it.
-  outline.title = String(outline.title || TOPIC).slice(0, 200);
+  outline.title = cleanTitle(String(outline.title || TOPIC)).slice(0, 200);
   outline.sections = (outline.sections || []).map((x) => String(x).trim().slice(0, 200)).filter(Boolean).slice(0, 50);
   if (!outline.sections.length) outline.sections = [outline.title];
   log("Outline:", outline.title, `(${outline.sections.length} parts)`);
@@ -1078,7 +1087,7 @@ async function main() {
     const mdir = path.join(path.dirname(new URL(import.meta.url).pathname), "music", CHANNEL === 2 || CHANNEL === 4 ? "ch2" : "ch1");
     const tracks = (await readdir(mdir)).filter((f) => /\.(mp3|m4a|wav)$/i.test(f));
     if (tracks.length) {
-      musicIn = ["-stream_loop", "-1", "-i", path.join(mdir, tracks[Math.floor(Math.random() * tracks.length)])];
+      musicIn = ["-stream_loop", "-1", "-ss", String(Math.floor(Math.random() * 90)), "-i", path.join(mdir, tracks[Math.floor(Math.random() * tracks.length)])]; // different track and a different start point each video
       musicVol = CHANNEL === 4 ? 0.07 : 0.22; // Luganda voice must stay clearly above the music
       log("Music: real track");
     }

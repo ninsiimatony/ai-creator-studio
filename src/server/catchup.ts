@@ -24,6 +24,10 @@ export function videoMinutes(slot: number, day: string): number {
 
 /** Days (UTC, 0 = Sunday) when channel 2 posts: Monday, Wednesday, Saturday. */
 export const CH2_DAYS = [1, 3, 6];
+/** Since 2026-11-16 (YouTube: mass-produced content is not paid): Channel 1 posts 4 days a week, Channel 3 four days, Channel 4 four days (UTC, 0 = Sunday). */
+export const CH1_DAYS = [1, 3, 5, 0];
+export const CH3_DAYS = [2, 4, 6, 0];
+export const CH4_DAYS = [1, 3, 5, 6];
 const SLOT_MINUTES_UTC = [11 * 60 + 17, 16 * 60 + 17, 22 * 60 + 17, 23 * 60 + 17, 19 * 60 + 17, 1 * 60 + 30, 7 * 60 + 30]; // slots 5 and 6 = fourth channel (Night Tales Uganda, Luganda horror): start 05:30 and 11:30 Oman, ready about 06:00 and 12:00 Oman; slot 4 = third channel (wildlife, space and old-world documentaries): starts 23:17 Oman, live about 3:30 PM New York; // main channel starts 15:17, 20:17, 02:17 Oman (live ~7 AM, 12 PM, 6 PM New York); slot 3 = second channel: starts 03:17 Oman (6:17 PM New York), live about 7:20 PM New York
 const MAX_ATTEMPTS = 4;
 const LOST_AFTER_MS = 12 * 60 * 1000; // dispatched but GitHub never showed a run
@@ -93,13 +97,14 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
   // Slots 0-2 = main channel, 3 = second channel, 4 = third channel (the last two only once they are connected).
   // Main channel makes 1 video a day (slot 2 = 22:17 UTC, about 6 PM New York). Slots 0 and 1 are switched off:
   // YouTube gives no bonus for posting more, and several AI stories a day looks like mass production (Nov 2026 upgrade).
-  const slots = [2];
+  const slots: number[] = [];
+  if (CH1_DAYS.includes(now.getUTCDay())) slots.push(2);
   // Channel 2 makes longer 3-story videos (~25 min) on 3 days a week only: Monday, Wednesday and Saturday (UTC).
   if (CH2_DAYS.includes(now.getUTCDay()) && (await channelConnected(db, 2))) slots.push(3);
-  if (await channelConnected(db, 3)) slots.push(4);
+  if (CH3_DAYS.includes(now.getUTCDay()) && (await channelConnected(db, 3))) slots.push(4);
   // Channel 4 (Night Tales Uganda, Luganda horror): 2 videos a day, ready at 6 AM and 12 PM Oman. Videos stay private until CH4_AUTO_PUBLISH=1 (Tony approves first).
   // Since 2026-11-16 Channel 4 makes ONE better video a day (slot 5, ready 6 AM Oman). Slot 6 is switched off (YouTube: repetitive mass-produced content is not paid).
-  if (await channelConnected(db, 4)) slots.push(5);
+  if (CH4_DAYS.includes(now.getUTCDay()) && (await channelConnected(db, 4))) slots.push(5);
   for (const slot of slots) {
     if (minuteOfDay < SLOT_MINUTES_UTC[slot]!) continue; // slot not due yet
     if ((slot === 5 || slot === 6) ? ch4Paused : mainPaused) continue; // that account's free allowance is used up: skip only these slots

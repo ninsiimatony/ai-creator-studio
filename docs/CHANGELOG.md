@@ -143,3 +143,11 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - Channel 4 now makes 1 video a day (slot 5, ready 6 AM Oman). Slot 6 (12 PM) switched off. Reason: YouTube's July 2026 policy does not pay for repetitive/mass-produced content.
 - Channel 4 uses moving clips (LTX-Video on free Kaggle GPU) mixed with photos by default (LTX_CHANNELS default "4"). If Kaggle fails it falls back to photos automatically. Not yet tested on Channel 4.
 - Previous behaviour is in git history (commit before this one).
+
+## 2026-11-16 — Safer for the new YouTube rules (fewer videos, honest titles, more variety)
+- Why: YouTube's 2026 rules do not pay for mass-produced, repetitive AI videos. Research report read; channels ranked by risk.
+- Channel 1 now posts 4 days a week (Mon, Wed, Fri, Sun), Channel 3 four days (Tue, Thu, Sat, Sun), Channel 4 four days (Mon, Wed, Fri, Sat), Channel 2 stays 3 days (Mon, Wed, Sat). Before: Channels 1, 3 and 4 posted every day. (src/server/catchup.ts: CH1_DAYS, CH3_DAYS, CH4_DAYS). Old version is in git history.
+- Titles: `cleanTitle()` in run.mjs removes "true story", "real footage", "caught on camera" and similar claims (our stories are fiction). Used on the outline title and again at upload.
+- Music: each video picks a track at random and starts at a random point, so videos do not all begin the same.
+- Descriptions already say "original fiction"; unchanged.
+- Still needs Tony in YouTube Studio: phone verification, "Not made for kids", AI-made label, accept new YPP terms before 2027-01-31.
