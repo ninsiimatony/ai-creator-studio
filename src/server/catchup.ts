@@ -73,8 +73,12 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
   await runWatchdog(env).catch((e) => console.log("watchdog:", String(e).slice(0, 100)));
   // Pause switch: app_notes 'pause_dispatch_until' = ISO time. Used when the free daily Workers AI allowance is
   // used up (it resets at 00:00 UTC), so videos are not started just to fail. No new videos start before that time.
+  // Two separate pauses: channels 1-3 share one Cloudflare account, channel 4 has its own. One must never stop the other.
   const pauseUntil = (await db.prepare("SELECT value FROM app_notes WHERE key='pause_dispatch_until'").first<{ value: string }>().catch(() => null))?.value;
-  if (pauseUntil && Date.now() < Date.parse(pauseUntil)) return `paused until ${pauseUntil}`;
+  const pause4Until = (await db.prepare("SELECT value FROM app_notes WHERE key='pause_dispatch_until_ch4'").first<{ value: string }>().catch(() => null))?.value;
+  const mainPaused = !!pauseUntil && Date.now() < Date.parse(pauseUntil);
+  const ch4Paused = !!pause4Until && Date.now() < Date.parse(pause4Until);
+  if (mainPaused && ch4Paused) return `paused until ${pauseUntil}`;
   const notify = async (text: string) => {
     if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID)
       await sendTelegram(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID, text).catch(() => {});
@@ -97,6 +101,7 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
   if (await channelConnected(db, 4)) slots.push(5, 6);
   for (const slot of slots) {
     if (minuteOfDay < SLOT_MINUTES_UTC[slot]!) continue; // slot not due yet
+    if ((slot === 5 || slot === 6) ? ch4Paused : mainPaused) continue; // that account's free allowance is used up: skip only these slots
     const isCh2 = slot === 3;
     const isCh3 = slot === 4;
     const isCh4 = slot === 5 || slot === 6;

@@ -134,3 +134,7 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 
 ## 2026-11-14 — Photo library v5 (8 new bright Gemini photos)
 - Added 46–53: child sleeping with ghost mother, taxi van ghost passenger, haunted tree hands, empty market ghost vendor, healer ritual fire, couple with shadow figure, women washing at river with ghost, schoolboy with shadow monster. Library now 52 photos. Nothing deleted.
+
+## 2026-11-15 — Fix: Night Tales could stop channels 1-3
+- Problem: when Channel 4 hit its free AI limit (it has its own Cloudflare account), the robot paused ALL channels, so Channels 1-3 made no videos on 2026-11-14.
+- Fix: two separate pauses (pause_dispatch_until for channels 1-3, pause_dispatch_until_ch4 for Channel 4). One no longer stops the other.

@@ -16,9 +16,12 @@ export const Route = createFileRoute("/api/automation/pause")({
         if (!hasBotBearer(request)) return Response.json({ error: "Not allowed." }, { status: 403 });
         try {
           const { env } = await requireUserOrBot(request);
+          const body = (await request.json().catch(() => ({}))) as { channel?: number };
+          // Channel 4 has its own Cloudflare account, so its pause must not stop channels 1-3 (and the other way round).
+          const key = body.channel === 4 ? "pause_dispatch_until_ch4" : "pause_dispatch_until";
           const until = nextResetIso();
           if (!env.DB) throw new Error("no database");
-          await env.DB.prepare("INSERT INTO app_notes (key, value) VALUES ('pause_dispatch_until', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(until).run();
+          await env.DB.prepare("INSERT INTO app_notes (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(key, until).run();
           return Response.json({ ok: true, until }, { headers: { "Cache-Control": "no-store" } });
         } catch (e) {
           console.error("pause route failed", e);

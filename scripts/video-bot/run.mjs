@@ -1381,7 +1381,7 @@ main()
     }
     if (/free daily allowance|allowance may be used up|allowance is used up/i.test(String(e.message ?? e))) {
       // Retrying before the allowance resets (00:00 UTC) would only fail again: pause new videos until 00:10 UTC.
-      await studio("/api/automation/pause", { reason: "ai-allowance" }).catch(() => {});
+      await studio("/api/automation/pause", { reason: "ai-allowance", channel: CHANNEL }).catch(() => {});
       await notify("⏸️ The free AI allowance is used up for today, so this video is skipped. The robot pauses and starts again by itself after 04:10 Oman time.");
       return;
     }
