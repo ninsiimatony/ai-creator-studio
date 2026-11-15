@@ -138,3 +138,8 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 ## 2026-11-15 — Fix: Night Tales could stop channels 1-3
 - Problem: when Channel 4 hit its free AI limit (it has its own Cloudflare account), the robot paused ALL channels, so Channels 1-3 made no videos on 2026-11-14.
 - Fix: two separate pauses (pause_dispatch_until for channels 1-3, pause_dispatch_until_ch4 for Channel 4). One no longer stops the other.
+
+## 2026-11-16 — Night Tales: fewer, better videos
+- Channel 4 now makes 1 video a day (slot 5, ready 6 AM Oman). Slot 6 (12 PM) switched off. Reason: YouTube's July 2026 policy does not pay for repetitive/mass-produced content.
+- Channel 4 uses moving clips (LTX-Video on free Kaggle GPU) mixed with photos by default (LTX_CHANNELS default "4"). If Kaggle fails it falls back to photos automatically. Not yet tested on Channel 4.
+- Previous behaviour is in git history (commit before this one).

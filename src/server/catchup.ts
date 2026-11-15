@@ -98,7 +98,8 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
   if (CH2_DAYS.includes(now.getUTCDay()) && (await channelConnected(db, 2))) slots.push(3);
   if (await channelConnected(db, 3)) slots.push(4);
   // Channel 4 (Night Tales Uganda, Luganda horror): 2 videos a day, ready at 6 AM and 12 PM Oman. Videos stay private until CH4_AUTO_PUBLISH=1 (Tony approves first).
-  if (await channelConnected(db, 4)) slots.push(5, 6);
+  // Since 2026-11-16 Channel 4 makes ONE better video a day (slot 5, ready 6 AM Oman). Slot 6 is switched off (YouTube: repetitive mass-produced content is not paid).
+  if (await channelConnected(db, 4)) slots.push(5);
   for (const slot of slots) {
     if (minuteOfDay < SLOT_MINUTES_UTC[slot]!) continue; // slot not due yet
     if ((slot === 5 || slot === 6) ? ch4Paused : mainPaused) continue; // that account's free allowance is used up: skip only these slots

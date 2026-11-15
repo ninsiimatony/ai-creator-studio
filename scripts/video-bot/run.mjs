@@ -831,7 +831,7 @@ async function main() {
   // Kaggle credentials are set; on any failure this just returns null and nothing else changes.
   let kaggleClips = null;
   // Moving clips are opt-in per channel: set repo variable LTX_CHANNELS to e.g. "2" or "1,2". Empty = old style everywhere.
-  if (ltx.KAGGLE_ENABLED && (process.env.LTX_CHANNELS || "").split(",").map((x) => x.trim()).includes(String(CHANNEL))) {
+  if (ltx.KAGGLE_ENABLED && (process.env.LTX_CHANNELS || "4").split(",").map((x) => x.trim()).includes(String(CHANNEL))) {
     try {
       kaggleClips = await ltx.generateClipsOnKaggle({
         studio, scenes, channel: CHANNEL, workDir: WORK,
