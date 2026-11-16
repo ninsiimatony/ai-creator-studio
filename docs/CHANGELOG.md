@@ -156,3 +156,8 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - Channels now post 3-4 days a week, so the auto descriptions for Channel 1 and 3 say "every week" instead of "every day" (honest metadata, YouTube spam rule).
 - Night Tales (Channel 4) got a new no-blood banner (file NightTales_banner_v2_nogore.jpg; old banner kept). Little Hope Tales and Wild Wonders World banners and pictures checked: fine.
 - Tony still to edit in Studio: Wild Wonders World channel text/banner say "a new documentary every day"; Little Hope Tales channel text says "a new one every day".
+
+## 2026-11-16 — Thumbnails no longer repeat (Channels 1-3)
+- Why: Channel 1 had the same crying-woman picture on two videos and the same shocked-face picture on two others. YouTube treats "same video, new names" as mass-produced.
+- Thumbnail style (Tony's face / AI person / scene) now rotates by date instead of random. Library pictures for Channels 1-3 rotate by date (9 pictures = no repeat inside about 9 days). Tony's face never repeats the previous video's face. Channel 4 stays random (52 pictures).
+- Only 9 library pictures exist for Channel 1: adding more pictures makes it even safer. Old behaviour is in git history (commit before this one).

@@ -606,7 +606,9 @@ async function makeThumbnail(title) {
   const pickOne = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const r = Math.random();
   // ch1: 40% Tony's face, 35% AI-made person, 25% scene only. ch2 (no real faces): 50% cartoon character, 50% scene.
-  const mode = SCARY || CHANNEL === 3 ? "scene" : CHANNEL === 2 ? (r < 0.5 ? "person" : "scene") : r < 0.5 ? "tony" : r < 0.75 ? "person" : "scene";
+  // Since 2026-11-16 the look rotates with the date, so two videos in a row never get the same kind of thumbnail (YouTube: repetitive = not paid).
+  const dayNum = Math.floor(Date.now() / 86400000);
+  const mode = SCARY || CHANNEL === 3 ? "scene" : CHANNEL === 2 ? (dayNum % 2 ? "person" : "scene") : (["tony", "scene", "person"])[dayNum % 3];
   const sceneLook = pickOne(["warm golden light", "cool blue night light", "soft sunrise glow", "moody dramatic shadows", "rainy window light", "candle light"]);
   let prompt;
   if (SCARY) {
@@ -639,7 +641,7 @@ async function makeThumbnail(title) {
     const dir = CHANNEL === 4 ? path.join(path.dirname(new URL(import.meta.url).pathname), "ch4-photos", "use") : path.join(path.dirname(new URL(import.meta.url).pathname), "thumbs", CHANNEL === 3 ? "ch3" : CHANNEL === 2 ? "ch2" : "ch1");
     const files = (await readdir(dir)).filter((f) => /\.(jpe?g|png)$/i.test(f) && !(CHANNEL === 4 && ch4Gory(f)));
     if (files.length && mode !== "tony" && (CHANNEL === 4 || !SCARY) && Math.random() < (CHANNEL === 4 ? 1 : 0.85)) {
-      img = await readFile(path.join(dir, pickOne(files)));
+      files.sort(); img = await readFile(path.join(dir, CHANNEL === 4 ? pickOne(files) : files[(dayNum + CHANNEL * 3) % files.length])); // channels 1-3: next picture each day, no repeat inside the last ~9 days
       libUsed = true;
     }
   } catch {
@@ -648,7 +650,9 @@ async function makeThumbnail(title) {
   if (!img) img = await studio("/api/media/image", { prompt: prompt.slice(0, 900) }, { raw: true });
   const src = path.join(WORK, "thumb-src.jpg");
   await writeFile(src, img);
-  const face = mode === "tony" && !libUsed ? pickFace(title, TOPIC) : "none";
+  const ALL_FACES = ["crying", "pointing", "sad", "shocked", "thinking", "thumbsup"];
+  let face = mode === "tony" && !libUsed ? pickFace(title, TOPIC) : "none";
+  if (face !== "none" && face === ALL_FACES[(dayNum + 5) % 6]) face = ALL_FACES[dayNum % 6]; // never the same face as the last video
   const here = path.dirname(new URL(import.meta.url).pathname);
   const out = path.join(WORK, "thumb.jpg");
   log("Thumbnail mode:", mode, "face:", face);
