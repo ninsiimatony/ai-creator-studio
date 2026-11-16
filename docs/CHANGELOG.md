@@ -151,3 +151,8 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - Music: each video picks a track at random and starts at a random point, so videos do not all begin the same.
 - Descriptions already say "original fiction"; unchanged.
 - Still needs Tony in YouTube Studio: phone verification, "Not made for kids", AI-made label, accept new YPP terms before 2027-01-31.
+
+## 2026-11-16 — Video descriptions no longer promise "every day"
+- Channels now post 3-4 days a week, so the auto descriptions for Channel 1 and 3 say "every week" instead of "every day" (honest metadata, YouTube spam rule).
+- Night Tales (Channel 4) got a new no-blood banner (file NightTales_banner_v2_nogore.jpg; old banner kept). Little Hope Tales and Wild Wonders World banners and pictures checked: fine.
+- Tony still to edit in Studio: Wild Wonders World channel text/banner say "a new documentary every day"; Little Hope Tales channel text says "a new one every day".

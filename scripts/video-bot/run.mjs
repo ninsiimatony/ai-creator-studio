@@ -1172,9 +1172,9 @@ async function main() {
     (SCARY
       ? `Three original scary stories on one theme. Which one scared you most? Tell us in the comments, and subscribe for new scary stories every week.\n\n`
       : WONDER
-      ? `If you love nature, wildlife and the wonders of space, please like, share and subscribe for a new documentary every day. Which fact surprised you most? Tell us in the comments.\n\n`
+      ? `If you love nature, wildlife and the wonders of space, please like, share and subscribe for new documentaries every week. Which fact surprised you most? Tell us in the comments.\n\n`
       : TONE === "emotional"
-      ? `If this story touched your heart, please like, share and subscribe for a new emotional story every day.\n\n`
+      ? `If this story touched your heart, please like, share and subscribe for new emotional stories every week.\n\n`
       : `Like and subscribe for more.\n\n`) +
     `${chapterText}\n\n` +
     (SCARY ? `All stories are original fiction written for entertainment. They are not true stories.\n` : TONE === "emotional" ? `This is a fictional story, written for reflection and inspiration.\n` : "") +
