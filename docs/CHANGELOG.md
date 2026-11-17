@@ -161,3 +161,9 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - Why: Channel 1 had the same crying-woman picture on two videos and the same shocked-face picture on two others. YouTube treats "same video, new names" as mass-produced.
 - Thumbnail style (Tony's face / AI person / scene) now rotates by date instead of random. Library pictures for Channels 1-3 rotate by date (9 pictures = no repeat inside about 9 days). Tony's face never repeats the previous video's face. Channel 4 stays random (52 pictures).
 - Only 9 library pictures exist for Channel 1: adding more pictures makes it even safer. Old behaviour is in git history (commit before this one).
+
+## 2026-11-17 — Little Hope Tales video held private: black screen fix
+- What happened: the 2026-11-16 23:30 UTC video ("3 Scary Apartment Stories", Channel 2) ran out of the free AI picture allowance part-way, and some scenes got no picture. Result: 66 seconds of black screen in a 21-minute video. The quality check correctly kept it PRIVATE (and its 2 Shorts private). All other videos that day passed the check and were published.
+- Fix (run.mjs): on Channel 2, when the picture maker fails, use a gentle (non-bloody) library photo that matches the story instead of leaving the screen black. Before: kept the last picture or showed black. Old version in git history.
+- Note: the free AI allowance is shared, so fewer videos per week (see 2026-11-16) also helps.
+- Open: that one held video is still private in Studio; Tony decides whether to make it public.

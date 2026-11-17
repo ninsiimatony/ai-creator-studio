@@ -914,8 +914,18 @@ async function main() {
                 if (ph) { curImg = ph; curWide = true; USED_AI_PICTURES = true; }
                 else if (!curImg) throw e;
               } else {
-                if (!curImg) throw e;
-                throw new Error("picture maker failed: " + String(e.message).slice(0, 60));
+                // Channel 2: when the free picture maker is out, use a gentle library photo instead of a black screen (11-16: 66 s of black held a video private).
+                let ph2 = null;
+                if (CHANNEL === 2) {
+                  const t3 = scenes.slice(i, i + 6).map((x) => x.en ?? x.narration).join(" ");
+                  const g3 = (await ch4Photo(t3, null)) ?? (await ch4Photo(t3, null, true));
+                  if (g3 && !ch4Gory(g3)) ph2 = g3;
+                }
+                if (ph2) { curImg = ph2; curWide = true; USED_AI_PICTURES = true; }
+                else {
+                  if (!curImg) throw e;
+                  throw new Error("picture maker failed: " + String(e.message).slice(0, 60));
+                }
               }
             }
             curClip = null;
