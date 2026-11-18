@@ -342,6 +342,19 @@ const CH4_PHOTOS = {
   "couple-shadow-figure": { who: "any", must: [/husband|wife|couple|marriage|home|table|door|doorway|shadow|figure|stranger|eyes|evening|night/] },
   "women-washing-river-ghost": { who: "f", must: [/river|lake|wash|washing|clothes|women|water|mist|morning|reflection|ghost|spirit|white/] },
   "schoolboy-shadow-monster": { who: "m", must: [/school|boy|student|uniform|home|road|path|shadow|monster|beast|creature|follow/] },
+  "maize-seller-spirit-child": { who: "f", must: [/maize|corn|roadside|seller|vendor|woman|grandmother|dusk|roast|road|child|ghost|spirit/] },
+  "fisherwoman-lake-tall-spirit": { who: "f", must: [/fisher|lake|net|nets|shore|water|boat|victoria|woman|ghost|spirit|tall/] },
+  "sisters-braiding-roof-shadow": { who: "f", must: [/sister|sisters|girl|braid|hair|veranda|roof|evening|shadow|spirit|home/] },
+  "adungu-elder-dancing-spirits": { who: "m", must: [/elder|old man|grandfather|mzee|harp|adungu|music|song|sing|mango|tree|dance|dancing|spirits/] },
+  "nurse-hospital-ghost-patient": { who: "f", must: [/nurse|hospital|clinic|ward|patient|corridor|doctor|health|ghost|spirit|sick/] },
+  "goat-boy-cloud-face": { who: "m", must: [/boy|goat|goats|herd|hill|hills|sky|cloud|clouds|face|grazing|afternoon|spirit/] },
+  "firewood-woman-faceless-eucalyptus": { who: "f", must: [/firewood|wood|eucalyptus|grove|trees|forest|woman|faceless|figure|stranger|bush/] },
+  "matooke-stall-reaching-hand": { who: "f", must: [/market|stall|matooke|vendor|trader|money|dawn|sack|sacks|hand|reach|woman|ghost/] },
+  "church-ghost-congregation": { who: "m", must: [/church|preacher|pastor|prayer|pray|bible|sermon|congregation|pews|service|sunday|ghost|spirit/] },
+  "classroom-spirit-teacher": { who: "f", must: [/school|class|classroom|teacher|chalk|chalkboard|pupil|student|uniform|lesson|ghost|spirit/] },
+  "bicycle-repair-glowing-child": { who: "m", must: [/bicycle|bike|repair|mechanic|shop|workshop|village|doorway|child|glowing|eyes|watch|ghost|spirit/] },
+  "grandmother-story-wall-shadow": { who: "any", must: [/grandmother|grandma|story|tale|told|tell|children|kids|mat|lantern|shadow|wall|legend|night|spirit/] },
+  "dishes-woman-basin-spirit": { who: "f", must: [/dish|dishes|wash|washing|basin|water|sunset|evening|hut|woman|mother|hair|ghost|spirit/] },
 };
 // Photos with blood/claws/gore: never used as thumbnails, and used inside videos only when no gentler photo fits (YouTube age-restriction risk).
 const CH4_GORY = ["ghost-crawling", "woman-fallen-ghost", "ghost-over-girl-house", "boy-ghost-graveyard"];

@@ -167,3 +167,6 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - Fix (run.mjs): on Channel 2, when the picture maker fails, use a gentle (non-bloody) library photo that matches the story instead of leaving the screen black. Before: kept the last picture or showed black. Old version in git history.
 - Note: the free AI allowance is shared, so fewer videos per week (see 2026-11-16) also helps.
 - Open: that one held video is still private in Studio; Tony decides whether to make it public.
+
+## 2026-11-18 — Night Tales Uganda photo library: 13 new photos (now 65)
+- Added photos 54-66 (Gemini, bright, non-gory): maize seller, fisherwoman, sisters braiding, adungu elder, nurse, goat boy, firewood woman, market stall, church, classroom, bicycle repair, grandmother story, dishes woman. Each has a CH4_PHOTOS entry in run.mjs. No existing photos changed.
