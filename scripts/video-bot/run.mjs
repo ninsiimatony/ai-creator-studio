@@ -1148,7 +1148,7 @@ async function main() {
         `[3:a]highpass=f=4200,lowpass=f=7200,tremolo=f=11:d=0.9,volume=0.10,${st}[cric];` +
         `[mus][wind][cric]amix=inputs=3:duration=first:normalize=0[bg];` +
         `[bg][v2]sidechaincompress=threshold=0.02:ratio=9:attack=20:release=600:makeup=1[bgd];` +
-        `[v1][bgd]amix=inputs=2:duration=first:normalize=0,loudnorm=I=-14:TP=-1:LRA=11[a]`,
+        `[v1][bgd]amix=inputs=2:duration=first:normalize=0,loudnorm=I=-14:TP=-1:LRA=11,alimiter=limit=0.89:level=disabled[a]`,
         "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", final,
       ]);
       mixed = true;
@@ -1160,7 +1160,7 @@ async function main() {
   if (!mixed) await ffmpeg([
     "-i", body, ...musicIn,
     "-filter_complex",
-    `[1:a]volume=${musicVol},afade=t=in:d=3,afade=t=out:st=${Math.max(0, total - 4).toFixed(1)}:d=4[m];[0:a][m]amix=inputs=2:duration=first:normalize=0,loudnorm=I=-14:TP=-1:LRA=11[a]`,
+    `[1:a]volume=${musicVol},afade=t=in:d=3,afade=t=out:st=${Math.max(0, total - 4).toFixed(1)}:d=4[m];[0:a][m]amix=inputs=2:duration=first:normalize=0,loudnorm=I=-14:TP=-1:LRA=11,alimiter=limit=0.89:level=disabled[a]`,
     "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", "-ar", "48000", final,
   ]);
 

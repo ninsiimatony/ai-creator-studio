@@ -170,3 +170,6 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 
 ## 2026-11-18 — Night Tales Uganda photo library: 13 new photos (now 65)
 - Added photos 54-66 (Gemini, bright, non-gory): maize seller, fisherwoman, sisters braiding, adungu elder, nurse, goat boy, firewood woman, market stall, church, classroom, bicycle repair, grandmother story, dishes woman. Each has a CH4_PHOTOS entry in run.mjs. No existing photos changed.
+
+## 2026-11-19 — Loud-peak fix
+- Videos were held private when the final audio peak touched 0 dB ("audio may be clipping"). Added `alimiter=limit=0.89` after loudnorm in both final mixes (run.mjs) so peaks stay under -1 dB.
