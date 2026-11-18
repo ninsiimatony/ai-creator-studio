@@ -1296,6 +1296,10 @@ async function main() {
   const AUTO = process.env.AUTO_PUBLISH !== "0" && green && !CH4_HOLD;
   if (CH4_HOLD) pubNote = "HELD";
   else if (process.env.AUTO_PUBLISH !== "0" && !green) pubNote = "HELD";
+  if (pubNote === "HELD" && !CH4_HOLD) {
+    // Tell the workflow to make a fresh replacement video once (so one held video never leaves a gap).
+    try { await writeFile(path.join(process.env.GITHUB_WORKSPACE || os.tmpdir(), "held.flag"), "1"); } catch { /* optional */ }
+  }
   let thumbNote = "";
   try {
     log("Making thumbnail...");

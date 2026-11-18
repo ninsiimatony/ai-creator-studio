@@ -174,3 +174,4 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 ## 2026-11-19 — Loud-peak fix
 - Videos were held private when the final audio peak touched 0 dB ("audio may be clipping"). Added `alimiter=limit=0.89` after loudnorm in both final mixes (run.mjs) so peaks stay under -1 dB.
 - Loud-peak and a-bit-quiet audio no longer hold a video private (logged only). Serious problems (policy risk, no sound, black screen, too short) still hold it.
+- Held video no longer leaves a gap: when a video is held private (not Ch4 hold), the workflow starts ONE replacement run (retry=1) with the same inputs. Runs are independent, so a held video never blocks later ones. Needs `actions: write` (added).
