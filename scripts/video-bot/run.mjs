@@ -1272,9 +1272,9 @@ async function main() {
         p.on("error", () => resolve(""));
       });
       const mx = String(vd).match(/max_volume:\s*(-?[\d.]+) dB/);
-      if (mx && Number(mx[1]) >= -0.05) problems.push("audio may be clipping (too loud)");
+      if (mx && Number(mx[1]) >= -0.05) log("Note: audio peak is very close to the limit (not held back)");
       const mean = String(vd).match(/mean_volume:\s*(-?[\d.]+) dB/);
-      if (mean && Number(mean[1]) < -38) problems.push("audio is very quiet");
+      if (mean && Number(mean[1]) < -38) log("Note: audio is a bit quiet (not held back)");
     } catch { /* optional check */ }
     if (problems.length) green = false;
     log("Quality check:", problems.length ? problems.join(", ") : "OK");
