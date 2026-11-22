@@ -175,3 +175,9 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - Videos were held private when the final audio peak touched 0 dB ("audio may be clipping"). Added `alimiter=limit=0.89` after loudnorm in both final mixes (run.mjs) so peaks stay under -1 dB.
 - Loud-peak and a-bit-quiet audio no longer hold a video private (logged only). Serious problems (policy risk, no sound, black screen, too short) still hold it.
 - Held video no longer leaves a gap: when a video is held private (not Ch4 hold), the workflow starts ONE replacement run (retry=1) with the same inputs. Runs are independent, so a held video never blocks later ones. Needs `actions: write` (added).
+
+## 2026-11-23 — Little Hope Tales (channel 2) stays goblin horror
+- Problem: the goblin channel made some non-goblin stories (for example "3 Empty Office Stories") and sometimes used Night Tales (Luganda) photos, so the channels looked mixed.
+- Fix: new story ideas for channel 2 must feature a goblin (topicgen.ts); built-in channel-2 topics without "goblin" are skipped (catchup.ts); channel 2 never uses ch4-photos (run.mjs), only its own goblin pictures in thumbs/ch2.
+- Previous version kept as git tag `v-before-ch2-goblin-fix` (commit 97bbb0f). Old non-goblin topics already stored in the database are not deleted; they are skipped.
+- Not yet verified on a real video run.

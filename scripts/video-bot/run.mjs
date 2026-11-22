@@ -361,6 +361,20 @@ const CH4_GORY = ["ghost-crawling", "woman-fallen-ghost", "ghost-over-girl-house
 const ch4Gory = (f) => CH4_GORY.some((g) => String(f).includes(g));
 let ch4Pool = null;
 const ch4Count = new Map();
+// Little Hope Tales (channel 2): its own goblin pictures only (scripts/video-bot/thumbs/ch2). Never the Night Tales photos.
+let ch2Pool = null;
+async function ch2Library() {
+  try {
+    if (ch2Pool === null) {
+      const dir = path.join(path.dirname(new URL(import.meta.url).pathname), "thumbs", "ch2");
+      ch2Pool = (await readdir(dir)).filter((f) => /\.jpe?g$/i.test(f)).map((f) => path.join(dir, f));
+    }
+    return ch2Pool.length ? ch2Pool[Math.floor(Math.random() * ch2Pool.length)] : null;
+  } catch {
+    return null;
+  }
+}
+
 async function ch4Photo(text = "", gender = null, loose = false) {
   if (ch4Pool === null) {
     try {
@@ -900,9 +914,7 @@ async function main() {
             let lib = null;
             // Channel 2 (Little Hope Tales): about 1 picture in 3 is one of the same scary photos, only when one matches the story and never the bloody ones (Tony, 2026-11-14: more variety, safer for YouTube).
             if (CHANNEL === 2 && imgN % 3 === 2) {
-              const t2 = scenes.slice(i, i + 6).map((x) => x.en ?? x.narration).join(" ");
-              const g2 = (await ch4Photo(t2, null)) ?? (await ch4Photo(t2, null, true)); // best match first, otherwise any gentle photo
-              if (g2 && !ch4Gory(g2)) lib = g2;
+              lib = await ch2Library(); // Little Hope Tales own goblin pictures only (never the Night Tales photos)
             }
             if (CHANNEL === 4 && (ch4Streak < 2 || AI_ALLOWANCE_GONE)) lib = await ch4Photo(scenes.slice(i, i + 3).map((x) => x.en ?? x.narration).join(" "), sc.g);
             if (lib) {
@@ -929,11 +941,7 @@ async function main() {
               } else {
                 // Channel 2: when the free picture maker is out, use a gentle library photo instead of a black screen (11-16: 66 s of black held a video private).
                 let ph2 = null;
-                if (CHANNEL === 2) {
-                  const t3 = scenes.slice(i, i + 6).map((x) => x.en ?? x.narration).join(" ");
-                  const g3 = (await ch4Photo(t3, null)) ?? (await ch4Photo(t3, null, true));
-                  if (g3 && !ch4Gory(g3)) ph2 = g3;
-                }
+                if (CHANNEL === 2) ph2 = await ch2Library(); // own goblin pictures only (never the Night Tales photos)
                 if (ph2) { curImg = ph2; curWide = true; USED_AI_PICTURES = true; }
                 else {
                   if (!curImg) throw e;

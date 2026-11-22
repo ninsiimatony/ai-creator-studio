@@ -29,7 +29,7 @@ export async function setNote(db: D1Database, key: string, value: string) {
 export async function pickTopic(db: D1Database, fallback: string, channel = 1): Promise<string> {
   try {
     await ensure(db);
-    const row = await db.prepare("SELECT id, topic FROM extra_topics WHERE used=0 AND channel=? ORDER BY id LIMIT 1").bind(channel).first<{ id: number; topic: string }>();
+    const row = await db.prepare("SELECT id, topic FROM extra_topics WHERE used=0 AND channel=? AND (? <> 2 OR lower(topic) LIKE '%goblin%') ORDER BY id LIMIT 1").bind(channel, channel).first<{ id: number; topic: string }>();
     if (!row) return fallback;
     await db.prepare("UPDATE extra_topics SET used=1 WHERE id=?").bind(row.id).run();
     return row.topic;
@@ -101,8 +101,9 @@ async function makeTopics(env: WorkerEnv, channel: number, count: number): Promi
         "Every idea is a TRUE, specific topic that can be explained in about 10 minutes and shown with free stock footage, NASA footage or old public-domain films. " +
         "Pick one specific animal, place, object or phenomenon (not a whole category), and do not promise facts you are not sure are real. No made-up statistics, no conspiracy theories, no real private people. "
       : channel === 2
-      ? "You invent episode ideas for a YouTube channel of ORIGINAL fictional scary story compilations for teens and adults (not for children). " +
-        "Each episode is one everyday theme (for example night shift, camping, home alone) with THREE separate short first-person stories that happen to different ordinary people. " +
+      ? "You invent episode ideas for the YouTube channel Little Hope Tales: ORIGINAL fictional GOBLIN horror stories for teens and adults (not for children). " +
+        "EVERY episode MUST feature a small mischievous goblin character in its stories (the word 'goblin' must appear in each premise). " +
+        "Each episode is one everyday theme (for example night shift, camping, home alone) with THREE separate short stories that happen to different ordinary people, each involving a goblin. " +
         "Fear comes from realistic, believable situations, strangers, sounds, darkness and small wrong details, building slowly. " +
         "No gore, no harm to children or pets, no sexual content, no real people or real crimes, never copy an existing story or creator, and never claim the stories are true or real. "
       : "You invent ORIGINAL fictional story premises for a YouTube channel of emotional human drama (love, family, secrets, second chances). " +
@@ -144,6 +145,7 @@ async function makeTopics(env: WorkerEnv, channel: number, count: number): Promi
     const p = Number(m[2]);
     const t = m[3]!.replace(/^["']|["']$/g, "").trim();
     if (n < 0 || n >= dnas.length || t.length < (channel === 3 ? 25 : 40) || t.length > 260) continue;
+    if (channel === 2 && !/goblin/i.test(t)) continue; // Little Hope Tales is always goblin horror
     if (BANNED_NAMES.some((b) => new RegExp(`\\b${b}\\b`).test(t))) continue;
     const cur = best.get(n);
     if (!cur || p < cur.p) best.set(n, { p, t });

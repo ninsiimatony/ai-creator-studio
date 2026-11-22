@@ -3,6 +3,8 @@
 // made. If a slot was skipped, failed, or GitHub/network was down, it starts it again on the next tick.
 import topics from "../../scripts/video-bot/topics.json";
 import topics2 from "../../scripts/video-bot/topics2.json";
+// Little Hope Tales is goblin horror only: any built-in topic without a goblin is skipped.
+const goblinTopics2 = (topics2 as string[]).filter((t) => /goblin/i.test(t));
 import topics3 from "../../scripts/video-bot/topics3.json";
 import topics4 from "../../scripts/video-bot/topics4.json";
 import { channelConnected } from "./google2";
@@ -118,7 +120,7 @@ export async function runCatchup(env: WorkerEnv): Promise<string> {
       : isCh3
       ? (topics3 as string[])[dayOfYear(now) % (topics3 as string[]).length]!
       : isCh2
-      ? (topics2 as string[])[dayOfYear(now) % (topics2 as string[]).length]!
+      ? (goblinTopics2 as string[])[dayOfYear(now) % goblinTopics2.length]!
       : list[(dayOfYear(now) * 3 + slot) % list.length]!;
     const existing = await db.prepare("SELECT 1 AS x FROM video_slots WHERE day = ? AND slot = ?").bind(day, slot).first();
     if (!existing) topic = await pickTopic(db, topic, chan); // fresh topic first, built-in list as backup
