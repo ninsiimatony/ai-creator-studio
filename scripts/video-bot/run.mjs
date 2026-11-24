@@ -355,6 +355,19 @@ const CH4_PHOTOS = {
   "bicycle-repair-glowing-child": { who: "m", must: [/bicycle|bike|repair|mechanic|shop|workshop|village|doorway|child|glowing|eyes|watch|ghost|spirit/] },
   "grandmother-story-wall-shadow": { who: "any", must: [/grandmother|grandma|story|tale|told|tell|children|kids|mat|lantern|shadow|wall|legend|night|spirit/] },
   "dishes-woman-basin-spirit": { who: "f", must: [/dish|dishes|wash|washing|basin|water|sunset|evening|hut|woman|mother|hair|ghost|spirit/] },
+  "fisherman-lake-spirit-child": { who: "m", must: [/fish|fisherman|lake|net|nets|water|shore|boat|child|spirit|ghost/] },
+  "herbalist-market-shadow-twin": { who: "f", must: [/herb|healer|root|market|shadow|horn|stall|sell|woman|witch/] },
+  "boda-rider-rainy-road-child": { who: "m", must: [/boda|rider|motorcycle|motorbike|road|rain|passenger|lift|child|ride/] },
+  "girl-mango-tree-hanging-legs": { who: "f", must: [/girl|school|mango|tree|legs|hanging|branch|fruit|ghost|spirit/] },
+  "pastor-church-faceless-kneeling": { who: "m", must: [/pastor|church|pray|prayer|elder|kneel|faceless|ghost|spirit|old/] },
+  "twins-banana-plantation": { who: "m", must: [/twin|twins|boy|boys|banana|plantation|identical|third|play|child|children/] },
+  "man-radio-ghost-hand": { who: "m", must: [/radio|voice|hand|shoulder|hut|door|listen|ghost|spirit|man/] },
+  "woman-water-pot-lake-reflection": { who: "f", must: [/water|jerrycan|spring|well|reflection|pond|river|woman|mother|hair|ghost|spirit/] },
+  "wedding-guests-ghost-bride": { who: "any", must: [/wedding|bride|guest|gomesi|ceremony|marriage|celebration|ghost|spirit/] },
+  "shopkeeper-dusk-spirit-doorway": { who: "m", must: [/shop|shopkeeper|dukka|store|dusk|door|doorway|close|night|spirit|ghost|eyes/] },
+  "boys-football-ghost-goalkeeper": { who: "m", must: [/football|soccer|boys|goal|goalkeeper|field|game|play|ghost|spirit/] },
+  "elder-drummers-spirit-circle": { who: "any", must: [/drum|drummer|drums|elder|dance|dancer|circle|gathering|festival|ghost|spirit|music/] },
+  "mother-baby-sling-shadow-hands": { who: "f", must: [/mother|baby|sling|path|bush|bushes|hands|reach|woman|ghost|spirit|shadow/] },
 };
 // Photos with blood/claws/gore: never used as thumbnails, and used inside videos only when no gentler photo fits (YouTube age-restriction risk).
 const CH4_GORY = ["ghost-crawling", "woman-fallen-ghost", "ghost-over-girl-house", "boy-ghost-graveyard"];

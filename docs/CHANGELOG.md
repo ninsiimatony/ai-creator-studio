@@ -181,3 +181,4 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - Fix: new story ideas for channel 2 must feature a goblin (topicgen.ts); built-in channel-2 topics without "goblin" are skipped (catchup.ts); channel 2 never uses ch4-photos (run.mjs), only its own goblin pictures in thumbs/ch2.
 - Previous version kept as git tag `v-before-ch2-goblin-fix` (commit 97bbb0f). Old non-goblin topics already stored in the database are not deleted; they are skipped.
 - Not yet verified on a real video run.
+- 2026-11-24: Night Tales Uganda (ch4) photo library: added 13 new bright scenes (67-79) from Gemini and their CH4_PHOTOS entries; library now 78 photos. No existing photos changed.
