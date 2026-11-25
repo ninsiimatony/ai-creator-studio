@@ -182,3 +182,4 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - Previous version kept as git tag `v-before-ch2-goblin-fix` (commit 97bbb0f). Old non-goblin topics already stored in the database are not deleted; they are skipped.
 - Not yet verified on a real video run.
 - 2026-11-24: Night Tales Uganda (ch4) photo library: added 13 new bright scenes (67-79) from Gemini and their CH4_PHOTOS entries; library now 78 photos. No existing photos changed.
+- 2026-11-25: Night Tales Uganda (ch4) photo library: added 3 new bright scenes (80-82) from Gemini (tailor mirror spirit, maize roaster spirit, schoolgirls papyrus swamp) with CH4_PHOTOS entries; library now 81 photos. No existing photos changed.

@@ -368,6 +368,9 @@ const CH4_PHOTOS = {
   "boys-football-ghost-goalkeeper": { who: "m", must: [/football|soccer|boys|goal|goalkeeper|field|game|play|ghost|spirit/] },
   "elder-drummers-spirit-circle": { who: "any", must: [/drum|drummer|drums|elder|dance|dancer|circle|gathering|festival|ghost|spirit|music/] },
   "mother-baby-sling-shadow-hands": { who: "f", must: [/mother|baby|sling|path|bush|bushes|hands|reach|woman|ghost|spirit|shadow/] },
+  "80-tailor-woman-mirror-spirit-child": { who: "f", must: [/tailor|seamstress|sewing|machine|mirror|shop|woman|spirit|ghost|child/] },
+  "81-maize-roaster-spirit-woman-bicycle": { who: "m", must: [/maize|corn|roadside|roast|seller|vendor|bicycle|old man|spirit|ghost/] },
+  "82-schoolgirls-papyrus-swamp-spirit": { who: "f", must: [/schoolgirl|school|girls|uniform|swamp|papyrus|reeds|wetland|spirit|ghost/] },
 };
 // Photos with blood/claws/gore: never used as thumbnails, and used inside videos only when no gentler photo fits (YouTube age-restriction risk).
 const CH4_GORY = ["ghost-crawling", "woman-fallen-ghost", "ghost-over-girl-house", "boy-ghost-graveyard"];
