@@ -183,3 +183,4 @@ A private test video ("3 Scary Night Shift Stories", 18 min) proved the new form
 - Not yet verified on a real video run.
 - 2026-11-24: Night Tales Uganda (ch4) photo library: added 13 new bright scenes (67-79) from Gemini and their CH4_PHOTOS entries; library now 78 photos. No existing photos changed.
 - 2026-11-25: Night Tales Uganda (ch4) photo library: added 3 new bright scenes (80-82) from Gemini (tailor mirror spirit, maize roaster spirit, schoolgirls papyrus swamp) with CH4_PHOTOS entries; library now 81 photos. No existing photos changed.
+- 2026-11-26: Night Tales Uganda (ch4) photo library: added 12 new bright scenes (83-94: fisherman wife net, borehole queue, cattle herder, mat weaving, chapati stall, salon, roof repair, skipping rope, kite boy, fig tree ceremony, hill path termite mound, cassava farm) from Gemini with CH4_PHOTOS entries; library now 93 photos. No existing photos changed.

@@ -371,6 +371,18 @@ const CH4_PHOTOS = {
   "80-tailor-woman-mirror-spirit-child": { who: "f", must: [/tailor|seamstress|sewing|machine|mirror|shop|woman|spirit|ghost|child/] },
   "81-maize-roaster-spirit-woman-bicycle": { who: "m", must: [/maize|corn|roadside|roast|seller|vendor|bicycle|old man|spirit|ghost/] },
   "82-schoolgirls-papyrus-swamp-spirit": { who: "f", must: [/schoolgirl|school|girls|uniform|swamp|papyrus|reeds|wetland|spirit|ghost/] },
+  "83-fisherman-wife-net-lake-ghost": { who: "f", must: [/net|nets|fisher|lake|shore|wife|woman|mend|ghost|spirit/] },
+  "84-borehole-queue-ghost-child": { who: "f", must: [/borehole|water|pump|well|jerrycan|queue|women|village|child|ghost|spirit/] },
+  "85-cattle-herder-ghost-cow": { who: "m", must: [/cattle|cow|cows|herd|herder|ankole|hill|boy|pasture|ghost|spirit/] },
+  "86-grandfather-mat-weaving-ghost-wife": { who: "m", must: [/grandfather|old man|elder|mzee|mat|weav|papyrus|doorstep|wife|ghost|spirit/] },
+  "87-chapati-stall-ghost-customer": { who: "f", must: [/chapati|rolex|stall|street|vendor|customer|queue|food|woman|ghost|spirit/] },
+  "88-salon-doorway-ghost-woman": { who: "f", must: [/salon|hair|hairdresser|plait|braid|customer|door|doorway|woman|ghost|spirit/] },
+  "89-roof-repair-ghost-face": { who: "m", must: [/roof|iron sheet|repair|house|fix|climb|man|behind|face|ghost|spirit/] },
+  "90-skipping-rope-ghost-girl": { who: "f", must: [/skip|rope|school|girls|children|playground|teacher|extra|ghost|spirit/] },
+  "91-kite-boy-ghost-cloud-face": { who: "m", must: [/kite|boy|hill|sky|cloud|string|fly|teen|ghost|spirit/] },
+  "92-fig-tree-ceremony-ancestors": { who: "any", must: [/fig|tree|ceremony|ritual|elder|priest|ancestor|shrine|spirit|ghost/] },
+  "93-hill-path-termite-mound-spirit": { who: "f", must: [/hill|path|termite|mound|jerrycan|mother|woman|behind|long arms|spirit|ghost/] },
+  "94-cassava-farm-ghost-digger": { who: "m", must: [/cassava|farm|hoe|dig|digging|garden|field|wife|baby|ghost|spirit/] },
 };
 // Photos with blood/claws/gore: never used as thumbnails, and used inside videos only when no gentler photo fits (YouTube age-restriction risk).
 const CH4_GORY = ["ghost-crawling", "woman-fallen-ghost", "ghost-over-girl-house", "boy-ghost-graveyard"];
