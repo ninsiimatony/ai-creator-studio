@@ -396,6 +396,16 @@ const CH4_PHOTOS = {
   "105-taxi-park-window-ghost-face": { who: "any", must: [/taxi|park|minibus|matatu|bus|kampala|window|face|empty|ghost|spirit/] },
   "106-dormitory-bunk-ghost": { who: "f", must: [/dormitory|dorm|boarding|bunk|bed|beds|school|girls|sleep|ghost|spirit/] },
   "107-lullaby-grandmother-crib-spirit": { who: "f", must: [/lullaby|grandmother|grandma|baby|cot|crib|hut|sing|song|ghost|spirit/] },
+  "108-fish-smoking-rack-ghost-woman": { who: "f", must: [/fish|tilapia|smoke|smoking|rack|lake|victoria|woman|shore|ghost|spirit/] },
+  "109-wheelbarrow-boy-bricks-spirit": { who: "m", must: [/brick|bricks|wheelbarrow|building|construction|site|wall|boy|ghost|spirit/] },
+  "110-radio-repair-old-man-ghost-child": { who: "m", must: [/radio|repair|repairman|workshop|roadside|old man|child|glowing|ghost|spirit/] },
+  "111-pineapple-seller-girl-ghost-umbrella": { who: "f", must: [/pineapple|fruit|seller|umbrella|roadside|girl|road|ghost|spirit/] },
+  "112-choir-practice-ghost-singer": { who: "any", must: [/choir|sing|singer|singing|song|rehearsal|church|hymn|voice|ghost|spirit/] },
+  "113-rain-water-tank-boy-reflection": { who: "m", must: [/rain|water|tank|puddle|reflection|jerrycan|boy|ghost|spirit/] },
+  "114-market-bicycle-ghost-rider": { who: "m", must: [/market|crowd|bicycle|bike|rider|stall|vendors|busy|ghost|spirit/] },
+  "115-goat-market-ghost-goat": { who: "m", must: [/goat|goats|market|herder|herders|animal|eyes|stare|ghost|spirit/] },
+  "116-matooke-steaming-ghost-hands": { who: "f", must: [/matooke|banana|leaves|steam|steaming|cook|cooking|kitchen|women|hands|ghost|spirit/] },
+  "117-school-teacher-ghost-pupil-doorway": { who: "f", must: [/teacher|school|pupil|exercise|books|marking|grading|doorway|veranda|ghost|spirit/] },
 };
 // Photos with blood/claws/gore: never used as thumbnails, and used inside videos only when no gentler photo fits (YouTube age-restriction risk).
 const CH4_GORY = ["ghost-crawling", "woman-fallen-ghost", "ghost-over-girl-house", "boy-ghost-graveyard"];
