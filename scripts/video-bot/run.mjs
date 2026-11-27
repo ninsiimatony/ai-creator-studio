@@ -383,6 +383,19 @@ const CH4_PHOTOS = {
   "92-fig-tree-ceremony-ancestors": { who: "any", must: [/fig|tree|ceremony|ritual|elder|priest|ancestor|shrine|spirit|ghost/] },
   "93-hill-path-termite-mound-spirit": { who: "f", must: [/hill|path|termite|mound|jerrycan|mother|woman|behind|long arms|spirit|ghost/] },
   "94-cassava-farm-ghost-digger": { who: "m", must: [/cassava|farm|hoe|dig|digging|garden|field|wife|baby|ghost|spirit/] },
+  "95-barber-shop-mirror-ghost": { who: "m", must: [/barber|haircut|shave|salon|mirror|shop|customer|ghost|spirit/] },
+  "96-tea-pickers-tall-spirit": { who: "f", must: [/tea|plantation|picker|pickers|leaves|hill|hills|bushes|women|tall|ghost|spirit/] },
+  "97-charcoal-seller-smoke-face": { who: "m", must: [/charcoal|smoke|sack|sacks|roadside|seller|fire|face|ghost|spirit/] },
+  "98-marbles-ghost-child": { who: "m", must: [/marble|marbles|boys|play|playing|compound|village|child|kids|ghost|spirit/] },
+  "99-millet-pounding-ghost-hand": { who: "f", must: [/millet|pound|pounding|mortar|pestle|women|hut|hand|ghost|spirit/] },
+  "100-coffee-farmer-drying-beans-ghost": { who: "m", must: [/coffee|beans|farmer|drying|banana|elder|old man|ghost|spirit/] },
+  "101-ferry-passenger-ghost": { who: "f", must: [/ferry|boat|lake|victoria|passenger|passengers|crossing|water|ghost|spirit/] },
+  "102-blacksmith-forge-shadow": { who: "m", must: [/blacksmith|forge|iron|hammer|anvil|smith|shadow|horn|horned|ghost|spirit/] },
+  "103-old-couple-bench-third-figure": { who: "any", must: [/couple|husband|wife|old|elderly|bench|porch|third|figure|between|ghost|spirit/] },
+  "104-sugarcane-girl-tall-spirit": { who: "f", must: [/sugarcane|sugar|cane|girl|field|path|tall|behind|ghost|spirit/] },
+  "105-taxi-park-window-ghost-face": { who: "any", must: [/taxi|park|minibus|matatu|bus|kampala|window|face|empty|ghost|spirit/] },
+  "106-dormitory-bunk-ghost": { who: "f", must: [/dormitory|dorm|boarding|bunk|bed|beds|school|girls|sleep|ghost|spirit/] },
+  "107-lullaby-grandmother-crib-spirit": { who: "f", must: [/lullaby|grandmother|grandma|baby|cot|crib|hut|sing|song|ghost|spirit/] },
 };
 // Photos with blood/claws/gore: never used as thumbnails, and used inside videos only when no gentler photo fits (YouTube age-restriction risk).
 const CH4_GORY = ["ghost-crawling", "woman-fallen-ghost", "ghost-over-girl-house", "boy-ghost-graveyard"];
